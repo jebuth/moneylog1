@@ -1,6 +1,13 @@
 import React from 'react';
-import { Stack } from 'expo-router';
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
+import { NavigationContainer } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
+import Screen1 from './screen1';
+import Screen2 from './screen2';
+import Screen3 from './screen3';
+
+const Tab = createMaterialTopTabNavigator();
 
 export default function MainLayout() {
   const { isAuthenticated } = useAuth();
@@ -11,31 +18,58 @@ export default function MainLayout() {
   }
   
   return (
-    <Stack
+    <Tab.Navigator
+      initialRouteName="screen2"
+      tabBarPosition="bottom"
       screenOptions={{
-        headerStyle: {
+        tabBarActiveTintColor: '#fff',
+        tabBarInactiveTintColor: '#f8f8f8',
+        tabBarStyle: {
           backgroundColor: '#f4511e',
         },
-        headerTintColor: '#fff',
-        headerTitleStyle: {
-          fontWeight: 'bold',
+        //tabBarStyle:{ display: 'none'}, // to hide tab bar
+        tabBarIndicatorStyle: {
+          backgroundColor: '#fff',
         },
-        gestureEnabled: true,
-        animation: 'slide_from_right',
+        swipeEnabled: true,
+        animationEnabled: true,
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+        },
+        tabBarShowIcon: true,
       }}
     >
-      <Stack.Screen
+      <Tab.Screen
         name="screen1"
-        options={{ title: 'Screen 1' }}
+        component={Screen1}
+        options={{
+          tabBarLabel: 'Profile',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="person" color={color} size={22} />
+          ),
+        }}
       />
-      <Stack.Screen
+      <Tab.Screen
         name="screen2"
-        options={{ title: 'Screen 2' }}
+        component={Screen2}
+        options={{
+          tabBarLabel: 'Items',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="list" color={color} size={22} />
+          ),
+        }}
       />
-      <Stack.Screen
+      <Tab.Screen
         name="screen3"
-        options={{ title: 'Screen 3' }}
+        component={Screen3}
+        options={{
+          tabBarLabel: 'Settings',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="settings" color={color} size={22} />
+          ),
+        }}
       />
-    </Stack>
+    </Tab.Navigator>
   );
 }

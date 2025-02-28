@@ -1,17 +1,30 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
-import { router } from 'expo-router';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Switch } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function Screen3() {
   const { user } = useAuth();
   
-  // Access user preferences from context
-  const preferences = user.preferences || {};
+  // Access user preferences from context with fallback for safety
+  const initialPreferences = user?.preferences || {
+    theme: 'light',
+    notifications: true
+  };
+
+  // Use local state to track changes (in a real app, you'd persist these)
+  const [preferences, setPreferences] = useState(initialPreferences);
+  
+  // Toggle handler for notification switch
+  const toggleNotifications = () => {
+    setPreferences(prev => ({
+      ...prev,
+      notifications: !prev.notifications
+    }));
+  };
   
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Screen 3</Text>
+      <Text style={styles.title}>Settings</Text>
       
       <View style={styles.card}>
         <Text style={styles.heading}>User Preferences</Text>
@@ -24,19 +37,12 @@ export default function Screen3() {
           <Text style={styles.preferenceText}>Notifications</Text>
           <Switch
             value={preferences.notifications}
-            disabled={true}
+            onValueChange={toggleNotifications}
           />
         </View>
       </View>
       
-      <View style={styles.navButtons}>
-        <TouchableOpacity 
-          style={[styles.button, { backgroundColor: '#2196F3' }]}
-          onPress={() => router.push('/(main)/screen2')}
-        >
-          <Text style={styles.buttonText}>Back to Screen 2</Text>
-        </TouchableOpacity>
-      </View>
+      <Text style={styles.hint}>Swipe left to see your items</Text>
     </View>
   );
 }
@@ -80,19 +86,10 @@ const styles = StyleSheet.create({
   preferenceText: {
     fontSize: 16,
   },
-  navButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  button: {
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    flex: 1,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
+  hint: {
+    textAlign: 'center',
+    color: '#666',
+    fontStyle: 'italic',
+    marginTop: 20,
   },
 });

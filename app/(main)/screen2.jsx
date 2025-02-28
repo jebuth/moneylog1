@@ -1,20 +1,23 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
-import { router } from 'expo-router';
+import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function Screen2() {
   const { user } = useAuth();
   
-  // Access user data from context
-  const items = user.data.items || [];
+  // Access user data from context with fallback for safety
+  const items = user?.data?.items || [
+    { id: 1, name: 'Default Item 1' },
+    { id: 2, name: 'Default Item 2' },
+    { id: 3, name: 'Default Item 3' }
+  ];
   
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Screen 2</Text>
+      <Text style={styles.title}>Items</Text>
       
       <View style={styles.card}>
-        <Text style={styles.heading}>User Items</Text>
+        <Text style={styles.heading}>Your Items</Text>
         <FlatList
           data={items}
           keyExtractor={(item) => item.id.toString()}
@@ -27,21 +30,7 @@ export default function Screen2() {
         />
       </View>
       
-      <View style={styles.navButtons}>
-        <TouchableOpacity 
-          style={[styles.button, { backgroundColor: '#2196F3', marginRight: 10 }]}
-          onPress={() => router.push('/(main)/screen1')}
-        >
-          <Text style={styles.buttonText}>Back to Screen 1</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.button, { backgroundColor: '#4CAF50' }]}
-          onPress={() => router.push('/(main)/screen3')}
-        >
-          <Text style={styles.buttonText}>Go to Screen 3</Text>
-        </TouchableOpacity>
-      </View>
+      <Text style={styles.hint}>Swipe left to see profile, swipe right to see settings</Text>
     </View>
   );
 }
@@ -85,19 +74,10 @@ const styles = StyleSheet.create({
   itemText: {
     fontSize: 16,
   },
-  navButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  button: {
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    flex: 1,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
+  hint: {
+    textAlign: 'center',
+    color: '#666',
+    fontStyle: 'italic',
+    marginTop: 20,
   },
 });

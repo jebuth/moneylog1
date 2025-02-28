@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { router } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function Screen1() {
@@ -8,22 +7,15 @@ export default function Screen1() {
   
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Screen 1</Text>
+      <Text style={styles.title}>Profile</Text>
       
       <View style={styles.card}>
         <Text style={styles.heading}>User Info</Text>
-        <Text style={styles.userInfo}>Name: {user.name}</Text>
-        <Text style={styles.userInfo}>Email: {user.email}</Text>
+        <Text style={styles.userInfo}>Name: {user?.name || 'User'}</Text>
+        <Text style={styles.userInfo}>Email: {user?.email || 'user@example.com'}</Text>
       </View>
       
-      <View style={styles.navButtons}>
-        <TouchableOpacity 
-          style={[styles.button, { backgroundColor: '#4CAF50' }]}
-          onPress={() => router.push('/(main)/screen2')}
-        >
-          <Text style={styles.buttonText}>Go to Screen 2</Text>
-        </TouchableOpacity>
-      </View>
+      <Text style={styles.hint}>Swipe right to see your items</Text>
       
       <TouchableOpacity 
         style={[styles.button, { backgroundColor: '#f44336', marginTop: 20 }]}
@@ -66,15 +58,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 5,
   },
-  navButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  hint: {
+    textAlign: 'center',
+    color: '#666',
+    fontStyle: 'italic',
+    marginTop: 20,
   },
   button: {
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
-    flex: 1,
+    marginTop: 10,
   },
   buttonText: {
     color: 'white',
