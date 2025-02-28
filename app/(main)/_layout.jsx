@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import Screen1 from './screen1';
 import Screen2 from './screen2';
 import Screen3 from './screen3';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Platform, StyleSheet } from 'react-native';
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -18,6 +20,7 @@ export default function MainLayout() {
   }
   
   return (
+    <SafeAreaView style={styles.container}>
     <Tab.Navigator
       initialRouteName="screen2"
       tabBarPosition="bottom"
@@ -71,5 +74,20 @@ export default function MainLayout() {
         }}
       />
     </Tab.Navigator>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    //paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    paddingBottom: Platform.OS === 'android' ? StatusBar.currentHeight : -50, // get lower tabBar as low as possible
+  },
+  header: {
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#4511e',
+  }
+});

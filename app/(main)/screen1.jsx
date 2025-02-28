@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, StatusBar } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function Screen1() {
@@ -7,22 +7,26 @@ export default function Screen1() {
   
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Profile</Text>
-      
-      <View style={styles.card}>
-        <Text style={styles.heading}>User Info</Text>
-        <Text style={styles.userInfo}>Name: {user?.name || 'User'}</Text>
-        <Text style={styles.userInfo}>Email: {user?.email || 'user@example.com'}</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Profile</Text>
       </View>
       
-      <Text style={styles.hint}>Swipe right to see your items</Text>
-      
-      <TouchableOpacity 
-        style={[styles.button, { backgroundColor: '#f44336', marginTop: 20 }]}
-        onPress={logout}
-      >
-        <Text style={styles.buttonText}>Logout</Text>
-      </TouchableOpacity>
+      <View style={styles.content}>
+        <View style={styles.card}>
+          <Text style={styles.heading}>User Info</Text>
+          <Text style={styles.userInfo}>Name: {user?.name || 'User'}</Text>
+          <Text style={styles.userInfo}>Email: {user?.email || 'user@example.com'}</Text>
+        </View>
+        
+        <Text style={styles.hint}>Swipe right to see your items</Text>
+        
+        <TouchableOpacity 
+          style={[styles.button, { backgroundColor: '#f44336', marginTop: 20 }]}
+          onPress={logout}
+        >
+          <Text style={styles.buttonText}>Logout</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -30,13 +34,20 @@ export default function Screen1() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: '#fff',
+  },
+  header: {
+    paddingTop: 10,
+    paddingHorizontal: 20,
+    paddingBottom: 10,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
+  },
+  content: {
+    flex: 1,
+    padding: 20,
   },
   card: {
     backgroundColor: '#f9f9f9',
