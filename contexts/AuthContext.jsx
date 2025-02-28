@@ -1,5 +1,26 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { router } from 'expo-router';
+import { initializeApp } from 'firebase/app';
+import { 
+  getAuth, 
+  signInWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged, 
+  GoogleAuthProvider, 
+  signInWithCredential 
+} from 'firebase/auth';
+import * as Google from 'expo-auth-session/providers/google';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert, Platform } from 'react-native';
+// Import configurations
+import { firebaseConfig, googleAuthConfig } from '../config/firebase';
+
+// Initialize Firebase app
+
+// console.log(firebaseConfig)
+// console.log(googleAuthConfig)
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
 // Create the authentication context
 const AuthContext = createContext();
@@ -13,61 +34,105 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Check if user is already logged in
+  // Google Auth setup
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId: Platform.OS === 'ios' ? googleAuthConfig.iosClientId : (Platform.OS === 'android' ? ANDROID_CLIENT_ID : WEB_CLIENT_ID),
+    //androidClientId: ANDROID_CLIENT_ID,
+    iosClientId:googleAuthConfig.iosClientId
+    //webClientId: WEB_CLIENT_ID,
+    //expoClientId: WEB_CLIENT_ID,
+  });
+
+  // Handle the Google sign-in response
   useEffect(() => {
+    if (response?.type === 'success') {
+      const { id_token } = response.params;
+      handleGoogleSignIn(id_token);
+    } else if (response?.type === 'error') {
+      setError(response.error || 'Google sign-in failed');
+    }
+  }, [response]);
+
+  // Handle Firebase auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        // User is signed in
+        // Convert Firebase user to your app's user format
+        const appUser = {
+          id: firebaseUser.uid,
+          email: firebaseUser.email,
+          name: firebaseUser.displayName || 'User',
+          photoURL: firebaseUser.photoURL,
+          preferences: {
+            theme: 'light',
+            notifications: true
+          },
+          data: {
+            items: [
+              { id: 1, name: 'Item 1' },
+              { id: 2, name: 'Item 2' },
+              { id: 3, name: 'Item 3' }
+            ]
+          }
+        };
+        
+        // Save user in state
+        setUser(appUser);
+        
+        // Save user to AsyncStorage
+        saveUserToStorage(appUser);
+      } else {
+        // User is signed out
+        setUser(null);
+        AsyncStorage.removeItem('user');
+      }
+      setIsLoading(false);
+    });
+
+    // Check for stored user credentials
     const checkLoginStatus = async () => {
       try {
-        // Here you'd typically check for stored credentials
-        // or tokens in secure storage
-        const savedUser = null; // Replace with actual storage check
-        
+        const savedUser = await AsyncStorage.getItem('user');
         if (savedUser) {
-          setUser(savedUser);
+          setUser(JSON.parse(savedUser));
         }
       } catch (error) {
         console.error('Error checking login status:', error);
       } finally {
-        setIsLoading(false);
+        // Firebase's onAuthStateChanged will set isLoading to false
       }
     };
 
     checkLoginStatus();
+
+    // Cleanup the observer on unmount
+    return () => unsubscribe();
   }, []);
 
-  // Login function
+  // Save user data to AsyncStorage
+  const saveUserToStorage = async (userData) => {
+    try {
+      await AsyncStorage.setItem('user', JSON.stringify(userData));
+    } catch (error) {
+      console.error('Error saving user to storage:', error);
+    }
+  };
+
+  // Login with email and password
   const login = async (email, password) => {
     setIsLoading(true);
+    setError(null);
+    
     try {
-      // Simulate API call
-      // In a real app, replace with actual authentication API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock user data
-      const userData = {
-        id: '123',
-        email,
-        name: 'Test User',
-        preferences: {
-          theme: 'light',
-          notifications: true
-        },
-        data: {
-          items: [
-            { id: 1, name: 'Item 1' },
-            { id: 2, name: 'Item 2' },
-            { id: 3, name: 'Item 3' }
-          ]
-        }
-      };
-      
-      setUser(userData);
-      
-      // Navigate to main app
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       router.replace('/(main)/screen1');
       return { success: true };
     } catch (error) {
       console.error('Login error:', error);
+      setError(error.message || 'Failed to login');
       return { 
         success: false, 
         error: error.message || 'Failed to login' 
@@ -77,18 +142,55 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Google Sign In
+  const handleGoogleSignIn = async (idToken) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Create a credential from the Google ID token
+      const credential = GoogleAuthProvider.credential(idToken);
+      
+      // Sign in to Firebase with the Google credential
+      const userCredential = await signInWithCredential(auth, credential);
+      
+      // Navigate to main app
+      router.replace('/(main)/screen1');
+      return { success: true };
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      setError(error.message || 'Failed to sign in with Google');
+      return {
+        success: false,
+        error: error.message || 'Failed to sign in with Google'
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Start Google sign-in process
+  const signInWithGoogle = async () => {
+    try {
+      return await promptAsync();
+    } catch (error) {
+      setError('Failed to start Google sign-in');
+      return { success: false, error: 'Failed to start Google sign-in' };
+    }
+  };
+
   // Logout function
   const logout = async () => {
     setIsLoading(true);
+    setError(null);
+    
     try {
-      // Clear user data
-      setUser(null);
-      
-      // Navigate back to login
+      await signOut(auth);
       router.replace('/(auth)');
       return { success: true };
     } catch (error) {
       console.error('Logout error:', error);
+      setError(error.message || 'Failed to logout');
       return { 
         success: false, 
         error: error.message || 'Failed to logout' 
@@ -103,8 +205,10 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider value={{
       user,
       isLoading,
+      error,
       login,
       logout,
+      signInWithGoogle,
       isAuthenticated: !!user
     }}>
       {children}
