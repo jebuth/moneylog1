@@ -19,13 +19,6 @@ export default function Screen1() {
         </View>
         
         <Text style={styles.hint}>Swipe right to see your items</Text>
-        
-        <TouchableOpacity 
-          style={[styles.button, { backgroundColor: '#f44336', marginTop: 20 }]}
-          onPress={logout}
-        >
-          <Text style={styles.buttonText}>Logout</Text>
-        </TouchableOpacity>
       </View>
     </View>
   );

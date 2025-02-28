@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Switch } from 'react-native';
+import { View, Text, StyleSheet, Switch, TouchableOpacity } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function Screen3() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   
   // Access user preferences from context with fallback for safety
   const initialPreferences = user?.preferences || {
@@ -24,7 +24,9 @@ export default function Screen3() {
   
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Settings</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Settings</Text>
+      </View>
       
       <View style={styles.card}>
         <Text style={styles.heading}>User Preferences</Text>
@@ -43,6 +45,13 @@ export default function Screen3() {
       </View>
       
       <Text style={styles.hint}>Swipe left to see your items</Text>
+      
+      <TouchableOpacity 
+        style={[styles.button, { backgroundColor: '#f44336', marginTop: 20 }]}
+        onPress={logout}
+      >
+        <Text style={styles.buttonText}>Logout</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -53,10 +62,22 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#fff',
   },
+  button: {
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  header: {
+    marginBottom: 20,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
   },
   card: {
     backgroundColor: '#f9f9f9',
