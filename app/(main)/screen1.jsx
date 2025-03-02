@@ -183,32 +183,37 @@ export default function Screen1() {
       {/* Middle Section - Amount Input */}
       {!categoriesExpanded && (
         <View style={styles.inputSection}>
-        <View style={styles.amountContainer}>
-          <Text style={styles.dollarSign}>$</Text>
-          <TextInput
-            style={styles.amountInput}
-            value={inputAmount}
-            onChangeText={(text) => {
-              // Remove all non-numeric characters
-              const numericValue = text.replace(/[^0-9]/g, '');
-              
-              if (numericValue === '') {
-                setInputAmount('');
-                return;
-              }
-              
-              // Convert to cents (e.g., "234" becomes "2.34")
-              const cents = parseInt(numericValue);
-              const formattedAmount = (cents / 100).toFixed(2);
-              
-              setInputAmount(formattedAmount);
-            }}
-            keyboardType="numeric"
-            placeholder="0.00"
-            placeholderTextColor="#666"
-            textAlign="right"
-          />
-        </View>
+          <View style={styles.amountContainer}>
+            <Text style={styles.dollarSign}>$</Text>
+            <TextInput
+              style={styles.amountInput}
+              value={inputAmount}
+              onChangeText={(text) => {
+                // Remove all non-numeric characters
+                const numericValue = text.replace(/[^0-9]/g, '');
+                
+                if (numericValue === '') {
+                  setInputAmount('');
+                  return;
+                }
+                
+                // Convert to cents (e.g., "234" becomes "2.34")
+                const cents = parseInt(numericValue);
+                
+                // Format with commas and two decimal places
+                const formattedAmount = new Intl.NumberFormat('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }).format(cents / 100);
+                
+                setInputAmount(formattedAmount);
+              }}
+              keyboardType="numeric"
+              placeholder="0.00"
+              placeholderTextColor="#666"
+              textAlign="right"
+            />
+          </View>
       </View>
       )}
       
@@ -417,7 +422,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
-  // formart number input
+  // format number input
   amountContainer: {
     flexDirection: 'row',
     alignItems: 'center',
