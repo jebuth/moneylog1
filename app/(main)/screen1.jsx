@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
+import CategorySelectorModal from '../../components/CategorySelectorModal';
 
 const { width, height } = Dimensions.get('window');
 
@@ -31,6 +32,29 @@ export default function Screen1() {
   // Animation state
   const [categoriesExpanded, setCategoriesExpanded] = useState(false);
   const animatedHeight = useRef(new Animated.Value(0)).current;
+
+  // category input
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+
+  // Add these with your other state variables
+  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+
+  // To open the modal
+  const openCategoryModal = () => {
+    setCategoryModalVisible(true);
+  };
+
+  // To close the modal
+  const closeCategoryModal = () => {
+    setCategoryModalVisible(false);
+  };
+
+  // Handler for category selection
+  const handleCategorySelect = (category) => {
+    setSelectedCategory(category);
+  };
   
   // Categories with expenses
   const [categories, setCategories] = useState([
@@ -76,20 +100,47 @@ export default function Screen1() {
     },
   ]);
   
-  // Remove quickCategories array since we're creating buttons directly
-  // const quickCategories = [
-  //   { id: 1, color: '#5C5CFF' },
-  //   { id: 2, color: '#FF5C5C' },
-  //   { id: 3, color: '#5CFF5C' },
-  //   { id: 4, color: '#FFDD5C' }
-  // ];
+  useEffect(() => {
+    // Parse the numeric amount (handle commas and empty values)
+    const numericAmount = parseFloat((inputAmount || '0').replace(/,/g, '')) || 0;
+    
+    if (numericAmount > 1.00) {
+      // Fade in and slide up animation
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        })
+      ]).start();
+    } else {
+      // Fade out and slide down animation
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 50,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [inputAmount, fadeAnim, slideAnim]);
 
   // Animation to expand categories
   const expandCategories = () => {
     setCategoriesExpanded(true);
     Animated.spring(animatedHeight, {
       toValue: 1,
-      friction: 8,
+      friction: 80,
       tension: 40,
       useNativeDriver: false
     }).start();
@@ -182,7 +233,8 @@ export default function Screen1() {
       
       {/* Middle Section - Amount Input */}
       {!categoriesExpanded && (
-        <View style={styles.inputSection}>
+      <>
+      <View style={styles.inputSection}>
           <View style={styles.amountContainer}>
             <Text style={styles.dollarSign}>$</Text>
             <TextInput
@@ -215,6 +267,35 @@ export default function Screen1() {
             />
           </View>
       </View>
+
+      <Animated.View 
+  style={[
+    styles.categoryContainer,
+    {
+      opacity: fadeAnim,
+      transform: [
+        { translateY: slideAnim }
+        //{ scale: pulseAnim }
+      ],
+    }
+  ]}
+>
+  <TouchableOpacity 
+    style={styles.categorySelector}
+    onPress={() => setCategoryModalVisible(true)}
+  >
+    <Text style={styles.categoryLabel}>
+      {selectedCategory ? selectedCategory.name : "Select Category"}
+    </Text>
+    <View 
+      style={[
+        styles.categoryIcon, 
+        { backgroundColor: selectedCategory ? selectedCategory.color : '#4169E1' }
+      ]} 
+    />
+  </TouchableOpacity>
+</Animated.View>
+      </>
       )}
       
       {/* Space between input and categories */}
@@ -275,6 +356,14 @@ export default function Screen1() {
       
       {/* Empty space at the bottom to allow room for the categories when expanded */}
       <View style={{ height: categoriesExpanded ? height * 0.65 : 140 }} />
+
+      <CategorySelectorModal
+        visible={categoryModalVisible}
+        onClose={closeCategoryModal}
+        onSelect={handleCategorySelect}
+        categories={categories}
+      />
+
     </SafeAreaView>
   );
 }
@@ -442,4 +531,35 @@ const styles = StyleSheet.create({
     padding: 16,
     textAlign: 'right',
   },
+
+  // category input
+
+  categoryContainer: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    backgroundColor: '#1D1D1D',
+    borderRadius: 24,
+    padding: 16,
+    zIndex: 10,
+  },
+  categorySelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+  },
+  categoryLabel: {
+    fontSize: 18,
+    color: '#999',
+  },
+  categoryIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#4169E1', // Blue circle as shown in screenshot
+  },
+
+  // category modal
+
 });
