@@ -29,6 +29,7 @@ export default function MainLayout() {
         tabBarInactiveTintColor: '#f8f8f8',
         tabBarStyle: {
           backgroundColor: '#f4511e',
+          display: 'none'
         },
         //tabBarStyle:{ display: 'none'}, // to hide tab bar
         tabBarIndicatorStyle: {
