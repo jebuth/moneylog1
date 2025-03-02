@@ -25,7 +25,8 @@ export default function Screen1() {
   const [totalAmount, setTotalAmount] = useState(23624.69);
   
   // Input amount
-  const [inputAmount, setInputAmount] = useState('0.00');
+  //const [inputAmount, setInputAmount] = useState(0.00);
+  const [inputAmount, setInputAmount] = useState('');
   
   // Animation state
   const [categoriesExpanded, setCategoriesExpanded] = useState(false);
@@ -182,15 +183,33 @@ export default function Screen1() {
       {/* Middle Section - Amount Input */}
       {!categoriesExpanded && (
         <View style={styles.inputSection}>
+        <View style={styles.amountContainer}>
+          <Text style={styles.dollarSign}>$</Text>
           <TextInput
             style={styles.amountInput}
             value={inputAmount}
-            onChangeText={(text) => setInputAmount(formatAmount(text))}
-            keyboardType="decimal-pad"
+            onChangeText={(text) => {
+              // Remove all non-numeric characters
+              const numericValue = text.replace(/[^0-9]/g, '');
+              
+              if (numericValue === '') {
+                setInputAmount('');
+                return;
+              }
+              
+              // Convert to cents (e.g., "234" becomes "2.34")
+              const cents = parseInt(numericValue);
+              const formattedAmount = (cents / 100).toFixed(2);
+              
+              setInputAmount(formattedAmount);
+            }}
+            keyboardType="numeric"
             placeholder="0.00"
             placeholderTextColor="#666"
+            textAlign="right"
           />
         </View>
+      </View>
       )}
       
       {/* Space between input and categories */}
@@ -396,5 +415,26 @@ const styles = StyleSheet.create({
   collapseButtonText: {
     color: '#AAAAAA',
     fontWeight: 'bold',
+  },
+
+  // formart number input
+  amountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+  },
+  dollarSign: {
+    fontSize: 36,
+    fontWeight: '500',
+    color: '#999',
+    marginRight: 4,
+  },
+  amountInput: {
+    flex: 1,
+    fontSize: 36,
+    fontWeight: '500',
+    color: '#999',
+    padding: 16,
+    textAlign: 'right',
   },
 });
