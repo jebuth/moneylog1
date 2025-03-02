@@ -244,8 +244,8 @@ export default function Screen1() {
       {/* Bottom mock categories for stacked effect - only visible when collapsed */}
       {!categoriesExpanded && (
         <View style={styles.mockCategoriesContainer}>
-          <View style={[styles.mockCategoryCard, { bottom: 10, opacity: 0.5 }]} />
-          <View style={[styles.mockCategoryCard, { bottom: 0, opacity: 0.3 }]} />
+          <View style={[styles.mockCategoryCard, { top: 60, opacity: 0.6, marginLeft: 10, marginRight: 10 }]} />
+          <View style={[styles.mockCategoryCard, { top: 70, opacity: 0.3, marginLeft: 20, marginRight: 20 }]} />
         </View>
       )}
       
