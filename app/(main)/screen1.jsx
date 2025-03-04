@@ -10,7 +10,8 @@ import {
   SafeAreaView,
   Platform,
   Dimensions,
-  Animated
+  Animated,
+  KeyboardAvoidingView
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,45 +19,35 @@ import CategorySelectorModal from '../../components/CategorySelectorModal';
 
 const { width, height } = Dimensions.get('window');
 
-export default function Screen1() {
+export default function ExpenseTracker() {
   const { user } = useAuth();
   
   // Trip information
   const [tripName, setTripName] = useState('Mexico Trip 2024');
   const [totalAmount, setTotalAmount] = useState(23624.69);
   
-  // Input amount
-  //const [inputAmount, setInputAmount] = useState(0.00);
-  const [inputAmount, setInputAmount] = useState('');
+  // Input states
+  const [inputAmount, setInputAmount] = useState('320.33');
+  const [description, setDescription] = useState('');
   
-  // Animation state
+  // Animation states
   const [categoriesExpanded, setCategoriesExpanded] = useState(false);
   const animatedHeight = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
 
-  // category input
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
-
-  // Add these with your other state variables
+  // Category selection
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState({ 
+    id: 2, 
+    name: 'Transportation', 
+    amount: 330, 
+    percentage: 5, 
+    transactions: 2,
+    color: '#5C5CFF' 
+  });
 
-  // To open the modal
-  const openCategoryModal = () => {
-    setCategoryModalVisible(true);
-  };
-
-  // To close the modal
-  const closeCategoryModal = () => {
-    setCategoryModalVisible(false);
-  };
-
-  // Handler for category selection
-  const handleCategorySelect = (category) => {
-    setSelectedCategory(category);
-  };
-  
-  // Categories with expenses
+  // Categories data with focus on Airfare for recent transactions
   const [categories, setCategories] = useState([
     { 
       id: 1, 
@@ -100,53 +91,53 @@ export default function Screen1() {
     },
   ]);
   
-  useEffect(() => {
-    // Parse the numeric amount (handle commas and empty values)
-    const numericAmount = parseFloat((inputAmount || '0').replace(/,/g, '')) || 0;
+  // Handle amount input changes
+  const handleAmountChange = (text) => {
+    // Remove all non-numeric characters
+    const numericValue = text.replace(/[^0-9]/g, '');
     
-    if (numericAmount > 1.00) {
-      // Fade in and slide up animation
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        })
-      ]).start();
-    } else {
-      // Fade out and slide down animation
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 50,
-          duration: 200,
-          useNativeDriver: true,
-        })
-      ]).start();
+    if (numericValue === '') {
+      setInputAmount('');
+      return;
     }
-  }, [inputAmount, fadeAnim, slideAnim]);
+    
+    // Convert to cents (e.g., "234" becomes "2.34")
+    const cents = parseInt(numericValue);
+    
+    // Format with commas and two decimal places
+    const formattedAmount = new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(cents / 100);
+    
+    setInputAmount(formattedAmount);
+  };
+  
+  // Category modal handlers
+  const openCategoryModal = () => {
+    setCategoryModalVisible(true);
+  };
 
-  // Animation to expand categories
+  const closeCategoryModal = () => {
+    setCategoryModalVisible(false);
+  };
+
+  const handleCategorySelect = (category) => {
+    setSelectedCategory(category);
+    closeCategoryModal();
+  };
+
+  // Animation functions for categories
   const expandCategories = () => {
     setCategoriesExpanded(true);
     Animated.spring(animatedHeight, {
       toValue: 1,
-      friction: 80,
+      friction: 8,
       tension: 40,
       useNativeDriver: false
     }).start();
   };
 
-  // Animation to collapse categories
   const collapseCategories = () => {
     Animated.timing(animatedHeight, {
       toValue: 0,
@@ -157,39 +148,33 @@ export default function Screen1() {
     });
   };
 
-  // Function to format the input amount
-  const formatAmount = (text) => {
-    // Remove non-numeric characters
-    const numericValue = text.replace(/[^0-9.]/g, '');
+  // Log the expense
+  const handleLogExpense = () => {
+    // Here you would typically save the expense to your backend
+    alert(`Logged $${inputAmount} for ${selectedCategory.name}`);
     
-    // Ensure only one decimal point
-    const parts = numericValue.split('.');
-    if (parts.length > 2) {
-      return parts[0] + '.' + parts[1];
-    }
-    
-    // Format with 2 decimal places when needed
-    if (parts.length === 2 && parts[1].length > 2) {
-      return parts[0] + '.' + parts[1].substring(0, 2);
-    }
-    
-    return numericValue;
+    // Reset form
+    setInputAmount('');
+    setDescription('');
   };
 
-  // Calculate animated styles for bottom-up expansion
+  // Clear the form
+  const handleClearForm = () => {
+    setInputAmount('');
+    setDescription('');
+  };
+
+  // Calculate animated styles for categories
   const animatedCategoriesStyle = {
     height: animatedHeight.interpolate({
       inputRange: [0, 1],
-      outputRange: [90, height * 0.65] // From single category height to almost full screen
+      outputRange: [90, height * 0.5]
     }),
-    bottom: 50, // Move the initial position up by adding bottom padding
     position: 'absolute',
+    bottom: 20,
     left: 16,
     right: 16,
-    opacity: animatedHeight.interpolate({
-      inputRange: [0, 0.5, 1],
-      outputRange: [1, 0.8, 1] // Subtle fade effect during transition
-    })
+    zIndex: 10
   };
 
   return (
@@ -203,6 +188,7 @@ export default function Screen1() {
         end={{ x: 1, y: 1 }}
         style={styles.headerCard}
       >
+        
         <View style={styles.headerContent}>
           <Text style={styles.tripName}>{tripName}</Text>
           <Text style={styles.totalAmount}>${totalAmount.toLocaleString(undefined, {
@@ -231,139 +217,104 @@ export default function Screen1() {
         </View>
       </LinearGradient>
       
-      {/* Middle Section - Amount Input */}
-      {!categoriesExpanded && (
-      <>
-      <View style={styles.inputSection}>
-          <View style={styles.amountContainer}>
-            <Text style={styles.dollarSign}>$</Text>
-            <TextInput
-              style={styles.amountInput}
-              value={inputAmount}
-              onChangeText={(text) => {
-                // Remove all non-numeric characters
-                const numericValue = text.replace(/[^0-9]/g, '');
-                
-                if (numericValue === '') {
-                  setInputAmount('');
-                  return;
-                }
-                
-                // Convert to cents (e.g., "234" becomes "2.34")
-                const cents = parseInt(numericValue);
-                
-                // Format with commas and two decimal places
-                const formattedAmount = new Intl.NumberFormat('en-US', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                }).format(cents / 100);
-                
-                setInputAmount(formattedAmount);
-              }}
-              keyboardType="numeric"
-              placeholder="0.00"
-              placeholderTextColor="#666"
-              textAlign="right"
-            />
+      {/* Input Form */}
+      <View style={styles.formContainer}>
+        {/* Row 1: Amount and Category side by side */}
+        <View style={{flexDirection: 'row', height:90}}>
+          {/* Amount Input */}
+          <View style={{flex: 0.75}}>
+            <Text style={styles.inputLabel}>AMOUNT</Text>
+            <View style={styles.amountContainer}>
+              <Text style={styles.dollarSign}>$</Text>
+              <TextInput
+                style={styles.amountInput}
+                value={inputAmount}
+                onChangeText={handleAmountChange}
+                keyboardType="numeric"
+                placeholder="0.00"
+                placeholderTextColor="#666"
+              />
+            </View>
           </View>
-      </View>
-
-      <Animated.View 
-  style={[
-    styles.categoryContainer,
-    {
-      opacity: fadeAnim,
-      transform: [
-        { translateY: slideAnim }
-        //{ scale: pulseAnim }
-      ],
-    }
-  ]}
->
-  <TouchableOpacity 
-    style={styles.categorySelector}
-    onPress={() => setCategoryModalVisible(true)}
-  >
-    <Text style={styles.categoryLabel}>
-      {selectedCategory ? selectedCategory.name : "Select Category"}
-    </Text>
-    <View 
-      style={[
-        styles.categoryIcon, 
-        { backgroundColor: selectedCategory ? selectedCategory.color : '#4169E1' }
-      ]} 
-    />
-  </TouchableOpacity>
-</Animated.View>
-      </>
-      )}
-      
-      {/* Space between input and categories */}
-      {!categoriesExpanded && <View style={styles.spacer} />}
-      
-      {/* Animated Categories Section */}
-      <Animated.View style={[styles.categoriesContainer, animatedCategoriesStyle]}>
-        <ScrollView 
-          style={styles.categoriesScrollView}
-          scrollEnabled={categoriesExpanded}
-        >
-          {categories.map((category, index) => (
+          
+          {/* Category Selector */}
+          <View style={{flex: 1}}>
+            <Text style={styles.inputLabel}>CATEGORY</Text>
             <TouchableOpacity 
-              key={category.id} 
-              style={[
-                styles.categoryCard,
-                index === 0 && !categoriesExpanded && styles.firstCategoryCard
-              ]}
-              onPress={() => {
-                if (!categoriesExpanded && index === 0) {
-                  expandCategories();
-                }
-              }}
+              style={styles.categorySelector}
+              onPress={openCategoryModal}
             >
-              <View style={[styles.categoryIcon, { backgroundColor: category.color }]} />
-              
-              <View style={styles.categoryInfo}>
-                <Text style={styles.categoryName}>{category.name}</Text>
-                <Text style={styles.transactionCount}>{category.transactions} transactions</Text>
-              </View>
-              
-              <View style={styles.categoryAmount}>
-                <Text style={styles.amountText}>${category.amount}</Text>
-                <Text style={styles.percentageText}>{category.percentage}%</Text>
-              </View>
+              <Text style={styles.categorySelectorText}>
+                {selectedCategory ? selectedCategory.name : "Select Category"}
+              </Text>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
+          </View>
+        </View>
         
-        {/* Collapse button */}
-        {categoriesExpanded && (
+        {/* Row 2: Description Input */}
+        <View style={styles.inputSection}>
+          <Text style={styles.inputLabel}>DESCRIPTION</Text>
+          <TextInput
+            style={styles.descriptionInput}
+            value={description}
+            onChangeText={setDescription}
+            placeholder=""
+            placeholderTextColor="#666"
+            multiline={false}
+          />
+        </View>
+        
+        {/* Row 3: Action Buttons */}
+        <View style={styles.buttonContainer}>
           <TouchableOpacity 
-            style={styles.collapseButton}
-            onPress={collapseCategories}
+            style={styles.clearButton}
+            onPress={handleClearForm}
           >
-            <Text style={styles.collapseButtonText}>Collapse</Text>
+            <Text style={styles.clearButtonText}>CLEAR</Text>
           </TouchableOpacity>
-        )}
-      </Animated.View>
+          
+          <TouchableOpacity 
+            style={styles.logButton}
+            onPress={handleLogExpense}
+          >
+            <Text style={styles.logButtonText}>LOG</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
       
-      {/* Bottom mock categories for stacked effect - only visible when collapsed */}
-      {!categoriesExpanded && (
+      {/* Bottom Categories Section */}
+      <View style={styles.categoriesContainer}>
+        <TouchableOpacity 
+          style={styles.categoryCard}
+          onPress={expandCategories}
+        >
+          <View style={[styles.categoryIcon, { backgroundColor: '#5C5CFF' }]} />
+          
+          <View style={styles.categoryInfo}>
+            <Text style={styles.categoryName}>Airfare</Text>
+            <Text style={styles.transactionCount}>2 transactions</Text>
+          </View>
+          
+          <View style={styles.categoryAmount}>
+            <Text style={styles.amountText}>$330</Text>
+            <Text style={styles.percentageText}>5%</Text>
+          </View>
+        </TouchableOpacity>
+        
+        {/* Stacked category effects */}
         <View style={styles.mockCategoriesContainer}>
           <View style={[styles.mockCategoryCard, { top: 60, opacity: 0.6, marginLeft: 10, marginRight: 10 }]} />
           <View style={[styles.mockCategoryCard, { top: 70, opacity: 0.3, marginLeft: 20, marginRight: 20 }]} />
         </View>
-      )}
+      </View>
       
-      {/* Empty space at the bottom to allow room for the categories when expanded */}
-      <View style={{ height: categoriesExpanded ? height * 0.65 : 140 }} />
-
+      {/* Category Selection Modal */}
       <CategorySelectorModal
         visible={categoryModalVisible}
         onClose={closeCategoryModal}
         onSelect={handleCategorySelect}
         categories={categories}
       />
-
     </SafeAreaView>
   );
 }
@@ -371,8 +322,7 @@ export default function Screen1() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212', // Very dark background
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    backgroundColor: '#121212', // Dark background
   },
   headerCard: {
     marginHorizontal: 16,
@@ -380,8 +330,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     height: 220,
     overflow: 'hidden',
-    //borderWidth: 1,  // Optional: adds a border to match Image 2
-    //borderColor: 'rgba(255, 80, 0, 0.7)', // Orange border to match Image 2
   },
   headerContent: {
     padding: 24,
@@ -403,59 +351,140 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 5,
-    paddingHorizontal: 10,
+    paddingHorizontal: 0,
     width: '100%',
   },
   quickCategoryButton: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    marginHorizontal: 5,
+    marginHorizontal: 10,
+  },
+  // Form Styles
+  formContainer: {
+    marginHorizontal: 16,
+    marginTop: 20,
+    backgroundColor: '#1D1D1D', // Dark gray background
+    borderRadius: 16,
+    padding: 16,
   },
   inputSection: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    backgroundColor: '#1D1D1D',
-    borderRadius: 24,
-    padding: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: 16,
   },
-  amountInput: {
-    fontSize: 36,
+  inputLabel: {
+    fontSize: 14,
     fontWeight: '500',
     color: '#999',
-    textAlign: 'center',
-    width: '100%',
-    padding: 16,
+    marginBottom: 4,
   },
-  spacer: {
-    height: 120, // Reduced height to move categories up
+  amountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1D1D1D',
+    borderWidth: 1,
+    borderColor: '#333',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    minHeight: 46, // here! 
+    //height: 56,
+    //flex: 0.5,
+    marginRight: 8,
   },
-  categoriesContainer: {
-    overflow: 'hidden',
-    borderRadius: 24,
-    zIndex: 10, // Ensure it's above everything else
+  dollarSign: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#999',
+    marginRight: 4,
   },
-  categoriesScrollView: {
+  amountInput: {
     flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#999',
+    
+    
+  },
+  categorySelector: {
+    padding: 12,
+    backgroundColor: '#1D1D1D',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#333',
+    flex: 0.5,
+    //marginLeft: 8,
+    //height: 56,
+    justifyContent: 'center',
+  },
+  categorySelectorText: {
+    fontSize: 16,
+    color: '#999',
+  },
+  descriptionInput: {
+    padding: 12,
+    backgroundColor: '#1D1D1D',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#333',
+    fontSize: 16,
+    color: '#999',
+    //minHeight: 56,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+  },
+  clearButton: {
+    flex: 0.75,
+    backgroundColor: '#2A2A2A',
+    borderRadius: 8,
+    //padding: 12,
+    //marginRight: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    //height: 56,
+  },
+  clearButtonText: {
+    color: '#999',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  logButton: {
+    flex: 1,
+    backgroundColor: '#5C5CFF',
+    borderRadius: 8,
+    padding: 12,
+    marginLeft: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    //height: 56,
+  },
+  logButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  // Categories Section
+  categoriesContainer: {
+    marginHorizontal: 16,
+    marginTop: 160, // TODO: this might need to change 
+    zIndex: 10
+    
   },
   categoryCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
-    borderRadius: 24,
+    padding: 16,
+    borderRadius: 50,
     backgroundColor: '#1D1D1D',
     marginBottom: 10,
-  },
-  firstCategoryCard: {
-    marginBottom: 0, // No margin for first card when collapsed
   },
   categoryIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
     marginRight: 16,
+    
   },
   categoryInfo: {
     flex: 1,
@@ -472,6 +501,7 @@ const styles = StyleSheet.create({
   },
   categoryAmount: {
     alignItems: 'flex-end',
+    marginRight: 8
   },
   amountText: {
     fontSize: 18,
@@ -480,86 +510,23 @@ const styles = StyleSheet.create({
   },
   percentageText: {
     fontSize: 14,
-    color: '#AAAAAA',
-    marginTop: 4,
+    color: '#888',
+    marginTop: 2,
   },
   mockCategoriesContainer: {
     position: 'absolute',
-    bottom: 80, // Increased this value to move the stack higher
+    bottom: 60, // Increased this value to move the stack higher
     left: 16,
     right: 16,
-    height: 50,
+    height: 25,
     zIndex: 1, // Above the background but below the categories
   },
   mockCategoryCard: {
     position: 'absolute',
-    height: 30,
+    height: 25,
     left: 0,
     right: 0,
     backgroundColor: '#1D1D1D',
-    borderRadius: 24,
+    borderRadius: 50,
   },
-  collapseButton: {
-    backgroundColor: '#2A2A2A',
-    padding: 12,
-    alignItems: 'center',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-  },
-  collapseButtonText: {
-    color: '#AAAAAA',
-    fontWeight: 'bold',
-  },
-
-  // format number input
-  amountContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-  },
-  dollarSign: {
-    fontSize: 36,
-    fontWeight: '500',
-    color: '#999',
-    marginRight: 4,
-  },
-  amountInput: {
-    flex: 1,
-    fontSize: 36,
-    fontWeight: '500',
-    color: '#999',
-    padding: 16,
-    textAlign: 'right',
-  },
-
-  // category input
-
-  categoryContainer: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    backgroundColor: '#1D1D1D',
-    borderRadius: 24,
-    padding: 16,
-    zIndex: 10,
-  },
-  categorySelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-  },
-  categoryLabel: {
-    fontSize: 18,
-    color: '#999',
-  },
-  categoryIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#4169E1', // Blue circle as shown in screenshot
-  },
-
-  // category modal
-
 });
