@@ -11,7 +11,7 @@ import {
   Platform,
   Dimensions,
   Animated,
-  KeyboardAvoidingView
+  Modal
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -33,9 +33,8 @@ export default function ExpenseTracker() {
   // Animation states
   const [categoriesExpanded, setCategoriesExpanded] = useState(false);
   const animatedHeight = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  const slideAnim = useRef(new Animated.Value(0)).current;
-
+  const slideAnim = useRef(new Animated.Value(height)).current;
+  
   // Category selection
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState({ 
@@ -127,22 +126,25 @@ export default function ExpenseTracker() {
     closeCategoryModal();
   };
 
-  // Animation functions for categories
+  // Animation functions for categories expansion
   const expandCategories = () => {
     setCategoriesExpanded(true);
-    Animated.spring(animatedHeight, {
-      toValue: 1,
+    
+    // Start with slide animation from bottom
+    slideAnim.setValue(height);
+    Animated.spring(slideAnim, {
+      toValue: 0,
+      tension: 50,
       friction: 8,
-      tension: 40,
-      useNativeDriver: false
+      useNativeDriver: true,
     }).start();
   };
 
   const collapseCategories = () => {
-    Animated.timing(animatedHeight, {
-      toValue: 0,
+    Animated.timing(slideAnim, {
+      toValue: height,
       duration: 300,
-      useNativeDriver: false
+      useNativeDriver: true,
     }).start(() => {
       setCategoriesExpanded(false);
     });
@@ -164,19 +166,6 @@ export default function ExpenseTracker() {
     setDescription('');
   };
 
-  // Calculate animated styles for categories
-  const animatedCategoriesStyle = {
-    height: animatedHeight.interpolate({
-      inputRange: [0, 1],
-      outputRange: [90, height * 0.5]
-    }),
-    position: 'absolute',
-    bottom: 20,
-    left: 16,
-    right: 16,
-    zIndex: 10
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -188,7 +177,6 @@ export default function ExpenseTracker() {
         end={{ x: 1, y: 1 }}
         style={styles.headerCard}
       >
-        
         <View style={styles.headerContent}>
           <Text style={styles.tripName}>{tripName}</Text>
           <Text style={styles.totalAmount}>${totalAmount.toLocaleString(undefined, {
@@ -220,7 +208,7 @@ export default function ExpenseTracker() {
       {/* Input Form */}
       <View style={styles.formContainer}>
         {/* Row 1: Amount and Category side by side */}
-        <View style={{flexDirection: 'row', height:90}}>
+        <View style={{flexDirection: 'row', height: 90}}>
           {/* Amount Input */}
           <View style={{flex: 0.75}}>
             <Text style={styles.inputLabel}>AMOUNT</Text>
@@ -315,6 +303,61 @@ export default function ExpenseTracker() {
         onSelect={handleCategorySelect}
         categories={categories}
       />
+      
+      {/* Categories Expansion Modal */}
+      {categoriesExpanded && (
+        <View style={styles.expandedModalContainer}>
+          <TouchableOpacity
+            style={styles.expandedDismissArea}
+            activeOpacity={1}
+            onPress={collapseCategories}
+          />
+          
+          <Animated.View
+            style={[
+              styles.expandedCategoriesContainer,
+              { transform: [{ translateY: slideAnim }] }
+            ]}
+          >
+            <View style={styles.expandedHeader}>
+              <View style={styles.expandedHandleBar} />
+              <Text style={styles.expandedTitle}>Categories</Text>
+            </View>
+            
+            <ScrollView style={styles.expandedScrollView}>
+              {categories.map((category) => (
+                <TouchableOpacity
+                  key={category.id}
+                  style={styles.expandedCategoryItem}
+                  onPress={() => {
+                    setSelectedCategory(category);
+                    collapseCategories();
+                  }}
+                >
+                  <View style={[styles.categoryIcon, { backgroundColor: category.color }]} />
+                  
+                  <View style={styles.categoryInfo}>
+                    <Text style={styles.categoryName}>{category.name}</Text>
+                    <Text style={styles.transactionCount}>{category.transactions} transactions</Text>
+                  </View>
+                  
+                  <View style={styles.categoryAmount}>
+                    <Text style={styles.amountText}>${category.amount}</Text>
+                    <Text style={styles.percentageText}>{category.percentage}%</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={collapseCategories}
+            >
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -385,9 +428,7 @@ const styles = StyleSheet.create({
     borderColor: '#333',
     borderRadius: 8,
     paddingHorizontal: 12,
-    minHeight: 46, // here! 
-    //height: 56,
-    //flex: 0.5,
+    minHeight: 46,
     marginRight: 8,
   },
   dollarSign: {
@@ -401,8 +442,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: '#999',
-    
-    
   },
   categorySelector: {
     padding: 12,
@@ -411,8 +450,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#333',
     flex: 0.5,
-    //marginLeft: 8,
-    //height: 56,
     justifyContent: 'center',
   },
   categorySelectorText: {
@@ -427,7 +464,6 @@ const styles = StyleSheet.create({
     borderColor: '#333',
     fontSize: 16,
     color: '#999',
-    //minHeight: 56,
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -438,11 +474,9 @@ const styles = StyleSheet.create({
     flex: 0.75,
     backgroundColor: '#2A2A2A',
     borderRadius: 8,
-    //padding: 12,
-    //marginRight: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    //height: 56,
+    height: 48,
   },
   clearButtonText: {
     color: '#999',
@@ -457,7 +491,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    //height: 56,
+    height: 48,
   },
   logButtonText: {
     color: '#FFFFFF',
@@ -467,9 +501,8 @@ const styles = StyleSheet.create({
   // Categories Section
   categoriesContainer: {
     marginHorizontal: 16,
-    marginTop: 160, // TODO: this might need to change 
+    marginTop: 160,
     zIndex: 10
-    
   },
   categoryCard: {
     flexDirection: 'row',
@@ -484,7 +517,6 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 24,
     marginRight: 16,
-    
   },
   categoryInfo: {
     flex: 1,
@@ -515,11 +547,11 @@ const styles = StyleSheet.create({
   },
   mockCategoriesContainer: {
     position: 'absolute',
-    bottom: 60, // Increased this value to move the stack higher
+    bottom: 60,
     left: 16,
     right: 16,
     height: 25,
-    zIndex: 1, // Above the background but below the categories
+    zIndex: 1,
   },
   mockCategoryCard: {
     position: 'absolute',
@@ -528,5 +560,70 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: '#1D1D1D',
     borderRadius: 50,
+  },
+  
+  // Expanded Categories Modal
+  expandedModalContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+    zIndex: 1000,
+  },
+  expandedDismissArea: {
+    flex: 1,
+  },
+  expandedCategoriesContainer: {
+    backgroundColor: '#1D1D1D',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingBottom: 30, // Add padding for the home indicator
+    maxHeight: height * 0.7, // Limit the modal height
+    width: '100%',
+  },
+  expandedHeader: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  expandedHandleBar: {
+    width: 40,
+    height: 5,
+    backgroundColor: '#999',
+    borderRadius: 3,
+    marginBottom: 12,
+  },
+  expandedTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFF',
+  },
+  expandedScrollView: {
+    padding: 16,
+    maxHeight: height * 0.5,
+  },
+  expandedCategoryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  closeButton: {
+    backgroundColor: '#2A2A2A',
+    padding: 16,
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 8,
+  },
+  closeButtonText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
