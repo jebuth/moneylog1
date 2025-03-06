@@ -8,6 +8,7 @@ import Screen2 from './screen2';
 import Screen3 from './screen3';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Platform, StyleSheet } from 'react-native';
+import {StatusBar} from 'expo-status-bar';
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -20,20 +21,22 @@ export default function MainLayout() {
   }
   
   return (
+    <>
+    {/* <StatusBar style="light" /> */}
     <SafeAreaView style={styles.container}>
     <Tab.Navigator
       initialRouteName="screen2"
       tabBarPosition="bottom"
       screenOptions={{
-        tabBarActiveTintColor: '#fff',
-        tabBarInactiveTintColor: '#f8f8f8',
+        tabBarActiveTintColor: '#5C5CFF',
+        tabBarInactiveTintColor: '#999',
         tabBarStyle: {
-          backgroundColor: '#f4511e',
-          display: 'none'
+          backgroundColor: '#121212',
+          //display: 'none'
         },
         //tabBarStyle:{ display: 'none'}, // to hide tab bar
         tabBarIndicatorStyle: {
-          backgroundColor: '#fff',
+          backgroundColor: '#121212',
         },
         swipeEnabled: true,
         animationEnabled: true,
@@ -76,19 +79,21 @@ export default function MainLayout() {
       />
     </Tab.Navigator>
     </SafeAreaView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#121212"
     //paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-    paddingBottom: Platform.OS === 'android' ? StatusBar.currentHeight : -50, // get lower tabBar as low as possible
+    //paddingBottom: Platform.OS === 'android' ? StatusBar.currentHeight : -50, // get lower tabBar as low as possible
   },
-  header: {
-    height: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#4511e',
-  }
+  // header: {
+  //   height: 60,
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  //   backgroundColor: '#4511e',
+  // }
 });

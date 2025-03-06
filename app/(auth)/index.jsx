@@ -10,6 +10,7 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import { StatusBar } from 'expo-status-bar';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -35,7 +36,9 @@ export default function LoginScreen() {
   };
 
   return (
+    <>
     <View style={styles.container}>
+    {/* <StatusBar style="auto" backgroundColor="#121212" translucent={true}  /> */}
       <Text style={styles.title}>Welcome to MoneyLog</Text>
       
       <View style={styles.inputContainer}>
@@ -94,6 +97,7 @@ export default function LoginScreen() {
       
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
+    </>
   );
 }
 

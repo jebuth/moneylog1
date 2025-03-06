@@ -7,15 +7,18 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
-  SafeAreaView,
+  //SafeAreaView,
   Platform,
   Dimensions,
   Animated,
   Modal
 } from 'react-native';
+import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context"
 import { useAuth } from '../../contexts/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import CategorySelectorModal from '../../components/CategorySelectorModal';
+//import { StatusBar } from 'expo-status-bar';
+
 
 const { width, height } = Dimensions.get('window');
 
@@ -167,10 +170,11 @@ export default function ExpenseTracker() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      
+    <>
+    {/* <StatusBar translucent backgroundColor="#121212" barStyle={"dark-content"} /> */}
+    {/* <SafeAreaView style={styles.container}> */}
       {/* Header Card with Trip Name and Amount */}
+      <View style={styles.container}>
       <LinearGradient
         colors={['#0F0F0F', '#1B1928', '#251E58', '#3F339F']}
         start={{ x: 0.5, y: 0 }}
@@ -358,7 +362,9 @@ export default function ExpenseTracker() {
           </Animated.View>
         </View>
       )}
-    </SafeAreaView>
+    {/* </SafeAreaView>  */}
+    </View>
+    </>    
   );
 }
 
@@ -366,10 +372,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#121212', // Dark background
+    // borderWidth: 2,
+    // borderColor: "pink"
   },
   headerCard: {
     marginHorizontal: 16,
-    marginTop: 16,
+    marginTop: 20,
     borderRadius: 24,
     height: 220,
     overflow: 'hidden',
@@ -501,16 +509,17 @@ const styles = StyleSheet.create({
   // Categories Section
   categoriesContainer: {
     marginHorizontal: 16,
-    marginTop: 160,
+    marginTop: 60,
     zIndex: 10
   },
   categoryCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderRadius: 50,
+    borderRadius: 56,
     backgroundColor: '#1D1D1D',
     marginBottom: 10,
+    
   },
   categoryIcon: {
     width: 48,
