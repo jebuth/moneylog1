@@ -200,16 +200,70 @@ export function AuthProvider({ children }) {
     }
   };
 
+
+  // crud
+    // State for the current log
+    const [currentLog, setCurrentLog] = useState(null);
+  
+    // State for all logs
+    const [logs, setLogs] = useState([
+      { id: '1', tripName: 'Mexico Trip 2024', totalAmount: 23624.69, date: '2024-03-01' },
+      { id: '2', tripName: 'Japan Vacation', totalAmount: 15420.50, date: '2023-11-15' },
+      { id: '3', tripName: 'Business Trip NYC', totalAmount: 4850.75, date: '2023-09-22' },
+      { id: '4', tripName: 'Europe Tour', totalAmount: 32150.00, date: '2023-07-10' },
+      { id: '5', tripName: 'Weekend Getaway', totalAmount: 1250.30, date: '2023-05-05' },
+    ]);
+    
+    // Add a log
+    const addLog = (log) => {
+      setLogs([log, ...logs]);
+    };
+    
+    // Update a log
+    const updateLog = (updatedLog) => {
+      const updatedLogs = logs.map(log => 
+        log.id === updatedLog.id ? updatedLog : log
+      );
+      setLogs(updatedLogs);
+      
+      // Also update currentLog if it's the one being updated
+      if (currentLog && currentLog.id === updatedLog.id) {
+        setCurrentLog(updatedLog);
+      }
+    };
+    
+    // Delete a log
+    const deleteLog = (logId) => {
+      setLogs(logs.filter(log => log.id !== logId));
+      
+      // If deleted log is current log, clear currentLog
+      if (currentLog && currentLog.id === logId) {
+        setCurrentLog(null);
+      }
+    };
+
+
   // Provide auth context to child components
   return (
     <AuthContext.Provider value={{
+      // authentication
       user,
       isLoading,
       error,
       login,
       logout,
       signInWithGoogle,
-      isAuthenticated: !!user
+      isAuthenticated: !!user,
+
+      // firestore crud
+      logs, 
+      setLogs, 
+      currentLog,
+      setCurrentLog,
+      addLog,
+      updateLog,
+      deleteLog
+
     }}>
       {children}
     </AuthContext.Provider>

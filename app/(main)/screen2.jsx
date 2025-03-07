@@ -17,6 +17,7 @@ import {
   UIManager
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+//import { useLogContext } from '../../contexts/LogContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
@@ -31,9 +32,15 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
+
+
 export default function LogsListScreen() {
-  const { user } = useAuth();
+  const { user, setCurrentLog } = useAuth();
   const navigation = useNavigation();
+  
+  // Get setCurrentLog from your LogContext
+  //const { setCurrentLog } = useLogContext();
+  
   
   // Track currently opened swipeable item
   const [openSwipeableId, setOpenSwipeableId] = useState(null);
@@ -68,7 +75,7 @@ export default function LogsListScreen() {
   // Configure custom animation for list changes
   const configureLayoutAnimation = () => {
     LayoutAnimation.configureNext({
-      duration: 900,
+      duration: 300,
       create: {
         type: LayoutAnimation.Types.easeInEaseOut,
         property: LayoutAnimation.Properties.opacity,
@@ -95,6 +102,18 @@ export default function LogsListScreen() {
       setOpenSwipeableId(null);
     }
   }, [openSwipeableId]);
+  
+  // Navigate to expense screen with the selected log
+  const navigateToExpenseScreen = useCallback((log) => {
+    // Close any open swipeable
+    closeOpenSwipeable();
+    
+    // Set the current log in context
+    setCurrentLog(log);
+    
+    // Navigate to screen1
+    navigation.navigate('screen1');
+  }, [closeOpenSwipeable, navigation, setCurrentLog]);
   
   // Handle creating a new log
   const handleCreateNewLog = () => {
@@ -125,8 +144,8 @@ export default function LogsListScreen() {
     setNewLogName('');
     setNewLogAmount('');
     
-    // Navigate to the log detail screen
-    // navigation.navigate('screen1', { logId: newLog.id });
+    // Navigate to the log detail screen with the new log
+    navigateToExpenseScreen(newLog);
   };
   
   // Handle deleting a log with animation
@@ -262,10 +281,8 @@ export default function LogsListScreen() {
           <TouchableOpacity 
             style={styles.logItem}
             onPress={() => {
-              // Close any open swipeable first
-              closeOpenSwipeable();
-              // Navigate to log detail screen
-              // navigation.navigate('screen1', { logId: item.id });
+              // Navigate to this log
+              navigateToExpenseScreen(item);
             }}
             onLayout={(event) => {
               // Store the height of each item for animation
@@ -288,9 +305,8 @@ export default function LogsListScreen() {
                   <TouchableOpacity 
                     style={styles.iconButton}
                     onPress={() => {
-                      closeOpenSwipeable();
-                      // Navigate to expense tracking screen
-                      // navigation.navigate('screen1', { logId: item.id });
+                      // Navigate to expense tracking screen with this log
+                      navigateToExpenseScreen(item);
                     }}
                   >
                     <Ionicons name="add-circle-outline" size={24} color="#FFF" />
@@ -315,7 +331,7 @@ export default function LogsListScreen() {
         </Swipeable>
       </Animated.View>
     );
-  }, [openSwipeableId, closeOpenSwipeable, itemBeingDeleted, slideOutAnim]);
+  }, [openSwipeableId, closeOpenSwipeable, itemBeingDeleted, slideOutAnim, navigateToExpenseScreen]);
   
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

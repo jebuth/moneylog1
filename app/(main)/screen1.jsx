@@ -18,19 +18,31 @@ import { useAuth } from '../../contexts/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import CategorySelectorModal from '../../components/CategorySelectorModal';
 //import { StatusBar } from 'expo-status-bar';
+//import { useLogContext } from '../../contexts/LogContext';
 
 
 const { width, height } = Dimensions.get('window');
 
 export default function ExpenseTracker() {
-  const { user } = useAuth();
+  const { user, currentLog, updateLog } = useAuth();
+  //const { currentLog, updateLog } = useLogContext();
   
   // Trip information
-  const [tripName, setTripName] = useState('Mexico Trip 2024');
-  const [totalAmount, setTotalAmount] = useState(23624.69);
+  // Trip information - now from currentLog
+  const [tripName, setTripName] = useState(currentLog ? currentLog.tripName : 'New Trip');
+  const [totalAmount, setTotalAmount] = useState(currentLog ? currentLog.totalAmount : 0);
   
+  // Update local state when currentLog changes
+  useEffect(() => {
+    if (currentLog) {
+      setTripName(currentLog.tripName);
+      setTotalAmount(currentLog.totalAmount);
+    }
+  }, [currentLog]);
+
   // Input states
-  const [inputAmount, setInputAmount] = useState('320.33');
+  //const [inputAmount, setInputAmount] = useState('320.33');
+  const [inputAmount, setInputAmount] = useState('');
   const [description, setDescription] = useState('');
   
   // Animation states
