@@ -7,10 +7,11 @@ import {
   StyleSheet, 
   Alert,
   Image,
-  ActivityIndicator
+  ActivityIndicator,
+  StatusBar
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
-import { StatusBar } from 'expo-status-bar';
+//import { StatusBar } from 'expo-status-bar';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -38,7 +39,8 @@ export default function LoginScreen() {
   return (
     <>
     <View style={styles.container}>
-    {/* <StatusBar style="auto" backgroundColor="#121212" translucent={true}  /> */}
+    {/* <StatusBar style="auto" backgroundColor="red" translucent={true}  /> */}
+    <StatusBar barStyle={"light-content"} backgroundColor={'#ccc'}></StatusBar>
       <Text style={styles.title}>Welcome to MoneyLog</Text>
       
       <View style={styles.inputContainer}>

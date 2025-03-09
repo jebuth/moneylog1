@@ -17,7 +17,7 @@ import {
   UIManager
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
-//import { useLogContext } from '../../contexts/LogContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,15 +32,10 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-
-
 export default function LogsListScreen() {
   const { user, setCurrentLog } = useAuth();
+  const {theme} = useTheme();
   const navigation = useNavigation();
-  
-  // Get setCurrentLog from your LogContext
-  //const { setCurrentLog } = useLogContext();
-  
   
   // Track currently opened swipeable item
   const [openSwipeableId, setOpenSwipeableId] = useState(null);
@@ -291,15 +286,15 @@ export default function LogsListScreen() {
             }}
           >
             <LinearGradient
-              colors={['#0F0F0F', '#1B1928', '#251E58', '#3F339F']}
+              colors={theme.gradient}
               start={{ x: 0.5, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.logGradient}
             >
               <View style={styles.logContent}>
-                <Text style={styles.logName}>{item.tripName}</Text>
-                <Text style={styles.logAmount}>{formatCurrency(item.totalAmount)}</Text>
-                <Text style={styles.logDate}>{item.date}</Text>
+                <Text style={[styles.logName, {color: theme.text}]}>{item.tripName}</Text>
+                <Text style={[styles.logAmount, {color: theme.text}]}>{formatCurrency(item.totalAmount)}</Text>
+                <Text style={[styles.logDate, {color: theme.subtext}]}>{item.date}</Text>
                 
                 <View style={styles.actionsRow}>
                   <TouchableOpacity 
@@ -335,12 +330,12 @@ export default function LogsListScreen() {
   
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, {backgroundColor : theme.background}]}>
         <StatusBar style="light" />
         
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>My Trips</Text>
+          <Text style={[styles.headerTitle, {color: theme.text}]}>My Trips</Text>
           <TouchableOpacity 
             style={styles.createButton}
             onPress={() => {
@@ -353,7 +348,7 @@ export default function LogsListScreen() {
         </View>
         
         {/* Search Bar */}
-        <View style={styles.searchContainer}>
+        <View style={[styles.searchContainer, {backgroundColor: theme.card}]}>
           <Ionicons name="search" size={20} color="#999" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
@@ -382,7 +377,7 @@ export default function LogsListScreen() {
           removeClippedSubviews={false} // Important for animations
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
+              <Text style={[styles.emptyText, {color: theme.text}]}>
                 {searchQuery.length > 0 
                   ? "No trips match your search" 
                   : "You haven't created any trips yet"}
@@ -391,7 +386,7 @@ export default function LogsListScreen() {
                 style={styles.emptyButton}
                 onPress={() => setShowNewLogModal(true)}
               >
-                <Text style={styles.emptyButtonText}>Create Your First Trip</Text>
+                <Text style={[styles.emptyButtonText, {color: theme.text}]}>Create Your First Trip</Text>
               </TouchableOpacity>
             </View>
           }
@@ -406,27 +401,27 @@ export default function LogsListScreen() {
         >
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={styles.modalContainer}
+            style={[styles.modalContainer, {backgroundColor : "#121212"}]}
           >
-            <View style={styles.modalContent}>
+            <View style={[styles.modalContent, {backgroundColor: theme.card}]}>
               <View style={styles.modalHandle} />
               
-              <Text style={styles.modalTitle}>Create New Trip</Text>
+              <Text style={styles.modalTitle}>Create New Log</Text>
               
-              <Text style={styles.inputLabel}>Trip Name</Text>
+              <Text style={[styles.inputLabel, {color: theme.subtext}]}>Log Title</Text>
               <TextInput
-                style={styles.modalInput}
+                style={[styles.modalInput, {backgroundColor: theme.background, color: theme.text}]}
                 placeholder="Enter trip name"
                 placeholderTextColor="#999"
                 value={newLogName}
                 onChangeText={setNewLogName}
               />
               
-              <Text style={styles.inputLabel}>Initial Budget</Text>
-              <View style={styles.amountInputContainer}>
-                <Text style={styles.currencySymbol}>$</Text>
+              <Text style={[styles.inputLabel, {color : theme.subtext}]}>Initial Budget</Text>
+              <View style={[styles.amountInputContainer, {backgroundColor: theme.background}]}>
+                <Text style={[styles.currencySymbol, {color: theme.text}]}>$</Text>
                 <TextInput
-                  style={styles.amountInput}
+                  style={[styles.amountInput, {color: theme.text}]}
                   placeholder="0.00"
                   placeholderTextColor="#999"
                   keyboardType="numeric"
@@ -437,21 +432,21 @@ export default function LogsListScreen() {
               
               <View style={styles.modalButtons}>
                 <TouchableOpacity 
-                  style={styles.cancelButton}
+                  style={[styles.cancelButton, {backgroundColor: theme.card, borderWidth:1, borderColor: theme.red}]}
                   onPress={() => {
                     setShowNewLogModal(false);
                     setNewLogName('');
                     setNewLogAmount('');
                   }}
                 >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                  <Text style={[styles.cancelButtonText, {color: theme.red}]}>CANCEL</Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
                   style={styles.createLogButton}
                   onPress={handleCreateNewLog}
                 >
-                  <Text style={styles.createLogButtonText}>Create Trip</Text>
+                  <Text style={styles.createLogButtonText}>CREATE TRIP</Text>
                 </TouchableOpacity>
               </View>
             </View>

@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context"
 import { useAuth } from '../../contexts/AuthContext';
+import {useTheme} from '../../contexts/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import CategorySelectorModal from '../../components/CategorySelectorModal';
 //import { StatusBar } from 'expo-status-bar';
@@ -25,7 +26,7 @@ const { width, height } = Dimensions.get('window');
 
 export default function ExpenseTracker() {
   const { user, currentLog, updateLog } = useAuth();
-  //const { currentLog, updateLog } = useLogContext();
+  const {theme} = useTheme();
   
   // Trip information
   // Trip information - now from currentLog
@@ -184,18 +185,20 @@ export default function ExpenseTracker() {
   return (
     <>
     {/* <StatusBar translucent backgroundColor="#121212" barStyle={"dark-content"} /> */}
+    {/* <StatusBar barStyle={"dark-content"} backgroundColor={'#ccc'} /> */}
     {/* <SafeAreaView style={styles.container}> */}
       {/* Header Card with Trip Name and Amount */}
-      <View style={styles.container}>
+      <View style={[styles.container, {backgroundColor: theme.background}]}>
       <LinearGradient
-        colors={['#0F0F0F', '#1B1928', '#251E58', '#3F339F']}
+        //colors={['#0F0F0F', '#1B1928', '#251E58', '#3F339F']}
+        colors={theme.gradient}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.headerCard}
       >
         <View style={styles.headerContent}>
-          <Text style={styles.tripName}>{tripName}</Text>
-          <Text style={styles.totalAmount}>${totalAmount.toLocaleString(undefined, {
+          <Text style={[styles.tripName, {color: "#FFF"}]}>{tripName}</Text>
+          <Text style={[styles.totalAmount, {color: "#FFF"}]}>${totalAmount.toLocaleString(undefined, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
           })}</Text>
@@ -222,13 +225,13 @@ export default function ExpenseTracker() {
       </LinearGradient>
       
       {/* Input Form */}
-      <View style={styles.formContainer}>
+      <View style={[styles.formContainer, {backgroundColor: theme.card}]}>
         {/* Row 1: Amount and Category side by side */}
         <View style={{flexDirection: 'row', height: 90}}>
           {/* Amount Input */}
           <View style={{flex: 0.75}}>
-            <Text style={styles.inputLabel}>AMOUNT</Text>
-            <View style={styles.amountContainer}>
+            <Text style={[styles.inputLabel, {color: theme.text}]}>AMOUNT</Text>
+            <View style={[styles.amountContainer, {backgroundColor: theme.background}]}>
               <Text style={styles.dollarSign}>$</Text>
               <TextInput
                 style={styles.amountInput}
@@ -243,12 +246,12 @@ export default function ExpenseTracker() {
           
           {/* Category Selector */}
           <View style={{flex: 1}}>
-            <Text style={styles.inputLabel}>CATEGORY</Text>
+            <Text style={[styles.inputLabel, {color: theme.text}]}>CATEGORY</Text>
             <TouchableOpacity 
-              style={styles.categorySelector}
+              style={[styles.categorySelector, {backgroundColor: theme.background}]}
               onPress={openCategoryModal}
             >
-              <Text style={styles.categorySelectorText}>
+              <Text style={[styles.categorySelectorText, {backgroundColor: theme.background}]}>
                 {selectedCategory ? selectedCategory.name : "Select Category"}
               </Text>
             </TouchableOpacity>
@@ -257,9 +260,9 @@ export default function ExpenseTracker() {
         
         {/* Row 2: Description Input */}
         <View style={styles.inputSection}>
-          <Text style={styles.inputLabel}>DESCRIPTION</Text>
+          <Text style={[styles.inputLabel, {color: theme.text}]}>DESCRIPTION</Text>
           <TextInput
-            style={styles.descriptionInput}
+            style={[styles.descriptionInput, {backgroundColor: theme.background}]}
             value={description}
             onChangeText={setDescription}
             placeholder=""
@@ -271,45 +274,46 @@ export default function ExpenseTracker() {
         {/* Row 3: Action Buttons */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity 
-            style={styles.clearButton}
+            style={[styles.clearButton, {backgroundColor: theme.card, borderWidth: 1, borderColor: theme.red}]}
             onPress={handleClearForm}
           >
-            <Text style={styles.clearButtonText}>CLEAR</Text>
+            <Text style={[styles.clearButtonText, {color: theme.red}]}>CLEAR</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={styles.logButton}
+            style={[styles.logButton, {backgroundColor: theme.purple}]}
             onPress={handleLogExpense}
           >
-            <Text style={styles.logButtonText}>LOG</Text>
+            <Text style={[styles.logButtonText]}>LOG</Text>
           </TouchableOpacity>
         </View>
       </View>
       
       {/* Bottom Categories Section */}
-      <View style={styles.categoriesContainer}>
+      <View style={[styles.categoriesContainer]}>
         <TouchableOpacity 
-          style={styles.categoryCard}
+          style={[styles.categoryCard, {backgroundColor: theme.card, zIndex: 0}]}
           onPress={expandCategories}
         >
           <View style={[styles.categoryIcon, { backgroundColor: '#5C5CFF' }]} />
           
-          <View style={styles.categoryInfo}>
-            <Text style={styles.categoryName}>Airfare</Text>
-            <Text style={styles.transactionCount}>2 transactions</Text>
+          <View style={[styles.categoryInfo, {zIndex: 0}]}>
+            <Text style={[styles.categoryName, {color: theme.text, zIndex: 0}]}>Airfare</Text>
+            <Text style={[styles.transactionCount, {color: theme.subtext, zIndex: 0}]}>2 transactions</Text>
           </View>
           
           <View style={styles.categoryAmount}>
-            <Text style={styles.amountText}>$330</Text>
-            <Text style={styles.percentageText}>5%</Text>
+            <Text style={[styles.amountText, {color: theme.text}]}>$330</Text>
+            <Text style={[styles.percentageText, {color: theme.subtext}]}>5%</Text>
           </View>
-        </TouchableOpacity>
+        {/* </TouchableOpacity> */}
         
         {/* Stacked category effects */}
-        <View style={styles.mockCategoriesContainer}>
-          <View style={[styles.mockCategoryCard, { top: 60, opacity: 0.6, marginLeft: 10, marginRight: 10 }]} />
-          <View style={[styles.mockCategoryCard, { top: 70, opacity: 0.3, marginLeft: 20, marginRight: 20 }]} />
-        </View>
+        {/* <View style={[styles.mockCategoriesContainer]}>
+          <View style={[styles.mockCategoryCard, { backgroundColor: theme.backgroundShadow1, top: 60, opacity: 1, marginLeft: 5, marginRight: 5, zIndex: -10, boxShadow: "0 3px 1px -1px rgba(8, 8, 8, 0.2)"}]} />
+          <View style={[styles.mockCategoryCard, { backgroundColor: theme.backgroundShadow2, top: 70, opacity: 1, marginLeft: 20, marginRight: 20, zIndex: -20, boxShadow: "0 3px 1px -1px rgba(8, 8, 8, 0.3)"}]} />
+        </View> */}
+        </TouchableOpacity>
       </View>
       
       {/* Category Selection Modal */}
@@ -330,14 +334,12 @@ export default function ExpenseTracker() {
           />
           
           <Animated.View
-            style={[
-              styles.expandedCategoriesContainer,
-              { transform: [{ translateY: slideAnim }] }
+            style={[styles.expandedCategoriesContainer,{ backgroundColor: theme.card, transform: [{ translateY: slideAnim }] }
             ]}
           >
             <View style={styles.expandedHeader}>
               <View style={styles.expandedHandleBar} />
-              <Text style={styles.expandedTitle}>Categories</Text>
+              <Text style={[styles.expandedTitle, {color: theme.text}]}>Categories</Text>
             </View>
             
             <ScrollView style={styles.expandedScrollView}>
@@ -353,29 +355,30 @@ export default function ExpenseTracker() {
                   <View style={[styles.categoryIcon, { backgroundColor: category.color }]} />
                   
                   <View style={styles.categoryInfo}>
-                    <Text style={styles.categoryName}>{category.name}</Text>
-                    <Text style={styles.transactionCount}>{category.transactions} transactions</Text>
+                    <Text style={[styles.categoryName, {color: theme.text}]}>{category.name}</Text>
+                    <Text style={[styles.transactionCount, {color: theme.subtext}]}>{category.transactions} transactions</Text>
                   </View>
                   
                   <View style={styles.categoryAmount}>
-                    <Text style={styles.amountText}>${category.amount}</Text>
-                    <Text style={styles.percentageText}>{category.percentage}%</Text>
+                    <Text style={[styles.amountText, {color: theme.text}]}>${category.amount}</Text>
+                    <Text style={[styles.percentageText, {color: theme.subtext}]}>{category.percentage}%</Text>
                   </View>
                 </TouchableOpacity>
               ))}
             </ScrollView>
             
             <TouchableOpacity
-              style={styles.closeButton}
+              style={[styles.closeButton, {borderWidth: 1, borderColor: theme.red, backgroundColor: theme.card}]}
               onPress={collapseCategories}
             >
-              <Text style={styles.closeButtonText}>Close</Text>
+              <Text style={[styles.closeButtonText, {color: theme.red}]}>Close</Text>
             </TouchableOpacity>
           </Animated.View>
         </View>
       )}
-    {/* </SafeAreaView>  */}
+    
     </View>
+    {/* </SafeAreaView>  */}
     </>    
   );
 }
@@ -386,6 +389,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#121212', // Dark background
     // borderWidth: 2,
     // borderColor: "pink"
+    
   },
   headerCard: {
     marginHorizontal: 16,
@@ -393,22 +397,35 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     height: 220,
     overflow: 'hidden',
+    //boxShadow: "0 4px 1px -1px rgba(8, 8, 8, 0.3)"
+    // here!
+    // shadowOpacity: .5,
+    // shadowRadius: 1,
   },
   headerContent: {
     padding: 24,
     paddingBottom: 16,
+    //boxShadow: "0 4px 1px -1px rgba(8, 8, 8, 0.3)"
+    // shadowColor: "#080808",
+    // shadowOpacity: .5,
+    // shadowRadius: 1,
   },
   tripName: {
     fontSize: 24,
     fontWeight: '600',
     color: '#FFFFFF',
     marginBottom: 8,
+    shadowColor: "#080808",
+    shadowOpacity: .5,
+    shadowRadius: 1,
   },
   totalAmount: {
     fontSize: 36,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 24,
+    shadowOpacity: .5,
+    shadowRadius: 1,
   },
   quickCategoryContainer: {
     flexDirection: 'row',
@@ -430,6 +447,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1D1D1D', // Dark gray background
     borderRadius: 16,
     padding: 16,
+    boxShadow: "0 4px 1px -1px rgba(8, 8, 8, 0.3)"
   },
   inputSection: {
     marginBottom: 16,
@@ -494,6 +512,7 @@ const styles = StyleSheet.create({
     flex: 0.75,
     backgroundColor: '#2A2A2A',
     borderRadius: 8,
+    
     alignItems: 'center',
     justifyContent: 'center',
     height: 48,
@@ -505,7 +524,7 @@ const styles = StyleSheet.create({
   },
   logButton: {
     flex: 1,
-    backgroundColor: '#5C5CFF',
+    //backgroundColor: '#5749C5',
     borderRadius: 8,
     padding: 12,
     marginLeft: 8,
@@ -522,7 +541,11 @@ const styles = StyleSheet.create({
   categoriesContainer: {
     marginHorizontal: 16,
     marginTop: 60,
-    zIndex: 10
+    //zIndex: 10,
+    // shadowColor: "#080808",
+    // shadowOpacity: 1,
+    // shadowRadius: 2,
+    //shadowOffset: 10
   },
   categoryCard: {
     flexDirection: 'row',
@@ -531,7 +554,12 @@ const styles = StyleSheet.create({
     borderRadius: 56,
     backgroundColor: '#1D1D1D',
     marginBottom: 10,
-    
+    //zIndex: 10,
+    //shadowColor: "#080808",
+    //shadowOpacity: 1,
+    // shadowRadius: 2,
+    boxShadow: "0 4px 1px -1px rgba(8, 8, 8, 0.3)"
+    // here! set shadow position
   },
   categoryIcon: {
     width: 48,
@@ -572,7 +600,10 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     height: 25,
-    zIndex: 1,
+    //zIndex: 1,
+    shadowColor: "#080808",
+    shadowOpacity: 1,
+    shadowRadius: 2,
   },
   mockCategoryCard: {
     position: 'absolute',
@@ -581,6 +612,7 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: '#1D1D1D',
     borderRadius: 50,
+    //zIndex: 1,
   },
   
   // Expanded Categories Modal
@@ -590,9 +622,10 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    //backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
-    zIndex: 1000,
+    shadowColor: '',
+    //zIndex: 1000,
   },
   expandedDismissArea: {
     flex: 1,

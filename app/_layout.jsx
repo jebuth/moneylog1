@@ -5,6 +5,7 @@ import { AuthProvider } from '../contexts/AuthContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { ThemeProvider } from '../contexts/ThemeContext';
 
 
 
@@ -15,25 +16,26 @@ export default function RootLayout() {
     {/* <StatusBar style="auto" />   */}
       <GestureHandlerRootView style={{ flex: 1 }}>
         <AuthProvider>
-          
+          <ThemeProvider>
           <Stack
             screenOptions={{
-              headerShown: false,
-              headerStyle: {
-                backgroundColor: "green"
-              }
+              // headerShown: false,
+              // headerStyle: {
+              //   backgroundColor: "green"
+              // }
               // statusBarBackgroundColor: "red",
               // statusBarTranslucent: true
             }}
           >
 
 {/* <key>UIViewControllerBasedStatusBarAppearance</key> */}
-            <Stack.Screen name="(auth)" options={{ headerShown: false, headerStyle: {backgroundColor: "#121212"} }} />
-            <Stack.Screen name="(main)" options={{ headerShown: false, headerStyle: {backgroundColor: "#121212"}  }} />
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="(main)" options={{ headerShown: false }} />
             <Stack.Screen name="index" options={{ headerShown: false }} />
           </Stack>
-          
+          </ThemeProvider>  
         </AuthProvider>
+        
       </GestureHandlerRootView> 
     </SafeAreaProvider>
     </>
