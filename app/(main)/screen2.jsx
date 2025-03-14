@@ -33,7 +33,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 export default function LogsListScreen() {
-  const { user, setCurrentLog } = useAuth();
+  const { user, logs, setLogs, setCurrentLog } = useAuth();
   const {theme} = useTheme();
   const navigation = useNavigation();
   
@@ -50,13 +50,13 @@ export default function LogsListScreen() {
   const slideOutAnim = useRef(new Animated.Value(0)).current;
 
   // Sample log data - replace with actual data source
-  const [logs, setLogs] = useState([
-    { id: '1', tripName: 'Mexico Trip 2024', totalAmount: 23624.69, date: '2024-03-01' },
-    { id: '2', tripName: 'Japan Vacation', totalAmount: 15420.50, date: '2023-11-15' },
-    { id: '3', tripName: 'Business Trip NYC', totalAmount: 4850.75, date: '2023-09-22' },
-    { id: '4', tripName: 'Europe Tour', totalAmount: 32150.00, date: '2023-07-10' },
-    { id: '5', tripName: 'Weekend Getaway', totalAmount: 1250.30, date: '2023-05-05' },
-  ]);
+  // const [logs, setLogs] = useState([
+  //   { id: '1', tripName: 'Mexico Trip 2024', totalAmount: 23624.69, date: '2024-03-01' },
+  //   { id: '2', tripName: 'Japan Vacation', totalAmount: 15420.50, date: '2023-11-15' },
+  //   { id: '3', tripName: 'Business Trip NYC', totalAmount: 4850.75, date: '2023-09-22' },
+  //   { id: '4', tripName: 'Europe Tour', totalAmount: 32150.00, date: '2023-07-10' },
+  //   { id: '5', tripName: 'Weekend Getaway', totalAmount: 1250.30, date: '2023-05-05' },
+  // ]);
   
   // State for search and new log creation
   const [searchQuery, setSearchQuery] = useState('');
@@ -129,9 +129,45 @@ export default function LogsListScreen() {
       id: Date.now().toString(),
       tripName: newLogName,
       totalAmount: amount,
-      date: new Date().toISOString().split('T')[0]
+      date: new Date().toISOString().split('T')[0],
+      categories: [
+        {
+          id: 1,
+          name: "new sheet's category",
+          amount: 0,
+          percentage: 0,
+          transactionCount: 0,
+          color: '#3F339F'
+        },
+        {
+          id: 2,
+          name: "Food",
+          amount: 0,
+          percentage: 0,
+          transactionCount: 0,
+          color: '#3F339F'
+  
+        },
+        {
+          id: 3,
+          name: "Groceries",
+          amount: 0,
+          percentage: 0,
+          transactionCount: 0,
+          color: '#3F339F'
+        },
+        {
+          id: 4,
+          name: "Utilities",
+          amount: 0,
+          percentage: 0,
+          transactionCount: 0,
+          color: '#3F339F'
+        },
+      ],
+      transactions: []
     };
-    
+
     // Animate new item
     configureLayoutAnimation();
     setLogs([newLog, ...logs]);

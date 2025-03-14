@@ -32,12 +32,24 @@ export default function ExpenseTracker() {
   // Trip information - now from currentLog
   const [tripName, setTripName] = useState(currentLog ? currentLog.tripName : 'New Trip');
   const [totalAmount, setTotalAmount] = useState(currentLog ? currentLog.totalAmount : 0);
+  const [categories, setCategories ]= useState(currentLog? currentLog.categories : {});
+  // const [selectedCategory, setSelectedCategory] = useState({ 
+  //   id: 2, 
+  //   name: 'Transportation', 
+  //   amount: 330, 
+  //   percentage: 5, 
+  //   transactions: 2,
+  //   color: '#5C5CFF' 
+  // });
+  const [selectedCategory, setSelectedCategory] = useState({ });
   
   // Update local state when currentLog changes
   useEffect(() => {
     if (currentLog) {
       setTripName(currentLog.tripName);
       setTotalAmount(currentLog.totalAmount);
+      setCategories(currentLog.categories)
+      setSelectedCategory({})
     }
   }, [currentLog]);
 
@@ -53,58 +65,51 @@ export default function ExpenseTracker() {
   
   // Category selection
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState({ 
-    id: 2, 
-    name: 'Transportation', 
-    amount: 330, 
-    percentage: 5, 
-    transactions: 2,
-    color: '#5C5CFF' 
-  });
+
 
   // Categories data with focus on Airfare for recent transactions
-  const [categories, setCategories] = useState([
-    { 
-      id: 1, 
-      name: 'Airfare', 
-      amount: 330, 
-      percentage: 5, 
-      transactions: 2,
-      color: '#5C5CFF' // Purple color
-    },
-    { 
-      id: 2, 
-      name: 'Transportation', 
-      amount: 330, 
-      percentage: 5, 
-      transactions: 2,
-      color: '#5C5CFF' 
-    },
-    { 
-      id: 3, 
-      name: 'Entertainment', 
-      amount: 330, 
-      percentage: 5, 
-      transactions: 2,
-      color: '#5C5CFF'
-    },
-    { 
-      id: 4, 
-      name: 'Food', 
-      amount: 330, 
-      percentage: 5, 
-      transactions: 2,
-      color: '#5C5CFF'
-    },
-    { 
-      id: 5, 
-      name: 'Groceries', 
-      amount: 330, 
-      percentage: 5, 
-      transactions: 2,
-      color: '#5C5CFF' 
-    },
-  ]);
+  // const [categories, setCategories] = useState([
+  //   { 
+  //     id: 1, 
+  //     name: 'Airfare', 
+  //     amount: 330, 
+  //     percentage: 5, 
+  //     transactions: 2,
+  //     color: '#5C5CFF' // Purple color
+  //   },
+  //   { 
+  //     id: 2, 
+  //     name: 'Transportation', 
+  //     amount: 330, 
+  //     percentage: 5, 
+  //     transactions: 2,
+  //     color: '#5C5CFF' 
+  //   },
+  //   { 
+  //     id: 3, 
+  //     name: 'Entertainment', 
+  //     amount: 330, 
+  //     percentage: 5, 
+  //     transactions: 2,
+  //     color: '#5C5CFF'
+  //   },
+  //   { 
+  //     id: 4, 
+  //     name: 'Food', 
+  //     amount: 330, 
+  //     percentage: 5, 
+  //     transactions: 2,
+  //     color: '#5C5CFF'
+  //   },
+  //   { 
+  //     id: 5, 
+  //     name: 'Groceries', 
+  //     amount: 330, 
+  //     percentage: 5, 
+  //     transactions: 2,
+  //     color: '#5C5CFF' 
+  //   },
+  // ]);
   
   // Handle amount input changes
   const handleAmountChange = (text) => {
@@ -169,11 +174,14 @@ export default function ExpenseTracker() {
   // Log the expense
   const handleLogExpense = () => {
     // Here you would typically save the expense to your backend
-    alert(`Logged $${inputAmount} for ${selectedCategory.name}`);
+    alert(`Logged $${inputAmount} for ${description} in ${selectedCategory.name}`);
     
+    // here!
+    updateLog(inputAmount, description, selectedCategory.name, new Date())
     // Reset form
     setInputAmount('');
     setDescription('');
+    setSelectedCategory({});
   };
 
   // Clear the form
@@ -298,13 +306,13 @@ export default function ExpenseTracker() {
           <View style={[styles.categoryIcon, { backgroundColor: '#5C5CFF' }]} />
           
           <View style={[styles.categoryInfo, {zIndex: 0}]}>
-            <Text style={[styles.categoryName, {color: theme.text, zIndex: 0}]}>Airfare</Text>
-            <Text style={[styles.transactionCount, {color: theme.subtext, zIndex: 0}]}>2 transactions</Text>
+            <Text style={[styles.categoryName, {color: theme.text, zIndex: 0}]}>{currentLog.categories[0].name}</Text>
+            <Text style={[styles.transactionCount, {color: theme.subtext, zIndex: 0}]}>{currentLog.categories[0].transactionCount} transactions</Text>
           </View>
           
           <View style={styles.categoryAmount}>
-            <Text style={[styles.amountText, {color: theme.text}]}>$330</Text>
-            <Text style={[styles.percentageText, {color: theme.subtext}]}>5%</Text>
+            <Text style={[styles.amountText, {color: theme.text}]}>${currentLog.categories[0].amount}</Text>
+            <Text style={[styles.percentageText, {color: theme.subtext}]}>{currentLog.categories[0].percentage}%</Text>
           </View>
         {/* </TouchableOpacity> */}
         
@@ -356,7 +364,7 @@ export default function ExpenseTracker() {
                   
                   <View style={styles.categoryInfo}>
                     <Text style={[styles.categoryName, {color: theme.text}]}>{category.name}</Text>
-                    <Text style={[styles.transactionCount, {color: theme.subtext}]}>{category.transactions} transactions</Text>
+                    <Text style={[styles.transactionCount, {color: theme.subtext}]}>{currentLog.categories.find(c => c.name === category.name).transactionCount} transactions</Text>
                   </View>
                   
                   <View style={styles.categoryAmount}>
