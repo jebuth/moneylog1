@@ -82,7 +82,10 @@ export default function LogsListScreen() {
 const filteredLogs = logs.filter(log => 
   log && log.logTitle && log.logTitle.toLowerCase().includes(searchQuery.toLowerCase())
 );
-    
+    // Filtered logs based on search query
+// const filteredLogs = Array.isArray(logs) && logs.length > 0
+// ? logs.filter(log => log && log.tripName && log.tripName.toLowerCase().includes(searchQuery.toLowerCase()))
+// : [];
   
   // Close any open swipeable
   const closeOpenSwipeable = useCallback(() => {
@@ -266,7 +269,7 @@ const filteredLogs = logs.filter(log =>
     // If this item is being deleted, apply the slide animation
     const isBeingDeleted = item.id === itemBeingDeleted;
     
-    console.log("rendering log item: ", item.logTitle, item.id)
+    //console.log("rendering log item: ", item.logTitle, item.id)
     //console.log("rendering log item: ", item)
     //console.log('Complete log structure:', JSON.stringify(item, null, 2));
 

@@ -72,124 +72,121 @@ export function AuthProvider({ children }) {
     }
   }, [response]);
 
- // Handle Firebase auth state changes
-useEffect(() => {
-  const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-    if (firebaseUser) {
-      // User is signed in
-      try {
-        // Convert Firebase user to your app's user format
-        const appUser = {
-          id: firebaseUser.uid,
-          email: firebaseUser.email,
-          name: firebaseUser.displayName || 'User',
-          photoURL: firebaseUser.photoURL,
-          preferences: {
-            theme: 'light',
-            notifications: true
-          },
-          data: {
-            items: []
-          }
-        };
-        
-        // Save user in state
-        setUser(appUser);
-        
-        // Save user to AsyncStorage
-        saveUserToStorage(appUser);
-        
-        // Fetch user logs from Firestore
-        await fetchUserLogs(firebaseUser.uid);
+  // Handle Firebase auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // User is signed in
+        try {
+          // Convert Firebase user to your app's user format
+          const appUser = {
+            id: firebaseUser.uid,
+            email: firebaseUser.email,
+            name: firebaseUser.displayName || 'User',
+            photoURL: firebaseUser.photoURL,
+            preferences: {
+              theme: 'light',
+              notifications: true
+            },
+            data: {
+              items: []
+            }
+          };
+          
+          // Save user in state
+          setUser(appUser);
+          
+          // Save user to AsyncStorage
+          saveUserToStorage(appUser);
+          
+          // Fetch user logs from Firestore
+          await fetchUserLogs(firebaseUser.uid);
 
 
 
-      } catch (error) {
-        console.error('Error handling user authentication:', error);
+        } catch (error) {
+          console.error('Error handling user authentication:', error);
+        }
+      } else {
+        // User is signed out
+        setUser(null);
+        setLogs([]);
+        setCurrentLog(null);
+        AsyncStorage.removeItem('user');
       }
-    } else {
-      // User is signed out
-      setUser(null);
-      setLogs([]);
-      setCurrentLog(null);
-      AsyncStorage.removeItem('user');
-    }
-    setIsLoading(false);
-  });
-
-  // Cleanup the observer on unmount
-  return () => unsubscribe();
-}, []);
-
-// Function to fetch user logs from Firestore
-const fetchUserLogs = async (userId) => {
-  try {
-    // Set loading state
-    setIsLoading(true);
-    
-    // Query logs collection for documents where userId matches
-    const logsRef = collection(db, 'logs');
-    const q = query(
-      logsRef, 
-      where('userId', '==', userId),
-      orderBy('date', 'desc')
-    );
-    
-    const querySnapshot = await getDocs(q);
-    
-    // Map the Firestore documents to your logs format
-    const userLogs = [];
-    
-    querySnapshot.forEach((doc) => {
-      const logData = doc.data();
-      userLogs.push({
-        id: doc.id,
-        logTitle: logData.logTitle,
-        totalAmount: logData.totalAmount,
-        date: logData.date,
-        categories: logData.categories || [],
-        transactions: logData.transactions || []
-      });
+      setIsLoading(false);
     });
 
-      // If no logs exist yet, create initial sample data
-      if (userLogs.length === 0) {
-        console.log('creating initial log')
-       userLogs.push( await createInitialLogs(userId));
-      }
-    
-    // Update logs state
-    setLogs(userLogs);
-    
-    // Set current log to the most recent one if available
-    if (userLogs.length > 0) {
-      setCurrentLog(userLogs[0]);
-    }
-    
-    console.log(`Fetched ${userLogs.length} logs for user`);
-    
-  } catch (error) {
-      console.error('Error fetching user logs:', error);
-      // More detailed error logging
-      if (error.code) {
-        console.error('Error code:', error.code);
-      }
-      if (error.message) {
-        console.error('Error message:', error.message);
-      }
-      throw error;
-  } finally {
-    setIsLoading(false);
-  }
-};
+    // Cleanup the observer on unmount
+    return () => unsubscribe();
+  }, []);
 
 
   useEffect(() => {
-    // Set the first log as current when component mounts
+    // Set the first log as current when logs change
     if (logs.length > 0 && !currentLog) {
+      console.log('Setting currentLog from useEffect: logs changed');
       setCurrentLog(logs[0]);
     }
-  }, []);
+  }, [logs, currentLog]);
+
+  // Function to fetch user logs from Firestore
+  const fetchUserLogs = async (userId) => {
+    try {
+      // Set loading state
+      setIsLoading(true);
+      
+      // Query logs collection for documents where userId matches
+      const logsRef = collection(db, 'logs');
+      const q = query(
+        logsRef, 
+        where('userId', '==', userId),
+        orderBy('date', 'desc')
+      );
+      
+      const querySnapshot = await getDocs(q);
+      
+      // Map the Firestore documents to your logs format
+      const userLogs = [];
+      
+      querySnapshot.forEach((doc) => {
+        const logData = doc.data();
+        userLogs.push({
+          id: doc.id,
+          logTitle: logData.logTitle,
+          totalAmount: logData.totalAmount,
+          date: logData.date,
+          categories: logData.categories || [],
+          transactions: logData.transactions || []
+        });
+      });
+  
+      // If no logs exist yet, create initial sample data
+      if (userLogs.length === 0) {
+        console.log('creating initial log');
+        const initialLog = await createInitialLogs(userId);
+        userLogs.push(initialLog);
+      }
+      
+      console.log(`Fetched ${userLogs.length} logs for user`);
+      
+      // Update logs state
+      setLogs(userLogs);
+      
+      // Set current log to the most recent one if available
+      if (userLogs.length > 0) {
+        console.log('Setting currentLog to:', userLogs[0].logTitle);
+        setCurrentLog(userLogs[0]);
+      }
+      
+    } catch (error) {
+      console.error('Error fetching user logs:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
 
 
   // Save user data to AsyncStorage
@@ -285,288 +282,290 @@ const fetchUserLogs = async (userId) => {
     // State for the current log
     const [currentLog, setCurrentLog] = useState(null);
   
+    const [logs, setLogs] = useState([]);
     // State for all logs
-    const [logs, setLogs] = useState([
-      { 
-        id: '1', 
-        logTitle: 'Mexico Trip 2024', 
-        totalAmount: 23624.69, 
-        date: '2024-03-01',
-        categories: [
-          {
-            id: 1,
-            name: "Transportationia",
-            amount: 666.66,
-            percentage: 50,
-            transactionCount: 6,
-            color: '#3F339F'
-          },
-          {
-            id: 2,
-            name: "Food",
-            amount: 666.66,
-            percentage: 50,
-            transactionCount: 6,
-            color: '#3F339F'
+    // const [logs, setLogs] = useState([
+    //   { 
+    //     id: '1', 
+    //     logTitle: 'Mexico Trip 2024', 
+    //     totalAmount: 23624.69, 
+    //     date: '2024-03-01',
+    //     categories: [
+    //       {
+    //         id: 1,
+    //         name: "Transportationia",
+    //         amount: 666.66,
+    //         percentage: 50,
+    //         transactionCount: 6,
+    //         color: '#3F339F'
+    //       },
+    //       {
+    //         id: 2,
+    //         name: "Food",
+    //         amount: 666.66,
+    //         percentage: 50,
+    //         transactionCount: 6,
+    //         color: '#3F339F'
 
-          },
-          {
-            id: 3,
-            name: "Groceries",
-            amount: 666.66,
-            percentage: 50,
-            transactionCount: 6,
-            color: '#3F339F'
-          },
-          {
-            id: 4,
-            name: "Utilities",
-            amount: 666.66,
-            percentage: 50,
+    //       },
+    //       {
+    //         id: 3,
+    //         name: "Groceries",
+    //         amount: 666.66,
+    //         percentage: 50,
+    //         transactionCount: 6,
+    //         color: '#3F339F'
+    //       },
+    //       {
+    //         id: 4,
+    //         name: "Utilities",
+    //         amount: 666.66,
+    //         percentage: 50,
             
-            transactionCount: 6,
-            color: '#3F339F'
-          },
-          {
-            id: 5,
-            name: "Gifts",
-            amount: 666.66,
-            percentage: 50,
+    //         transactionCount: 6,
+    //         color: '#3F339F'
+    //       },
+    //       {
+    //         id: 5,
+    //         name: "Gifts",
+    //         amount: 666.66,
+    //         percentage: 50,
             
-            transactionCount: 6,
-            color: '#3F339F'
-          },
+    //         transactionCount: 6,
+    //         color: '#3F339F'
+    //       },
 
-        ],
-        transactions: []
-      },
-      { 
-        id: '2', 
-        logTitle: 'Japan Vacation', 
-        totalAmount: 15420.50, 
-        date: '2023-11-15',
-        categories: [
-          {
-            id: 1,
-            name: "Densha",
-            amount: 666.66,
-            percentage: 50,
+    //     ],
+    //     transactions: []
+    //   },
+    //   { 
+    //     id: '2', 
+    //     logTitle: 'Japan Vacation', 
+    //     totalAmount: 15420.50, 
+    //     date: '2023-11-15',
+    //     categories: [
+    //       {
+    //         id: 1,
+    //         name: "Densha",
+    //         amount: 666.66,
+    //         percentage: 50,
             
-            transactionCount: 6,
-            color: '#3F339F'
-          },
-          {
-            id: 2,
-            name: "Food",
-            amount: 666.66,
-            percentage: 50,
+    //         transactionCount: 6,
+    //         color: '#3F339F'
+    //       },
+    //       {
+    //         id: 2,
+    //         name: "Food",
+    //         amount: 666.66,
+    //         percentage: 50,
             
-            transactionCount: 6,
-            color: '#3F339F'
+    //         transactionCount: 6,
+    //         color: '#3F339F'
 
-          },
-          {
-            id: 3,
-            name: "Groceries",
-            amount: 666.66,
-            percentage: 50,
-            transactions: [],
-            transactionCount: 6,
-            color: '#3F339F'
-          },
-          {
-            id: 4,
-            name: "Utilities",
-            amount: 666.66,
-            percentage: 50,
-            transactions: [],
-            transactionCount: 6,
-            color: '#3F339F'
-          },
-          {
-            id: 5,
-            name: "Gifts",
-            amount: 666.66,
-            percentage: 50,
-            transactions: [],
-            transactionCount: 6,
-            color: '#3F339F'
-          },
+    //       },
+    //       {
+    //         id: 3,
+    //         name: "Groceries",
+    //         amount: 666.66,
+    //         percentage: 50,
+    //         transactions: [],
+    //         transactionCount: 6,
+    //         color: '#3F339F'
+    //       },
+    //       {
+    //         id: 4,
+    //         name: "Utilities",
+    //         amount: 666.66,
+    //         percentage: 50,
+    //         transactions: [],
+    //         transactionCount: 6,
+    //         color: '#3F339F'
+    //       },
+    //       {
+    //         id: 5,
+    //         name: "Gifts",
+    //         amount: 666.66,
+    //         percentage: 50,
+    //         transactions: [],
+    //         transactionCount: 6,
+    //         color: '#3F339F'
+    //       },
 
-        ],
-        transactions: []
+    //     ],
+    //     transactions: []
         
         
-      },
-      { 
-        id: '3', 
-        logTitle: 'Business Trip NYC', 
-        totalAmount: 4850.75, 
-        date: '2023-09-22',
-        categories: [
-          {
-            id: 1,
-            name: "NYC subways",
-            amount: 666.66,
-            percentage: 50,
-            transactions: [],
-            transactionCount: 6,
-            color: '#3F339F'
-          },
-          {
-            id: 2,
-            name: "Food",
-            amount: 666.66,
-            percentage: 50,
-            transactions: [],
-            transactionCount: 6,
-            color: '#3F339F'
+    //   },
+    //   { 
+    //     id: '3', 
+    //     logTitle: 'Business Trip NYC', 
+    //     totalAmount: 4850.75, 
+    //     date: '2023-09-22',
+    //     categories: [
+    //       {
+    //         id: 1,
+    //         name: "NYC subways",
+    //         amount: 666.66,
+    //         percentage: 50,
+    //         transactions: [],
+    //         transactionCount: 6,
+    //         color: '#3F339F'
+    //       },
+    //       {
+    //         id: 2,
+    //         name: "Food",
+    //         amount: 666.66,
+    //         percentage: 50,
+    //         transactions: [],
+    //         transactionCount: 6,
+    //         color: '#3F339F'
 
-          },
-          {
-            id: 3,
-            name: "Groceries",
-            amount: 666.66,
-            percentage: 50,
-            transactions: [],
-            transactionCount: 6,
-            color: '#3F339F'
-          },
-          {
-            id: 4,
-            name: "Utilities",
-            amount: 666.66,
-            percentage: 50,
-            transactions: [],
-            transactionCount: 6,
-            color: '#3F339F'
-          },
-          {
-            id: 5,
-            name: "Gifts",
-            amount: 666.66,
-            percentage: 50,
-            transactions: [],
-            transactionCount: 6,
-            color: '#3F339F'
-          },
+    //       },
+    //       {
+    //         id: 3,
+    //         name: "Groceries",
+    //         amount: 666.66,
+    //         percentage: 50,
+    //         transactions: [],
+    //         transactionCount: 6,
+    //         color: '#3F339F'
+    //       },
+    //       {
+    //         id: 4,
+    //         name: "Utilities",
+    //         amount: 666.66,
+    //         percentage: 50,
+    //         transactions: [],
+    //         transactionCount: 6,
+    //         color: '#3F339F'
+    //       },
+    //       {
+    //         id: 5,
+    //         name: "Gifts",
+    //         amount: 666.66,
+    //         percentage: 50,
+    //         transactions: [],
+    //         transactionCount: 6,
+    //         color: '#3F339F'
+    //       },
 
-        ],
-        transactions: []
-      },
-      { 
-        id: '4', 
-        logTitle: 'Europe Tour', 
-        totalAmount: 32150.00, 
-        date: '2023-07-10',
-        categories: [
-          {
-            id: 1,
-            name: "Trollies",
-            amount: 666.66,
-            percentage: 50,
-            transactions: [],
-            transactionCount: 6,
-            color: '#3F339F'
-          },
-          {
-            id: 2,
-            name: "Food",
-            amount: 666.66,
-            percentage: 50,
-            transactions: [],
-            transactionCount: 6,
-            color: '#3F339F'
+    //     ],
+    //     transactions: []
+    //   },
+    //   { 
+    //     id: '4', 
+    //     logTitle: 'Europe Tour', 
+    //     totalAmount: 32150.00, 
+    //     date: '2023-07-10',
+    //     categories: [
+    //       {
+    //         id: 1,
+    //         name: "Trollies",
+    //         amount: 666.66,
+    //         percentage: 50,
+    //         transactions: [],
+    //         transactionCount: 6,
+    //         color: '#3F339F'
+    //       },
+    //       {
+    //         id: 2,
+    //         name: "Food",
+    //         amount: 666.66,
+    //         percentage: 50,
+    //         transactions: [],
+    //         transactionCount: 6,
+    //         color: '#3F339F'
 
-          },
-          {
-            id: 3,
-            name: "Groceries",
-            amount: 666.66,
-            percentage: 50,
-            transactions: [],
-            transactionCount: 6,
-            color: '#3F339F'
-          },
-          {
-            id: 4,
-            name: "Utilities",
-            amount: 666.66,
-            percentage: 50,
-            transactions: [],
-            transactionCount: 6,
-            color: '#3F339F'
-          },
-          {
-            id: 5,
-            name: "Gifts",
-            amount: 666.66,
-            percentage: 50,
-            transactions: [],
-            transactionCount: 6,
-            color: '#3F339F'
-          },
+    //       },
+    //       {
+    //         id: 3,
+    //         name: "Groceries",
+    //         amount: 666.66,
+    //         percentage: 50,
+    //         transactions: [],
+    //         transactionCount: 6,
+    //         color: '#3F339F'
+    //       },
+    //       {
+    //         id: 4,
+    //         name: "Utilities",
+    //         amount: 666.66,
+    //         percentage: 50,
+    //         transactions: [],
+    //         transactionCount: 6,
+    //         color: '#3F339F'
+    //       },
+    //       {
+    //         id: 5,
+    //         name: "Gifts",
+    //         amount: 666.66,
+    //         percentage: 50,
+    //         transactions: [],
+    //         transactionCount: 6,
+    //         color: '#3F339F'
+    //       },
 
-        ],
-        transactions: []
-      },
-      { 
-        id: '5', 
-        logTitle: 'Weekend Getaway', 
-        totalAmount: 1250.30, 
-        date: '2023-05-05',
-        categories: [
-          {
-            id: 1,
-            name: "Ubers",
-            amount: 666.66,
-            percentage: 50,
-            transactions: [],
-            transactionCount: 6,
-            color: '#3F339F'
-          },
-          {
-            id: 2,
-            name: "Food",
-            amount: 666.66,
-            percentage: 50,
-            transactions: [],
-            transactionCount: 6,
-            color: '#3F339F'
+    //     ],
+    //     transactions: []
+    //   },
+    //   { 
+    //     id: '5', 
+    //     logTitle: 'Weekend Getaway', 
+    //     totalAmount: 1250.30, 
+    //     date: '2023-05-05',
+    //     categories: [
+    //       {
+    //         id: 1,
+    //         name: "Ubers",
+    //         amount: 666.66,
+    //         percentage: 50,
+    //         transactions: [],
+    //         transactionCount: 6,
+    //         color: '#3F339F'
+    //       },
+    //       {
+    //         id: 2,
+    //         name: "Food",
+    //         amount: 666.66,
+    //         percentage: 50,
+    //         transactions: [],
+    //         transactionCount: 6,
+    //         color: '#3F339F'
 
-          },
-          {
-            id: 3,
-            name: "Groceries",
-            amount: 666.66,
-            percentage: 50,
-            transactions: [],
-            transactionCount: 6,
-            color: '#3F339F'
-          },
-          {
-            id: 4,
-            name: "Utilities",
-            amount: 666.66,
-            percentage: 50,
-            transactions: [],
-            transactionCount: 6,
-            color: '#3F339F'
-          },
-          {
-            id: 5,
-            name: "Gifts",
-            amount: 666.66,
-            percentage: 50,
-            transactions: [],
-            transactionCount: 6,
-            color: '#3F339F'
-          },
+    //       },
+    //       {
+    //         id: 3,
+    //         name: "Groceries",
+    //         amount: 666.66,
+    //         percentage: 50,
+    //         transactions: [],
+    //         transactionCount: 6,
+    //         color: '#3F339F'
+    //       },
+    //       {
+    //         id: 4,
+    //         name: "Utilities",
+    //         amount: 666.66,
+    //         percentage: 50,
+    //         transactions: [],
+    //         transactionCount: 6,
+    //         color: '#3F339F'
+    //       },
+    //       {
+    //         id: 5,
+    //         name: "Gifts",
+    //         amount: 666.66,
+    //         percentage: 50,
+    //         transactions: [],
+    //         transactionCount: 6,
+    //         color: '#3F339F'
+    //       },
 
-        ],
-        transactions: []
-      },
-    ]);
+    //     ],
+    //     transactions: []
+    //   },
+    // ]);
+
 
 
     const createInitialLogs = async (userId) => {
@@ -574,7 +573,7 @@ const fetchUserLogs = async (userId) => {
         // Create a sample log
         const sampleLog = {
           userId: userId,
-          logTitle: 'initial log',
+          logTitle: 'March 2025',
           totalAmount: 0,
           date: new Date().toISOString().split('T')[0],
           categories: [
@@ -584,6 +583,7 @@ const fetchUserLogs = async (userId) => {
               amount: 0,
               percentage: 0,
               transactionCount: 0,
+              color: '#3F339F'
             },
             {
               id: 2,
@@ -591,6 +591,7 @@ const fetchUserLogs = async (userId) => {
               amount: 0,
               percentage: 0,
               transactionCount: 0,
+              color: '#3F339F'
             },
             {
               id: 3,
@@ -598,6 +599,7 @@ const fetchUserLogs = async (userId) => {
               amount: 0,
               percentage: 0,
               transactionCount: 0,
+              color: '#3F339F'
             }
           ],
           transactions: [],
@@ -606,13 +608,17 @@ const fetchUserLogs = async (userId) => {
         };
         
         // Add to Firestore
-        const logsRef = collection(db, 'logs');
-        await addDoc(logsRef, sampleLog);
+        const docRef = await addDoc(collection(db, 'logs'), sampleLog);
         
-        console.log('Created initial log for new user');
+        // Create complete log object with ID
+        const newLog = {
+          id: docRef.id,
+          ...sampleLog
+        };
         
-        // Fetch the logs again (which will now include our new log)
-        return await fetchUserLogs(userId);
+        console.log('Created initial log for new user with ID:', docRef.id);
+        
+        return newLog; // Return the new log object directly
       } catch (error) {
         console.error('Error creating initial logs:', error);
         throw error;
@@ -621,50 +627,6 @@ const fetchUserLogs = async (userId) => {
 
     // Add a log to Firestore
 const addLog = async (logData) => {
-  // try {
-  //   if (!user) {
-  //     throw new Error('No authenticated user');
-  //   }
-    
-  //   // Add userId to the log data
-  //   const newLog = {
-  //     ...logData,
-  //     userId: user.id,
-  //     createdAt: new Date().toISOString(),
-  //     updatedAt: new Date().toISOString()
-  //   };
-    
-  //   // Add to Firestore
-  //   const logsRef = collection(db, 'logs');
-  //   const docRef = await addDoc(logsRef, newLog);
-    
-  //   // Get the document with the auto-generated ID
-  //   // const addedLog = {
-  //   //   id: docRef.id,
-  //   //   ...newLog
-  //   // };
-    
-  //   //Get the document with the auto-generated ID
-  //   const addedLog = {
-  //     ...docRef
-  //   };
-
-  //   // the issue is here!!!!!!
-
-  //   console.log(JSON.stringify(addedLog))
-  //   // Update local state
-  //   setLogs([addedLog, ...logs]);
-  //   //setLogs(prevLogs => [addedLog, ...prevLogs]);
-    
-  //   // Set as current log
-  //   setCurrentLog(addedLog);
-    
-  //   return addedLog;
-  // } catch (error) {
-  //   console.error('Error adding log:', error);
-  //   throw error;
-  // }
-
   try {
     // Add to Firestore
     const docRef = await addDoc(collection(db, 'logs'), {
@@ -799,87 +761,6 @@ const deleteLog = async (logId) => {
     throw error;
   }
 };
-    
-    // // Add a log
-    // const addLog = (log) => {
-    //   setLogs([log, ...logs]);
-    // };
-    
-    // const updateLog = (amount, description, categoryName, date) => {
-    //   amount = toFixedNumber(amount, 2);
-      
-    //   // Create a new transaction object with a unique ID
-    //   let newTransaction = {
-    //     id: Date.now().toString(),
-    //     amount,
-    //     description,
-    //     category: categoryName,
-    //     date
-    //   };
-    
-    //   if (!currentLog) {
-    //     console.error("No current log selected");
-    //     return;
-    //   }
-    
-    //   // Create a deep copy of the current log to avoid direct state mutation
-    //   const updatedLog = { ...currentLog };
-      
-    //   // Add newTransaction to the currentLog.transactions
-    //   updatedLog.transactions = [...(updatedLog.transactions || []), newTransaction];
-      
-    //   // Update the total amount of the log - ensure it exists and is a number
-    //   const currentAmount = typeof updatedLog.totalAmount === 'number' ? updatedLog.totalAmount : 0;
-    //   updatedLog.totalAmount = parseFloat((currentAmount + amount).toFixed(2));
-      
-    //   // Update currentLog.categories with the newTransaction
-    //   if (updatedLog.categories && updatedLog.categories.length > 0) {
-    //     updatedLog.categories = updatedLog.categories.map(category => {
-    //       // If this is the category for the new transaction
-    //       if (category.name === categoryName) {
-    //         const categoryAmount = typeof category.amount === 'number' ? category.amount : 0;
-    //         return {
-    //           ...category,
-    //           // Increase the amount for this category
-    //           amount: parseFloat((categoryAmount + amount).toFixed(2)),
-    //           // Increment transaction count
-    //           transactionCount: (category.transactionCount || 0) + 1,
-
-    //         };
-    //       }
-    //       return category;
-    //     });
-        
-    //     // Recalculate percentages for all categories
-    //     const totalLogAmount = updatedLog.totalAmount;
-    //     if (totalLogAmount > 0) {
-    //       updatedLog.categories = updatedLog.categories.map(category => ({
-    //         ...category,
-    //         percentage: Math.round(((category.amount || 0) / totalLogAmount) * 100)
-    //       }));
-    //     }
-    //   }
-      
-    //   // Update logs array with the modified log
-    //   const updatedLogs = logs.map(log => 
-    //     log.id === updatedLog.id ? updatedLog : log
-    //   );
-      
-    //   // Update both states
-    //   setLogs(updatedLogs);
-    //   setCurrentLog(updatedLog);
-    // };
-    
-    // // Delete a log
-    // const deleteLog = (logId) => {
-    //   setLogs(logs.filter(log => log.id !== logId));
-      
-    //   // If deleted log is current log, clear currentLog. what to display on screen1?
-    //   if (currentLog && currentLog.id === logId) {
-    //     setCurrentLog(null);
-    //   }
-    // };
-
 
     // ensure variables are number format decimals
     function toFixedNumber(value, decimals = 2) {

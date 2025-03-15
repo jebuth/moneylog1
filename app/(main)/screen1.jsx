@@ -25,7 +25,7 @@ import { useRouter } from 'expo-router';
 const { width, height } = Dimensions.get('window');
 
 export default function ExpenseTracker() {
-  const { user, currentLog, updateLog, isLoading } = useAuth();
+  const { user, logs, currentLog, updateLog, isLoading } = useAuth();
   const {theme} = useTheme();
   const router = useRouter();
   
@@ -46,6 +46,7 @@ export default function ExpenseTracker() {
   
   // Update local state when currentLog changes
   useEffect(() => {
+    
     if (currentLog) {
       setlogTitle(currentLog.logTitle);
       setTotalAmount(currentLog.totalAmount);
@@ -53,8 +54,12 @@ export default function ExpenseTracker() {
       setSelectedCategory({})
     }
 
+    console.log('useEffect in screen1.jsx with logs, currentLog dependencies')
+    console.log('screen1: isLoading: ' + isLoading)
+    console.log('screen1: currentLog: ' + JSON.stringify(currentLog))
+    console.log('screen1: logs: ' + JSON.stringify(logs))
     //router.replace('/(main)/screen2');
-  }, [currentLog]);
+  }, [logs, currentLog]);
 
   // If no current log, redirect to screen2 (logs list)
   // useEffect(() => {
@@ -77,15 +82,31 @@ export default function ExpenseTracker() {
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
 
 
+
     // Show loading indicator while currentLog is being fetched
-    if (isLoading || !currentLog) {
-      return (
-        <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
-          <ActivityIndicator size="large" color={theme.accent} />
-          <Text style={{ color: theme.text, marginTop: 20 }}>Loading log data...</Text>
-        </View>
-      );
-    }
+if (isLoading || !currentLog) {
+  return (
+    <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+      <ActivityIndicator size="large" color={theme.accent} />
+      <Text style={{ color: theme.text, marginTop: 20 }}>Loading log data...</Text>
+    </View>
+  );
+}
+
+// Handle the case where no currentLog exists
+// if (!currentLog) {
+//   return (
+//     <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+//       <Text style={{ color: theme.text, marginBottom: 20 }}>No logs selected.</Text>
+//       <TouchableOpacity
+//         style={[styles.logButton, {backgroundColor: theme.purple, paddingHorizontal: 20}]}
+//         onPress={() => router.replace('/(main)/screen2')}
+//       >
+//         <Text style={styles.logButtonText}>Select a log</Text>
+//       </TouchableOpacity>
+//     </View>
+//   );
+// }
   // Categories data with focus on Airfare for recent transactions
   // const [categories, setCategories] = useState([
   //   { 
