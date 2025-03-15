@@ -30,7 +30,7 @@ export default function ExpenseTracker() {
   
   // Trip information
   // Trip information - now from currentLog
-  const [tripName, setTripName] = useState(currentLog ? currentLog.tripName : 'New Trip');
+  const [logTitle, setlogTitle] = useState(currentLog ? currentLog.logTitle : 'New Trip');
   const [totalAmount, setTotalAmount] = useState(currentLog ? currentLog.totalAmount : 0);
   const [categories, setCategories ]= useState(currentLog? currentLog.categories : {});
   // const [selectedCategory, setSelectedCategory] = useState({ 
@@ -46,7 +46,7 @@ export default function ExpenseTracker() {
   // Update local state when currentLog changes
   useEffect(() => {
     if (currentLog) {
-      setTripName(currentLog.tripName);
+      setlogTitle(currentLog.logTitle);
       setTotalAmount(currentLog.totalAmount);
       setCategories(currentLog.categories)
       setSelectedCategory({})
@@ -205,7 +205,7 @@ export default function ExpenseTracker() {
         style={styles.headerCard}
       >
         <View style={styles.headerContent}>
-          <Text style={[styles.tripName, {color: "#FFF"}]}>{tripName}</Text>
+          <Text style={[styles.logTitle, {color: "#FFF"}]}>{logTitle}</Text>
           <Text style={[styles.totalAmount, {color: "#FFF"}]}>${totalAmount.toLocaleString(undefined, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     // shadowOpacity: .5,
     // shadowRadius: 1,
   },
-  tripName: {
+  logTitle: {
     fontSize: 24,
     fontWeight: '600',
     color: '#FFFFFF',

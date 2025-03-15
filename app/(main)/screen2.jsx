@@ -51,11 +51,11 @@ export default function LogsListScreen() {
 
   // Sample log data - replace with actual data source
   // const [logs, setLogs] = useState([
-  //   { id: '1', tripName: 'Mexico Trip 2024', totalAmount: 23624.69, date: '2024-03-01' },
-  //   { id: '2', tripName: 'Japan Vacation', totalAmount: 15420.50, date: '2023-11-15' },
-  //   { id: '3', tripName: 'Business Trip NYC', totalAmount: 4850.75, date: '2023-09-22' },
-  //   { id: '4', tripName: 'Europe Tour', totalAmount: 32150.00, date: '2023-07-10' },
-  //   { id: '5', tripName: 'Weekend Getaway', totalAmount: 1250.30, date: '2023-05-05' },
+  //   { id: '1', logTitle: 'Mexico Trip 2024', totalAmount: 23624.69, date: '2024-03-01' },
+  //   { id: '2', logTitle: 'Japan Vacation', totalAmount: 15420.50, date: '2023-11-15' },
+  //   { id: '3', logTitle: 'Business Trip NYC', totalAmount: 4850.75, date: '2023-09-22' },
+  //   { id: '4', logTitle: 'Europe Tour', totalAmount: 32150.00, date: '2023-07-10' },
+  //   { id: '5', logTitle: 'Weekend Getaway', totalAmount: 1250.30, date: '2023-05-05' },
   // ]);
   
   // State for search and new log creation
@@ -87,7 +87,7 @@ export default function LogsListScreen() {
   
   // Filtered logs based on search query
   const filteredLogs = logs.filter(log => 
-    log.tripName.toLowerCase().includes(searchQuery.toLowerCase())
+    log.logTitle.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
   // Close any open swipeable
@@ -127,7 +127,7 @@ export default function LogsListScreen() {
     // Create new log and add to list
     const newLog = {
       id: Date.now().toString(),
-      tripName: newLogName,
+      logTitle: newLogName,
       totalAmount: amount,
       date: new Date().toISOString().split('T')[0],
       categories: [
@@ -328,7 +328,7 @@ export default function LogsListScreen() {
               style={styles.logGradient}
             >
               <View style={styles.logContent}>
-                <Text style={[styles.logName, {color: theme.text}]}>{item.tripName}</Text>
+                <Text style={[styles.logName, {color: theme.text}]}>{item.logTitle}</Text>
                 <Text style={[styles.logAmount, {color: theme.text}]}>{formatCurrency(item.totalAmount)}</Text>
                 <Text style={[styles.logDate, {color: theme.subtext}]}>{item.date}</Text>
                 

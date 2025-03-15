@@ -218,7 +218,7 @@ export function AuthProvider({ children }) {
     const [logs, setLogs] = useState([
       { 
         id: '1', 
-        tripName: 'Mexico Trip 2024', 
+        logTitle: 'Mexico Trip 2024', 
         totalAmount: 23624.69, 
         date: '2024-03-01',
         categories: [
@@ -271,7 +271,7 @@ export function AuthProvider({ children }) {
       },
       { 
         id: '2', 
-        tripName: 'Japan Vacation', 
+        logTitle: 'Japan Vacation', 
         totalAmount: 15420.50, 
         date: '2023-11-15',
         categories: [
@@ -329,7 +329,7 @@ export function AuthProvider({ children }) {
       },
       { 
         id: '3', 
-        tripName: 'Business Trip NYC', 
+        logTitle: 'Business Trip NYC', 
         totalAmount: 4850.75, 
         date: '2023-09-22',
         categories: [
@@ -385,7 +385,7 @@ export function AuthProvider({ children }) {
       },
       { 
         id: '4', 
-        tripName: 'Europe Tour', 
+        logTitle: 'Europe Tour', 
         totalAmount: 32150.00, 
         date: '2023-07-10',
         categories: [
@@ -441,7 +441,7 @@ export function AuthProvider({ children }) {
       },
       { 
         id: '5', 
-        tripName: 'Weekend Getaway', 
+        logTitle: 'Weekend Getaway', 
         totalAmount: 1250.30, 
         date: '2023-05-05',
         categories: [
@@ -502,20 +502,7 @@ export function AuthProvider({ children }) {
       setLogs([log, ...logs]);
     };
     
-    // Update a log
-    // const updateLog = (updatedLog) => {
-    //   // const updatedLogs = logs.map(log => 
-    //   //   log.id === updatedLog.id ? updatedLog : log
-    //   // );
-    //   // setLogs(updatedLogs);
-      
-    //   // Also update currentLog if it's the one being updated
-    //   if (currentLog && currentLog.id === updatedLog.id) {
-    //     setCurrentLog(updatedLog);
-    //   }
-    // };
     const updateLog = (amount, description, categoryName, date) => {
-      
       amount = toFixedNumber(amount, 2);
       
       // Create a new transaction object with a unique ID
@@ -552,12 +539,9 @@ export function AuthProvider({ children }) {
               ...category,
               // Increase the amount for this category
               amount: parseFloat((categoryAmount + amount).toFixed(2)),
-              // amount: parseFloat((categoryAmount + 10).toFixed(2)),
               // Increment transaction count
               transactionCount: (category.transactionCount || 0) + 1,
-              // Add the transaction to the category's transactions array if it exists
-              //transactions: [...(category.transactions || []), newTransaction]
-              //transactions: [...(category.transactions || []), [{newTransaction}]]
+
             };
           }
           return category;
