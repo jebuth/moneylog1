@@ -27,8 +27,6 @@ export default function RootLayout() {
               // statusBarTranslucent: true
             }}
           >
-
-{/* <key>UIViewControllerBasedStatusBarAppearance</key> */}
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
             <Stack.Screen name="(main)" options={{ headerShown: false }} />
             <Stack.Screen name="index" options={{ headerShown: false }} />

@@ -14,7 +14,8 @@ import {
   Alert,
   Animated,
   LayoutAnimation,
-  UIManager
+  UIManager,
+  ActivityIndicator
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -33,31 +34,19 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 export default function LogsListScreen() {
-  const { user, logs, setLogs, setCurrentLog } = useAuth();
+  const { isLoading, user, logs, setLogs, currentLog, setCurrentLog, addLog, deleteLog } = useAuth();
   const {theme} = useTheme();
   const navigation = useNavigation();
   
   // Track currently opened swipeable item
   const [openSwipeableId, setOpenSwipeableId] = useState(null);
-  
   // Map to store references to swipeables
   const swipeableRefs = useRef({});
-  
   // Store item heights for animation
   const itemHeights = useRef({});
-  
   // Animation value for deletion
   const slideOutAnim = useRef(new Animated.Value(0)).current;
 
-  // Sample log data - replace with actual data source
-  // const [logs, setLogs] = useState([
-  //   { id: '1', logTitle: 'Mexico Trip 2024', totalAmount: 23624.69, date: '2024-03-01' },
-  //   { id: '2', logTitle: 'Japan Vacation', totalAmount: 15420.50, date: '2023-11-15' },
-  //   { id: '3', logTitle: 'Business Trip NYC', totalAmount: 4850.75, date: '2023-09-22' },
-  //   { id: '4', logTitle: 'Europe Tour', totalAmount: 32150.00, date: '2023-07-10' },
-  //   { id: '5', logTitle: 'Weekend Getaway', totalAmount: 1250.30, date: '2023-05-05' },
-  // ]);
-  
   // State for search and new log creation
   const [searchQuery, setSearchQuery] = useState('');
   const [showNewLogModal, setShowNewLogModal] = useState(false);
@@ -84,11 +73,16 @@ export default function LogsListScreen() {
       },
     });
   };
-  
+
+
   // Filtered logs based on search query
-  const filteredLogs = logs.filter(log => 
-    log.logTitle.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  //const filteredLogs = logs.filter(log => log.logTitle.toLowerCase().includes(searchQuery.toLowerCase()))
+
+  // Filtered logs based on search query
+const filteredLogs = logs.filter(log => 
+  log && log.logTitle && log.logTitle.toLowerCase().includes(searchQuery.toLowerCase())
+);
+    
   
   // Close any open swipeable
   const closeOpenSwipeable = useCallback(() => {
@@ -102,42 +96,38 @@ export default function LogsListScreen() {
   const navigateToExpenseScreen = useCallback((log) => {
     // Close any open swipeable
     closeOpenSwipeable();
-    
     // Set the current log in context
     setCurrentLog(log);
-    
     // Navigate to screen1
     navigation.navigate('screen1');
   }, [closeOpenSwipeable, navigation, setCurrentLog]);
   
   // Handle creating a new log
-  const handleCreateNewLog = () => {
+  const handleCreateNewLog = async () => {
     if (newLogName.trim() === '' || newLogAmount.trim() === '') {
-      alert('Please enter both a trip name and starting amount');
+      alert('Enter both a log title and starting amount');
       return;
     }
     
     const amount = parseFloat(newLogAmount.replace(/[^0-9.]/g, ''));
     
     if (isNaN(amount)) {
-      alert('Please enter a valid amount');
+      alert('Enter a valid amount');
       return;
     }
-    
-    // Create new log and add to list
-    const newLog = {
-      id: Date.now().toString(),
+
+    const logData = {
+      userId: user.id,
       logTitle: newLogName,
-      totalAmount: amount,
+      totalAmount: 0,
       date: new Date().toISOString().split('T')[0],
       categories: [
         {
           id: 1,
-          name: "new sheet's category",
+          name: "Transportation",
           amount: 0,
           percentage: 0,
           transactionCount: 0,
-          color: '#3F339F'
         },
         {
           id: 2,
@@ -145,45 +135,40 @@ export default function LogsListScreen() {
           amount: 0,
           percentage: 0,
           transactionCount: 0,
-          color: '#3F339F'
-  
         },
         {
           id: 3,
-          name: "Groceries",
+          name: "Accommodation",
           amount: 0,
           percentage: 0,
           transactionCount: 0,
-          color: '#3F339F'
-        },
-        {
-          id: 4,
-          name: "Utilities",
-          amount: 0,
-          percentage: 0,
-          transactionCount: 0,
-          color: '#3F339F'
-        },
+        }
       ],
-      transactions: []
+      transactions: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
+
+    let addedLog = await addLog(logData);
 
     // Animate new item
     configureLayoutAnimation();
-    setLogs([newLog, ...logs]);
+    
+    setLogs([addedLog, ...logs]);
+    setSearchQuery('')
     setShowNewLogModal(false);
     setNewLogName('');
     setNewLogAmount('');
     
     // Navigate to the log detail screen with the new log
-    navigateToExpenseScreen(newLog);
+    navigateToExpenseScreen(logData);
   };
   
   // Handle deleting a log with animation
-  const handleDeleteLog = (logId) => {
+  const handleDeleteLog = async (logId) => {
     Alert.alert(
-      "Delete Trip",
-      "Are you sure you want to delete this trip? This cannot be undone.",
+      "Delete Log",
+      "Are you sure you want to delete this log? This cannot be undone.",
       [
         {
           text: "Cancel",
@@ -191,9 +176,10 @@ export default function LogsListScreen() {
         },
         { 
           text: "Delete", 
-          onPress: () => {
+          onPress: async () => {
             setItemBeingDeleted(logId);
-            
+            // here!
+            await deleteLog(logId)
             // Animate the item sliding away
             slideOutAnim.setValue(0);
             Animated.timing(slideOutAnim, {
@@ -280,6 +266,10 @@ export default function LogsListScreen() {
     // If this item is being deleted, apply the slide animation
     const isBeingDeleted = item.id === itemBeingDeleted;
     
+    console.log("rendering log item: ", item.logTitle, item.id)
+    //console.log("rendering log item: ", item)
+    //console.log('Complete log structure:', JSON.stringify(item, null, 2));
+
     // Animation style when being deleted
     const animatedStyle = isBeingDeleted ? {
       transform: [{ translateX: slideOutAnim }]
@@ -363,7 +353,18 @@ export default function LogsListScreen() {
       </Animated.View>
     );
   }, [openSwipeableId, closeOpenSwipeable, itemBeingDeleted, slideOutAnim, navigateToExpenseScreen]);
-  
+
+      // Show loading indicator while currentLog is being fetched
+      if (isLoading) {
+        return (
+          <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+            <ActivityIndicator size="large" color={theme.accent} />
+            <Text style={{ color: theme.text, marginTop: 20 }}>Loading log data...</Text>
+          </View>
+        );
+      }
+    
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={[styles.container, {backgroundColor : theme.background}]}>
@@ -371,7 +372,7 @@ export default function LogsListScreen() {
         
         {/* Header */}
         <View style={styles.header}>
-          <Text style={[styles.headerTitle, {color: theme.text}]}>My Trips</Text>
+          <Text style={[styles.headerTitle, {color: theme.text}]}>My Logs</Text>
           <TouchableOpacity 
             style={styles.createButton}
             onPress={() => {
@@ -388,7 +389,7 @@ export default function LogsListScreen() {
           <Ionicons name="search" size={20} color="#999" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search trips..."
+            placeholder="Search logs..."
             placeholderTextColor="#999"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -405,7 +406,9 @@ export default function LogsListScreen() {
         
         {/* Logs List */}
         <FlatList
+          //key={`logs-${logs.length}`} // This forces a re-render when logs.length changes
           data={filteredLogs}
+          //extraData={logs} // FlatList will re-render when logs.length changes
           renderItem={renderLogItem}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.listContainer}
@@ -415,14 +418,14 @@ export default function LogsListScreen() {
             <View style={styles.emptyContainer}>
               <Text style={[styles.emptyText, {color: theme.text}]}>
                 {searchQuery.length > 0 
-                  ? "No trips match your search" 
-                  : "You haven't created any trips yet"}
+                  ? "No logs match your search" 
+                  : "You haven't created any logs yet"}
               </Text>
               <TouchableOpacity 
                 style={styles.emptyButton}
                 onPress={() => setShowNewLogModal(true)}
               >
-                <Text style={[styles.emptyButtonText, {color: theme.text}]}>Create Your First Trip</Text>
+                <Text style={[styles.emptyButtonText, {color: theme.text}]}>Create Your First Log</Text>
               </TouchableOpacity>
             </View>
           }
@@ -447,7 +450,7 @@ export default function LogsListScreen() {
               <Text style={[styles.inputLabel, {color: theme.subtext}]}>Log Title</Text>
               <TextInput
                 style={[styles.modalInput, {backgroundColor: theme.background, color: theme.text}]}
-                placeholder="Enter trip name"
+                placeholder="Enter log name"
                 placeholderTextColor="#999"
                 value={newLogName}
                 onChangeText={setNewLogName}
@@ -482,7 +485,7 @@ export default function LogsListScreen() {
                   style={styles.createLogButton}
                   onPress={handleCreateNewLog}
                 >
-                  <Text style={styles.createLogButtonText}>CREATE TRIP</Text>
+                  <Text style={styles.createLogButtonText}>CREATE LOG</Text>
                 </TouchableOpacity>
               </View>
             </View>

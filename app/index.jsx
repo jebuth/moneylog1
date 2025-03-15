@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { View, ActivityIndicator } from 'react-native';
 
 export default function Index() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, currentLog } = useAuth();
   
   // Show loading indicator while checking auth status
   if (isLoading) {
@@ -14,8 +14,16 @@ export default function Index() {
     );
   }
   
-  // Redirect based on authentication status
-  return isAuthenticated 
-    ? <Redirect href="/(main)/screen1" />
-    : <Redirect href="/(auth)" />;
+  // Not authenticated - go to auth screen
+  if (!isAuthenticated) {
+    return <Redirect href="/(auth)" />;
+  }
+
+  // Authenticated but no currentLog - go to logs list first
+  // if (!currentLog) {
+  //   return <Redirect href="/(main)/screen2" />;
+  // }
+
+  // Authenticated with currentLog - proceed to expense tracker
+  //return <Redirect href="/(main)/screen1" />;
 }

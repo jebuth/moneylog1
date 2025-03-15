@@ -11,22 +11,23 @@ import {
   Platform,
   Dimensions,
   Animated,
-  Modal
+  Modal,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context"
 import { useAuth } from '../../contexts/AuthContext';
 import {useTheme} from '../../contexts/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import CategorySelectorModal from '../../components/CategorySelectorModal';
-//import { StatusBar } from 'expo-status-bar';
-//import { useLogContext } from '../../contexts/LogContext';
+import { useRouter } from 'expo-router';
 
 
 const { width, height } = Dimensions.get('window');
 
 export default function ExpenseTracker() {
-  const { user, currentLog, updateLog } = useAuth();
+  const { user, currentLog, updateLog, isLoading } = useAuth();
   const {theme} = useTheme();
+  const router = useRouter();
   
   // Trip information
   // Trip information - now from currentLog
@@ -51,7 +52,16 @@ export default function ExpenseTracker() {
       setCategories(currentLog.categories)
       setSelectedCategory({})
     }
+
+    //router.replace('/(main)/screen2');
   }, [currentLog]);
+
+  // If no current log, redirect to screen2 (logs list)
+  // useEffect(() => {
+  //   if (!currentLog) {
+  //     router.replace('/(main)/screen2');
+  //   }
+  // }, [currentLog, router]);
 
   // Input states
   //const [inputAmount, setInputAmount] = useState('320.33');
@@ -67,6 +77,15 @@ export default function ExpenseTracker() {
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
 
 
+    // Show loading indicator while currentLog is being fetched
+    if (isLoading || !currentLog) {
+      return (
+        <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+          <ActivityIndicator size="large" color={theme.accent} />
+          <Text style={{ color: theme.text, marginTop: 20 }}>Loading log data...</Text>
+        </View>
+      );
+    }
   // Categories data with focus on Airfare for recent transactions
   // const [categories, setCategories] = useState([
   //   { 

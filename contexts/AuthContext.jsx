@@ -9,6 +9,20 @@ import {
   GoogleAuthProvider, 
   signInWithCredential 
 } from 'firebase/auth';
+import { 
+  getFirestore, 
+  collection, 
+  doc, 
+  getDoc, 
+  getDocs, 
+  setDoc, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  query, 
+  where, 
+  orderBy 
+} from 'firebase/firestore';
 import * as Google from 'expo-auth-session/providers/google';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert, Platform } from 'react-native';
@@ -21,6 +35,9 @@ import { firebaseConfig, googleAuthConfig } from '../config/firebase';
 // console.log(googleAuthConfig)setcurr
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+
+// Initialize Firestore
+const db = getFirestore(app);
 
 // Create the authentication context
 const AuthContext = createContext();
@@ -55,11 +72,12 @@ export function AuthProvider({ children }) {
     }
   }, [response]);
 
-  // Handle Firebase auth state changes
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        // User is signed in
+ // Handle Firebase auth state changes
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    if (firebaseUser) {
+      // User is signed in
+      try {
         // Convert Firebase user to your app's user format
         const appUser = {
           id: firebaseUser.uid,
@@ -71,11 +89,7 @@ export function AuthProvider({ children }) {
             notifications: true
           },
           data: {
-            items: [
-              { id: 1, name: 'Item 1' },
-              { id: 2, name: 'Item 2' },
-              { id: 3, name: 'Item 3' }
-            ]
+            items: []
           }
         };
         
@@ -84,33 +98,90 @@ export function AuthProvider({ children }) {
         
         // Save user to AsyncStorage
         saveUserToStorage(appUser);
-      } else {
-        // User is signed out
-        setUser(null);
-        AsyncStorage.removeItem('user');
+        
+        // Fetch user logs from Firestore
+        await fetchUserLogs(firebaseUser.uid);
+
+
+
+      } catch (error) {
+        console.error('Error handling user authentication:', error);
       }
-      setIsLoading(false);
+    } else {
+      // User is signed out
+      setUser(null);
+      setLogs([]);
+      setCurrentLog(null);
+      AsyncStorage.removeItem('user');
+    }
+    setIsLoading(false);
+  });
+
+  // Cleanup the observer on unmount
+  return () => unsubscribe();
+}, []);
+
+// Function to fetch user logs from Firestore
+const fetchUserLogs = async (userId) => {
+  try {
+    // Set loading state
+    setIsLoading(true);
+    
+    // Query logs collection for documents where userId matches
+    const logsRef = collection(db, 'logs');
+    const q = query(
+      logsRef, 
+      where('userId', '==', userId),
+      orderBy('date', 'desc')
+    );
+    
+    const querySnapshot = await getDocs(q);
+    
+    // Map the Firestore documents to your logs format
+    const userLogs = [];
+    
+    querySnapshot.forEach((doc) => {
+      const logData = doc.data();
+      userLogs.push({
+        id: doc.id,
+        logTitle: logData.logTitle,
+        totalAmount: logData.totalAmount,
+        date: logData.date,
+        categories: logData.categories || [],
+        transactions: logData.transactions || []
+      });
     });
 
-    // Check for stored user credentials
-    const checkLoginStatus = async () => {
-      try {
-        const savedUser = await AsyncStorage.getItem('user');
-        if (savedUser) {
-          setUser(JSON.parse(savedUser));
-        }
-      } catch (error) {
-        console.error('Error checking login status:', error);
-      } finally {
-        // Firebase's onAuthStateChanged will set isLoading to false
+      // If no logs exist yet, create initial sample data
+      if (userLogs.length === 0) {
+        console.log('creating initial log')
+       userLogs.push( await createInitialLogs(userId));
       }
-    };
-
-    checkLoginStatus();
-
-    // Cleanup the observer on unmount
-    return () => unsubscribe();
-  }, []);
+    
+    // Update logs state
+    setLogs(userLogs);
+    
+    // Set current log to the most recent one if available
+    if (userLogs.length > 0) {
+      setCurrentLog(userLogs[0]);
+    }
+    
+    console.log(`Fetched ${userLogs.length} logs for user`);
+    
+  } catch (error) {
+      console.error('Error fetching user logs:', error);
+      // More detailed error logging
+      if (error.code) {
+        console.error('Error code:', error.code);
+      }
+      if (error.message) {
+        console.error('Error message:', error.message);
+      }
+      throw error;
+  } finally {
+    setIsLoading(false);
+  }
+};
 
 
   useEffect(() => {
@@ -496,86 +567,318 @@ export function AuthProvider({ children }) {
         transactions: []
       },
     ]);
-    
-    // Add a log
-    const addLog = (log) => {
-      setLogs([log, ...logs]);
-    };
-    
-    const updateLog = (amount, description, categoryName, date) => {
-      amount = toFixedNumber(amount, 2);
-      
-      // Create a new transaction object with a unique ID
-      let newTransaction = {
-        id: Date.now().toString(),
-        amount,
-        description,
-        category: categoryName,
-        date
-      };
-    
-      if (!currentLog) {
-        console.error("No current log selected");
-        return;
-      }
-    
-      // Create a deep copy of the current log to avoid direct state mutation
-      const updatedLog = { ...currentLog };
-      
-      // Add newTransaction to the currentLog.transactions
-      updatedLog.transactions = [...(updatedLog.transactions || []), newTransaction];
-      
-      // Update the total amount of the log - ensure it exists and is a number
-      const currentAmount = typeof updatedLog.totalAmount === 'number' ? updatedLog.totalAmount : 0;
-      updatedLog.totalAmount = parseFloat((currentAmount + amount).toFixed(2));
-      
-      // Update currentLog.categories with the newTransaction
-      if (updatedLog.categories && updatedLog.categories.length > 0) {
-        updatedLog.categories = updatedLog.categories.map(category => {
-          // If this is the category for the new transaction
-          if (category.name === categoryName) {
-            const categoryAmount = typeof category.amount === 'number' ? category.amount : 0;
-            return {
-              ...category,
-              // Increase the amount for this category
-              amount: parseFloat((categoryAmount + amount).toFixed(2)),
-              // Increment transaction count
-              transactionCount: (category.transactionCount || 0) + 1,
 
-            };
-          }
-          return category;
-        });
+
+    const createInitialLogs = async (userId) => {
+      try {
+        // Create a sample log
+        const sampleLog = {
+          userId: userId,
+          logTitle: 'initial log',
+          totalAmount: 0,
+          date: new Date().toISOString().split('T')[0],
+          categories: [
+            {
+              id: 1,
+              name: "Transportation",
+              amount: 0,
+              percentage: 0,
+              transactionCount: 0,
+            },
+            {
+              id: 2,
+              name: "Food",
+              amount: 0,
+              percentage: 0,
+              transactionCount: 0,
+            },
+            {
+              id: 3,
+              name: "Accommodation",
+              amount: 0,
+              percentage: 0,
+              transactionCount: 0,
+            }
+          ],
+          transactions: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
         
-        // Recalculate percentages for all categories
-        const totalLogAmount = updatedLog.totalAmount;
-        if (totalLogAmount > 0) {
-          updatedLog.categories = updatedLog.categories.map(category => ({
-            ...category,
-            percentage: Math.round(((category.amount || 0) / totalLogAmount) * 100)
-          }));
-        }
+        // Add to Firestore
+        const logsRef = collection(db, 'logs');
+        await addDoc(logsRef, sampleLog);
+        
+        console.log('Created initial log for new user');
+        
+        // Fetch the logs again (which will now include our new log)
+        return await fetchUserLogs(userId);
+      } catch (error) {
+        console.error('Error creating initial logs:', error);
+        throw error;
       }
-      
-      // Update logs array with the modified log
-      const updatedLogs = logs.map(log => 
-        log.id === updatedLog.id ? updatedLog : log
-      );
-      
-      // Update both states
-      setLogs(updatedLogs);
-      setCurrentLog(updatedLog);
+    };
+
+    // Add a log to Firestore
+const addLog = async (logData) => {
+  // try {
+  //   if (!user) {
+  //     throw new Error('No authenticated user');
+  //   }
+    
+  //   // Add userId to the log data
+  //   const newLog = {
+  //     ...logData,
+  //     userId: user.id,
+  //     createdAt: new Date().toISOString(),
+  //     updatedAt: new Date().toISOString()
+  //   };
+    
+  //   // Add to Firestore
+  //   const logsRef = collection(db, 'logs');
+  //   const docRef = await addDoc(logsRef, newLog);
+    
+  //   // Get the document with the auto-generated ID
+  //   // const addedLog = {
+  //   //   id: docRef.id,
+  //   //   ...newLog
+  //   // };
+    
+  //   //Get the document with the auto-generated ID
+  //   const addedLog = {
+  //     ...docRef
+  //   };
+
+  //   // the issue is here!!!!!!
+
+  //   console.log(JSON.stringify(addedLog))
+  //   // Update local state
+  //   setLogs([addedLog, ...logs]);
+  //   //setLogs(prevLogs => [addedLog, ...prevLogs]);
+    
+  //   // Set as current log
+  //   setCurrentLog(addedLog);
+    
+  //   return addedLog;
+  // } catch (error) {
+  //   console.error('Error adding log:', error);
+  //   throw error;
+  // }
+
+  try {
+    // Add to Firestore
+    const docRef = await addDoc(collection(db, 'logs'), {
+      ...logData,
+      userId: user.id,
+      createdAt: new Date().toISOString()
+    });
+    
+    // Create complete log object with ID
+    const newLog = {
+      id: docRef.id,  // Explicitly set the ID field
+      ...logData,
+      userId: user.id,
+      createdAt: new Date().toISOString()
     };
     
-    // Delete a log
-    const deleteLog = (logId) => {
-      setLogs(logs.filter(log => log.id !== logId));
-      
-      // If deleted log is current log, clear currentLog. what to display on screen1?
-      if (currentLog && currentLog.id === logId) {
-        setCurrentLog(null);
-      }
+    console.log('Added new log with ID:', newLog.id);
+    
+    // Update state with the new log that includes the ID
+    setLogs(prevLogs => [newLog, ...prevLogs]);
+    
+    return newLog;
+  } catch (error) {
+    console.error('Error adding log:', error);
+    throw error;
+  }
+};
+
+// Update a log in Firestore
+const updateLog = async (amount, description, categoryName, date) => {
+  try {
+    if (!user || !currentLog) {
+      console.error("No user or current log selected");
+      return;
+    }
+    
+    amount = toFixedNumber(amount, 2);
+    
+    // Create transaction object
+    let newTransaction = {
+      id: Date.now().toString(),
+      amount,
+      description,
+      category: categoryName,
+      date: date.toISOString().split('T')[0]
     };
+    
+    // Create updated log object
+    const updatedLog = { ...currentLog };
+    
+    // Add transaction
+    updatedLog.transactions = [...(updatedLog.transactions || []), newTransaction];
+    
+    // Update amount
+    const currentAmount = typeof updatedLog.totalAmount === 'number' ? updatedLog.totalAmount : 0;
+    updatedLog.totalAmount = parseFloat((currentAmount + amount).toFixed(2));
+    
+    // Update categories
+    if (updatedLog.categories && updatedLog.categories.length > 0) {
+      updatedLog.categories = updatedLog.categories.map(category => {
+        if (category.name === categoryName) {
+          const categoryAmount = typeof category.amount === 'number' ? category.amount : 0;
+          return {
+            ...category,
+            amount: parseFloat((categoryAmount + amount).toFixed(2)),
+            transactionCount: (category.transactionCount || 0) + 1,
+          };
+        }
+        return category;
+      });
+      
+      // Recalculate percentages
+      const totalLogAmount = updatedLog.totalAmount;
+      if (totalLogAmount > 0) {
+        updatedLog.categories = updatedLog.categories.map(category => ({
+          ...category,
+          percentage: Math.round(((category.amount || 0) / totalLogAmount) * 100)
+        }));
+      }
+    }
+    
+    // Update in Firestore
+    const logRef = doc(db, 'logs', updatedLog.id);
+    await updateDoc(logRef, {
+      totalAmount: updatedLog.totalAmount,
+      categories: updatedLog.categories,
+      transactions: updatedLog.transactions,
+      updatedAt: new Date().toISOString()
+    });
+    
+    // Update local state
+    const updatedLogs = logs.map(log => 
+      log.id === updatedLog.id ? updatedLog : log
+    );
+    
+    setLogs(updatedLogs);
+    setCurrentLog(updatedLog);
+    
+  } catch (error) {
+    console.error('Error updating log:', error);
+  }
+};
+
+// Delete a log from Firestore
+const deleteLog = async (logId) => {
+  try {
+    if (!user) {
+      throw new Error('No authenticated user');
+    }
+    
+    console.log('Calling deleteLog with logId: ' + logId)
+
+    // Delete from Firestore
+    await deleteDoc(doc(db, 'logs', logId));
+    
+    console.log('After deleteLog')
+
+    // Update local state
+    setLogs(logs.filter(log => log.id !== logId));
+    
+    // If deleted log is current log, clear currentLog
+    if (currentLog && currentLog.id === logId) {
+
+      console.log("deleted log is current log")
+
+      const remainingLogs = logs.filter(log => log.id !== logId);
+      setCurrentLog(remainingLogs.length > 0 ? remainingLogs[0] : null);
+    }
+    
+  } catch (error) {
+    console.error('Error deleting log:', error);
+    throw error;
+  }
+};
+    
+    // // Add a log
+    // const addLog = (log) => {
+    //   setLogs([log, ...logs]);
+    // };
+    
+    // const updateLog = (amount, description, categoryName, date) => {
+    //   amount = toFixedNumber(amount, 2);
+      
+    //   // Create a new transaction object with a unique ID
+    //   let newTransaction = {
+    //     id: Date.now().toString(),
+    //     amount,
+    //     description,
+    //     category: categoryName,
+    //     date
+    //   };
+    
+    //   if (!currentLog) {
+    //     console.error("No current log selected");
+    //     return;
+    //   }
+    
+    //   // Create a deep copy of the current log to avoid direct state mutation
+    //   const updatedLog = { ...currentLog };
+      
+    //   // Add newTransaction to the currentLog.transactions
+    //   updatedLog.transactions = [...(updatedLog.transactions || []), newTransaction];
+      
+    //   // Update the total amount of the log - ensure it exists and is a number
+    //   const currentAmount = typeof updatedLog.totalAmount === 'number' ? updatedLog.totalAmount : 0;
+    //   updatedLog.totalAmount = parseFloat((currentAmount + amount).toFixed(2));
+      
+    //   // Update currentLog.categories with the newTransaction
+    //   if (updatedLog.categories && updatedLog.categories.length > 0) {
+    //     updatedLog.categories = updatedLog.categories.map(category => {
+    //       // If this is the category for the new transaction
+    //       if (category.name === categoryName) {
+    //         const categoryAmount = typeof category.amount === 'number' ? category.amount : 0;
+    //         return {
+    //           ...category,
+    //           // Increase the amount for this category
+    //           amount: parseFloat((categoryAmount + amount).toFixed(2)),
+    //           // Increment transaction count
+    //           transactionCount: (category.transactionCount || 0) + 1,
+
+    //         };
+    //       }
+    //       return category;
+    //     });
+        
+    //     // Recalculate percentages for all categories
+    //     const totalLogAmount = updatedLog.totalAmount;
+    //     if (totalLogAmount > 0) {
+    //       updatedLog.categories = updatedLog.categories.map(category => ({
+    //         ...category,
+    //         percentage: Math.round(((category.amount || 0) / totalLogAmount) * 100)
+    //       }));
+    //     }
+    //   }
+      
+    //   // Update logs array with the modified log
+    //   const updatedLogs = logs.map(log => 
+    //     log.id === updatedLog.id ? updatedLog : log
+    //   );
+      
+    //   // Update both states
+    //   setLogs(updatedLogs);
+    //   setCurrentLog(updatedLog);
+    // };
+    
+    // // Delete a log
+    // const deleteLog = (logId) => {
+    //   setLogs(logs.filter(log => log.id !== logId));
+      
+    //   // If deleted log is current log, clear currentLog. what to display on screen1?
+    //   if (currentLog && currentLog.id === logId) {
+    //     setCurrentLog(null);
+    //   }
+    // };
 
 
     // ensure variables are number format decimals
@@ -616,8 +919,8 @@ export function AuthProvider({ children }) {
       setCurrentLog,
       addLog,
       updateLog,
-      deleteLog
-
+      deleteLog,
+      fetchUserLogs
     }}>
       {children}
     </AuthContext.Provider>
