@@ -58,9 +58,9 @@ export default function MainLayout() {
         name="screen1"
         component={Screen1}
         options={{
-          tabBarLabel: 'Profile',
+          tabBarLabel: 'Spend',
           tabBarIcon: ({ color }) => (
-            <Ionicons name="person" color={color} size={22} />
+            <Ionicons name="wallet-outline" color={color} size={22} />
           ),
         }}
       />
@@ -68,9 +68,9 @@ export default function MainLayout() {
         name="screen2"
         component={Screen2}
         options={{
-          tabBarLabel: 'Items',
+          tabBarLabel: 'Logs',
           tabBarIcon: ({ color }) => (
-            <Ionicons name="list" color={color} size={22} />
+            <Ionicons name="document-text-outline" color={color} size={22} />
           ),
         }}
       />
@@ -80,7 +80,7 @@ export default function MainLayout() {
         options={{
           tabBarLabel: 'Settings',
           tabBarIcon: ({ color }) => (
-            <Ionicons name="settings" color={color} size={22} />
+            <Ionicons name="cog-outline" color={color} size={22} />
           ),
         }}
       />

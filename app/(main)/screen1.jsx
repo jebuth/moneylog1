@@ -20,6 +20,7 @@ import {useTheme} from '../../contexts/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import CategorySelectorModal from '../../components/CategorySelectorModal';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 
 const { width, height } = Dimensions.get('window');
@@ -81,76 +82,6 @@ export default function ExpenseTracker() {
   // Category selection
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
 
-
-
-    // Show loading indicator while currentLog is being fetched
-if (isLoading || !currentLog) {
-  return (
-    <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
-      <ActivityIndicator size="large" color={theme.accent} />
-      <Text style={{ color: theme.text, marginTop: 20 }}>Loading log data...</Text>
-    </View>
-  );
-}
-
-// Handle the case where no currentLog exists
-// if (!currentLog) {
-//   return (
-//     <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
-//       <Text style={{ color: theme.text, marginBottom: 20 }}>No logs selected.</Text>
-//       <TouchableOpacity
-//         style={[styles.logButton, {backgroundColor: theme.purple, paddingHorizontal: 20}]}
-//         onPress={() => router.replace('/(main)/screen2')}
-//       >
-//         <Text style={styles.logButtonText}>Select a log</Text>
-//       </TouchableOpacity>
-//     </View>
-//   );
-// }
-  // Categories data with focus on Airfare for recent transactions
-  // const [categories, setCategories] = useState([
-  //   { 
-  //     id: 1, 
-  //     name: 'Airfare', 
-  //     amount: 330, 
-  //     percentage: 5, 
-  //     transactions: 2,
-  //     color: '#5C5CFF' // Purple color
-  //   },
-  //   { 
-  //     id: 2, 
-  //     name: 'Transportation', 
-  //     amount: 330, 
-  //     percentage: 5, 
-  //     transactions: 2,
-  //     color: '#5C5CFF' 
-  //   },
-  //   { 
-  //     id: 3, 
-  //     name: 'Entertainment', 
-  //     amount: 330, 
-  //     percentage: 5, 
-  //     transactions: 2,
-  //     color: '#5C5CFF'
-  //   },
-  //   { 
-  //     id: 4, 
-  //     name: 'Food', 
-  //     amount: 330, 
-  //     percentage: 5, 
-  //     transactions: 2,
-  //     color: '#5C5CFF'
-  //   },
-  //   { 
-  //     id: 5, 
-  //     name: 'Groceries', 
-  //     amount: 330, 
-  //     percentage: 5, 
-  //     transactions: 2,
-  //     color: '#5C5CFF' 
-  //   },
-  // ]);
-  
   // Handle amount input changes
   const handleAmountChange = (text) => {
     // Remove all non-numeric characters
@@ -229,6 +160,38 @@ if (isLoading || !currentLog) {
     setInputAmount('');
     setDescription('');
   };
+
+  // Show loading indicator while currentLog is being fetched
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={theme.accent} />
+        <Text style={{ color: theme.text, marginTop: 20 }}>Loading log data...</Text>
+      </View>
+    );
+  }
+
+  // Show message when no log is selected
+  if (!currentLog) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center', padding: 20 }]}>
+        <Ionicons name="document-text-outline" size={80} color={theme.subtext} style={{ marginBottom: 20 }} />
+        <Text style={[styles.noLogTitle, { color: theme.text }]}>No Log Selected</Text>
+        <Text style={[styles.noLogDescription, { color: theme.subtext, textAlign: 'center', marginBottom: 30 }]}>
+          You need to create or select a log before you can add expenses.
+        </Text>
+        <TouchableOpacity 
+          style={[styles.createLogButton, {backgroundColor: theme.purple}]}
+          //style={[styles.logButton, {backgroundColor: theme.purple, paddingHorizontal: 30}]}
+          onPress={() => router.replace('/(main)/screen2')}
+        >
+          <Ionicons name="add-circle-outline" size={20} color="#FFF" style={{ marginRight: 8 }} />
+          <Text style={[styles.logButtonText]}>CREATE A LOG</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
 
   return (
     <>
@@ -728,4 +691,29 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
+
+  // if !currentLog
+  noLogTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  noLogDescription: {
+    fontSize: 16,
+    lineHeight: 22,
+    maxWidth: 300,
+  },
+  createLogButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#5C5CFF',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    width: '80%',         // Set width to a percentage of the screen
+    maxWidth: 300,        // Maximum width
+    height: 56,           // Fixed height
+    marginTop: 20,        // Give some spacing from the text
+  }
 });

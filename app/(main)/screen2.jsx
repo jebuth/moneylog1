@@ -96,11 +96,32 @@ const filteredLogs = logs.filter(log =>
   }, [openSwipeableId]);
   
   // Navigate to expense screen with the selected log
+  // const navigateToExpenseScreen = useCallback((log) => {
+  //   // Close any open swipeable
+  //   closeOpenSwipeable();
+  //   // Set the current log in context
+  //   setCurrentLog(log);
+  //   // Navigate to screen1
+  //   navigation.navigate('screen1');
+  // }, [closeOpenSwipeable, navigation, setCurrentLog]);
+  // Navigate to expense screen with the selected log
   const navigateToExpenseScreen = useCallback((log) => {
     // Close any open swipeable
     closeOpenSwipeable();
+    
+    if (!log) {
+      // Show alert if no log is available
+      Alert.alert(
+        "No Log Selected",
+        "Please create a trip first before adding expenses.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+    
     // Set the current log in context
     setCurrentLog(log);
+    
     // Navigate to screen1
     navigation.navigate('screen1');
   }, [closeOpenSwipeable, navigation, setCurrentLog]);
@@ -417,18 +438,33 @@ const filteredLogs = logs.filter(log =>
           contentContainerStyle={styles.listContainer}
           onScroll={closeOpenSwipeable}
           removeClippedSubviews={false} // Important for animations
+          // ListEmptyComponent={
+          //   <View style={styles.emptyContainer}>
+          //     <Text style={[styles.emptyText, {color: theme.text}]}>
+          //       {searchQuery.length > 0 
+          //         ? "No logs match your search" 
+          //         : "You haven't created any logs yet"}
+          //     </Text>
+          //     <TouchableOpacity 
+          //       style={styles.emptyButton}
+          //       onPress={() => setShowNewLogModal(true)}
+          //     >
+          //       <Text style={[styles.emptyButtonText, {color: theme.text}]}>Create Your First Log</Text>
+          //     </TouchableOpacity>
+          //   </View>
+          // }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={[styles.emptyText, {color: theme.text}]}>
                 {searchQuery.length > 0 
-                  ? "No logs match your search" 
-                  : "You haven't created any logs yet"}
+                  ? "No trips match your search" 
+                  : "You haven't created any trips yet"}
               </Text>
               <TouchableOpacity 
                 style={styles.emptyButton}
                 onPress={() => setShowNewLogModal(true)}
               >
-                <Text style={[styles.emptyButtonText, {color: theme.text}]}>Create Your First Log</Text>
+                <Text style={[styles.emptyButtonText, {color: theme.text}]}>Create Your First Trip</Text>
               </TouchableOpacity>
             </View>
           }
