@@ -11,7 +11,7 @@ import {
   Platform,
   Dimensions,
   Animated,
-  Modal,
+  Alert,
   ActivityIndicator
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context"
@@ -162,7 +162,7 @@ export default function ExpenseTracker() {
   };
 
   // Show loading indicator while currentLog is being fetched
-  if (isLoading) {
+  if (isLoading && !currentLog) {
     return (
       <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={theme.accent} />
@@ -178,7 +178,7 @@ export default function ExpenseTracker() {
         <Ionicons name="document-text-outline" size={80} color={theme.subtext} style={{ marginBottom: 20 }} />
         <Text style={[styles.noLogTitle, { color: theme.text }]}>No Log Selected</Text>
         <Text style={[styles.noLogDescription, { color: theme.subtext, textAlign: 'center', marginBottom: 30 }]}>
-          You need to create or select a log before you can add expenses.
+          You need to create a log before you can add expenses to it.
         </Text>
         <TouchableOpacity 
           style={[styles.createLogButton, {backgroundColor: theme.purple}]}
@@ -195,13 +195,9 @@ export default function ExpenseTracker() {
 
   return (
     <>
-    {/* <StatusBar translucent backgroundColor="#121212" barStyle={"dark-content"} /> */}
-    {/* <StatusBar barStyle={"dark-content"} backgroundColor={'#ccc'} /> */}
-    {/* <SafeAreaView style={styles.container}> */}
       {/* Header Card with Trip Name and Amount */}
       <View style={[styles.container, {backgroundColor: theme.background}]}>
       <LinearGradient
-        //colors={['#0F0F0F', '#1B1928', '#251E58', '#3F339F']}
         colors={theme.gradient}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -216,21 +212,69 @@ export default function ExpenseTracker() {
           
           <View style={styles.quickCategoryContainer}>
             <TouchableOpacity
-              style={[styles.quickCategoryButton, { backgroundColor: '#42404F' }]}
-              onPress={() => {/* No functionality yet */}}
-            />
+              style={[styles.quickCategoryButton, {backgroundColor: '#42404F' }]}
+              onPress={() => {
+                Alert.alert(
+                  "View Analytics",  // Title
+                  "This feature is not yet available.",  // Message
+                  [
+                    { text: "OK", onPress: () => console.log("OK Pressed") }
+                  ]
+                );
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', top: 10 }}>
+                  <Ionicons name="analytics-outline" size={35} color="#999" />
+              </View>
+            </TouchableOpacity>
             <TouchableOpacity
               style={[styles.quickCategoryButton, { backgroundColor: '#42404F' }]}
-              onPress={() => {/* No functionality yet */}}
-            />
+              onPress={() => {
+                Alert.alert(
+                  "View Chart",  // Title
+                  "This feature is not yet available.",  // Message
+                  [
+                    { text: "OK", onPress: () => console.log("OK Pressed") }
+                  ]
+                );
+              }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', top: 8 }}>
+                    <Ionicons name="pie-chart-outline" size={35} color="#999" />
+                </View>
+              </TouchableOpacity>
             <TouchableOpacity
               style={[styles.quickCategoryButton, { backgroundColor: '#42404F' }]}
-              onPress={() => {/* No functionality yet */}}
-            />
+              onPress={() => {
+                Alert.alert(
+                  "View Stats",  // Title
+                  "This feature is not yet available.",  // Message
+                  [
+                    { text: "OK", onPress: () => console.log("OK Pressed") }
+                  ]
+                );
+              }}
+            >
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', top: 10 }}>
+                  <Ionicons name="stats-chart-outline" size={30} color="#999" />
+                </View>
+            </TouchableOpacity>
             <TouchableOpacity
               style={[styles.quickCategoryButton, { backgroundColor: '#42404F' }]}
-              onPress={() => {/* No functionality yet */}}
-            />
+              onPress={() => {
+                Alert.alert(
+                  "Duplcate Log",  // Title
+                  "This feature is not yet available.",  // Message
+                  [
+                    { text: "OK", onPress: () => console.log("OK Pressed") }
+                  ]
+                );
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', top: 10 }}>
+                  <Ionicons name="duplicate-outline" size={35} color="#999" />
+              </View>
+              </TouchableOpacity>
           </View>
         </View>
       </LinearGradient>

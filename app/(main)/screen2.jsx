@@ -387,7 +387,6 @@ const filteredLogs = logs.filter(log =>
           </View>
         );
       }
-    
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -438,33 +437,18 @@ const filteredLogs = logs.filter(log =>
           contentContainerStyle={styles.listContainer}
           onScroll={closeOpenSwipeable}
           removeClippedSubviews={false} // Important for animations
-          // ListEmptyComponent={
-          //   <View style={styles.emptyContainer}>
-          //     <Text style={[styles.emptyText, {color: theme.text}]}>
-          //       {searchQuery.length > 0 
-          //         ? "No logs match your search" 
-          //         : "You haven't created any logs yet"}
-          //     </Text>
-          //     <TouchableOpacity 
-          //       style={styles.emptyButton}
-          //       onPress={() => setShowNewLogModal(true)}
-          //     >
-          //       <Text style={[styles.emptyButtonText, {color: theme.text}]}>Create Your First Log</Text>
-          //     </TouchableOpacity>
-          //   </View>
-          // }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={[styles.emptyText, {color: theme.text}]}>
                 {searchQuery.length > 0 
-                  ? "No trips match your search" 
-                  : "You haven't created any trips yet"}
+                  ? "No logs match your search" 
+                  : "You haven't created any logs yet"}
               </Text>
               <TouchableOpacity 
                 style={styles.emptyButton}
                 onPress={() => setShowNewLogModal(true)}
               >
-                <Text style={[styles.emptyButtonText, {color: theme.text}]}>Create Your First Trip</Text>
+                <Text style={[styles.emptyButtonText, {color: theme.text}]}>Create Your First Log</Text>
               </TouchableOpacity>
             </View>
           }

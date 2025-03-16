@@ -72,6 +72,15 @@ export function AuthProvider({ children }) {
     }
   }, [response]);
 
+  useEffect(() => {
+    // Set the first log as current when logs change
+    if (logs.length > 0 && !currentLog) {
+      console.log('Setting currentLog from useEffect: logs changed');
+      setCurrentLog(logs[0]);
+    }
+  }, [logs, currentLog]);
+
+
   // Handle Firebase auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -122,13 +131,6 @@ export function AuthProvider({ children }) {
   }, []);
 
 
-  useEffect(() => {
-    // Set the first log as current when logs change
-    if (logs.length > 0 && !currentLog) {
-      console.log('Setting currentLog from useEffect: logs changed');
-      setCurrentLog(logs[0]);
-    }
-  }, [logs, currentLog]);
 
   // Function to fetch user logs from Firestore
   const fetchUserLogs = async (userId) => {
@@ -579,7 +581,7 @@ export function AuthProvider({ children }) {
           categories: [
             {
               id: 1,
-              name: "Transportation",
+              name: "Restaurants",
               amount: 0,
               percentage: 0,
               transactionCount: 0,
@@ -587,7 +589,7 @@ export function AuthProvider({ children }) {
             },
             {
               id: 2,
-              name: "Food",
+              name: "Gifts",
               amount: 0,
               percentage: 0,
               transactionCount: 0,
@@ -595,7 +597,63 @@ export function AuthProvider({ children }) {
             },
             {
               id: 3,
-              name: "Accommodation",
+              name: "Health/Medical",
+              amount: 0,
+              percentage: 0,
+              transactionCount: 0,
+              color: '#3F339F'
+            },
+            {
+              id: 4,
+              name: "Home",
+              amount: 0,
+              percentage: 0,
+              transactionCount: 0,
+              color: '#3F339F'
+            },
+            {
+              id: 5,
+              name: "Transportation",
+              amount: 0,
+              percentage: 0,
+              transactionCount: 0,
+              color: '#3F339F'
+            },
+            {
+              id: 6,
+              name: "Personal",
+              amount: 0,
+              percentage: 0,
+              transactionCount: 0,
+              color: '#3F339F'
+            },
+            {
+              id: 7,
+              name: "Pets",
+              amount: 0,
+              percentage: 0,
+              transactionCount: 0,
+              color: '#3F339F'
+            },
+            {
+              id: 8,
+              name: "Utilities",
+              amount: 0,
+              percentage: 0,
+              transactionCount: 0,
+              color: '#3F339F'
+            },
+            {
+              id: 9,
+              name: "Entertainment",
+              amount: 0,
+              percentage: 0,
+              transactionCount: 0,
+              color: '#3F339F'
+            },
+            {
+              id: 9,
+              name: "Groceries",
               amount: 0,
               percentage: 0,
               transactionCount: 0,
