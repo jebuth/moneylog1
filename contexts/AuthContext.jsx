@@ -652,7 +652,7 @@ export function AuthProvider({ children }) {
               color: '#3F339F'
             },
             {
-              id: 9,
+              id: 10,
               name: "Groceries",
               amount: 0,
               percentage: 0,
