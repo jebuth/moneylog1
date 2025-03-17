@@ -215,8 +215,8 @@ export default function ExpenseTracker() {
               style={[styles.quickCategoryButton, {backgroundColor: '#42404F' }]}
               onPress={() => {
                 Alert.alert(
-                  "View Analytics",  // Title
-                  "This feature is not yet available.",  // Message
+                  "Analytics",  // Title
+                  "This feature is coming soon.",  // Message
                   [
                     { text: "OK", onPress: () => console.log("OK Pressed") }
                   ]
@@ -232,14 +232,14 @@ export default function ExpenseTracker() {
               onPress={() => {
                 Alert.alert(
                   "View Chart",  // Title
-                  "This feature is not yet available.",  // Message
+                  "This feature is coming soon.",  // Message
                   [
                     { text: "OK", onPress: () => console.log("OK Pressed") }
                   ]
                 );
               }}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', top: 8 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', top: 10 }}>
                     <Ionicons name="pie-chart-outline" size={35} color="#999" />
                 </View>
               </TouchableOpacity>
@@ -248,14 +248,14 @@ export default function ExpenseTracker() {
               onPress={() => {
                 Alert.alert(
                   "View Stats",  // Title
-                  "This feature is not yet available.",  // Message
+                  "This feature is coming soon.",  // Message
                   [
                     { text: "OK", onPress: () => console.log("OK Pressed") }
                   ]
                 );
               }}
             >
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', top: 10 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', top: 12 }}>
                   <Ionicons name="stats-chart-outline" size={30} color="#999" />
                 </View>
             </TouchableOpacity>
@@ -263,8 +263,8 @@ export default function ExpenseTracker() {
               style={[styles.quickCategoryButton, { backgroundColor: '#42404F' }]}
               onPress={() => {
                 Alert.alert(
-                  "Duplcate Log",  // Title
-                  "This feature is not yet available.",  // Message
+                  "Duplicate Log",  // Title
+                  "This feature is coming soon.",  // Message
                   [
                     { text: "OK", onPress: () => console.log("OK Pressed") }
                   ]
