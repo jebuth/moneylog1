@@ -237,6 +237,11 @@ const filteredLogs = logs.filter(log =>
     // Animate new item
     configureLayoutAnimation();
     
+    // console.log('SCREEN2 addedLog')
+    // console.log(JSON.stringify(addedLog));
+
+    //setCurrentLog(addedLog);
+
     setLogs([addedLog, ...logs]);
     setSearchQuery('')
     setShowNewLogModal(false);
@@ -244,7 +249,7 @@ const filteredLogs = logs.filter(log =>
     setNewLogAmount('');
     
     // Navigate to the log detail screen with the new log
-    navigateToExpenseScreen(logData);
+    //navigateToExpenseScreen(logData);
   };
   
   // Handle deleting a log with animation

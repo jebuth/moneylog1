@@ -1,6 +1,6 @@
 import React from 'react';
 import {SafeAreaView} from 'react-native'
-import { Slot, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
 import { AuthProvider } from '../contexts/AuthContext';
 //import {LogProvider} from '../contexts/LogContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -8,9 +8,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { ThemeProvider } from '../contexts/ThemeContext';
 
-
-
 export default function RootLayout() {
+
+
   return (
     <>
     <SafeAreaProvider>
@@ -20,7 +20,10 @@ export default function RootLayout() {
           <ThemeProvider>
           <Stack
             screenOptions={{
-              // headerShown: false,
+              // gestureResponseDistance: {
+              //   horizontal: 200, // Default is around 50, higher number requires longer swipe
+              // },
+              headerShown: false,
               // headerStyle: {
               //   backgroundColor: "green"
               // }

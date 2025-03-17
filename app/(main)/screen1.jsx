@@ -240,7 +240,7 @@ export default function ExpenseTracker() {
               }}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', top: 10 }}>
-                    <Ionicons name="pie-chart-outline" size={35} color="#999" />
+                    <Ionicons name="list-outline" size={35} color="#999" />
                 </View>
               </TouchableOpacity>
             <TouchableOpacity
@@ -256,7 +256,7 @@ export default function ExpenseTracker() {
               }}
             >
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', top: 12 }}>
-                  <Ionicons name="stats-chart-outline" size={30} color="#999" />
+                  <Ionicons name="pie-chart-outline" size={30} color="#999" />
                 </View>
             </TouchableOpacity>
             <TouchableOpacity

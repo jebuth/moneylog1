@@ -704,8 +704,9 @@ const addLog = async (logData) => {
     console.log('Added new log with ID:', newLog.id);
     
     // Update state with the new log that includes the ID
+    //setCurrentLog(newLog);
     setLogs(prevLogs => [newLog, ...prevLogs]);
-    
+
     return newLog;
   } catch (error) {
     console.error('Error adding log:', error);
@@ -732,6 +733,9 @@ const updateLog = async (amount, description, categoryName, date) => {
       date: date.toISOString().split('T')[0]
     };
     
+    console.log('currentLog:')
+    console.log(JSON.stringify(currentLog))
+
     // Create updated log object
     const updatedLog = { ...currentLog };
     
@@ -765,9 +769,17 @@ const updateLog = async (amount, description, categoryName, date) => {
         }));
       }
     }
-    
+
+    console.log('before calling firestore')
+    console.log('updatedLog.Id: ' + updateLog.id);
+    console.log('currentLog.id: ' + currentLog.id);
+
     // Update in Firestore
     const logRef = doc(db, 'logs', updatedLog.id);
+
+    console.log('logref: ')
+    console.log(logRef)
+
     await updateDoc(logRef, {
       totalAmount: updatedLog.totalAmount,
       categories: updatedLog.categories,
@@ -775,6 +787,8 @@ const updateLog = async (amount, description, categoryName, date) => {
       updatedAt: new Date().toISOString()
     });
     
+    console.log('after calling firestore')
+
     // Update local state
     const updatedLogs = logs.map(log => 
       log.id === updatedLog.id ? updatedLog : log
