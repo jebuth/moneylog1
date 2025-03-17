@@ -585,7 +585,7 @@ export function AuthProvider({ children }) {
               amount: 0,
               percentage: 0,
               transactionCount: 0,
-              color: '#3F339F'
+
             },
             {
               id: 2,
@@ -593,7 +593,7 @@ export function AuthProvider({ children }) {
               amount: 0,
               percentage: 0,
               transactionCount: 0,
-              color: '#3F339F'
+    
             },
             {
               id: 3,
@@ -601,7 +601,7 @@ export function AuthProvider({ children }) {
               amount: 0,
               percentage: 0,
               transactionCount: 0,
-              color: '#3F339F'
+
             },
             {
               id: 4,
@@ -609,7 +609,7 @@ export function AuthProvider({ children }) {
               amount: 0,
               percentage: 0,
               transactionCount: 0,
-              color: '#3F339F'
+       
             },
             {
               id: 5,
@@ -617,7 +617,7 @@ export function AuthProvider({ children }) {
               amount: 0,
               percentage: 0,
               transactionCount: 0,
-              color: '#3F339F'
+          
             },
             {
               id: 6,
@@ -625,7 +625,7 @@ export function AuthProvider({ children }) {
               amount: 0,
               percentage: 0,
               transactionCount: 0,
-              color: '#3F339F'
+           
             },
             {
               id: 7,
@@ -633,7 +633,7 @@ export function AuthProvider({ children }) {
               amount: 0,
               percentage: 0,
               transactionCount: 0,
-              color: '#3F339F'
+
             },
             {
               id: 8,
@@ -641,7 +641,7 @@ export function AuthProvider({ children }) {
               amount: 0,
               percentage: 0,
               transactionCount: 0,
-              color: '#3F339F'
+      
             },
             {
               id: 9,
@@ -649,7 +649,7 @@ export function AuthProvider({ children }) {
               amount: 0,
               percentage: 0,
               transactionCount: 0,
-              color: '#3F339F'
+         
             },
             {
               id: 10,
@@ -657,7 +657,7 @@ export function AuthProvider({ children }) {
               amount: 0,
               percentage: 0,
               transactionCount: 0,
-              color: '#3F339F'
+             
             }
           ],
           transactions: [],

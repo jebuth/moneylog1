@@ -148,24 +148,83 @@ const filteredLogs = logs.filter(log =>
       categories: [
         {
           id: 1,
+          name: "Restaurants",
+          amount: 0,
+          percentage: 0,
+          transactionCount: 0,
+
+        },
+        {
+          id: 2,
+          name: "Gifts",
+          amount: 0,
+          percentage: 0,
+          transactionCount: 0,
+
+        },
+        {
+          id: 3,
+          name: "Health/Medical",
+          amount: 0,
+          percentage: 0,
+          transactionCount: 0,
+
+        },
+        {
+          id: 4,
+          name: "Home",
+          amount: 0,
+          percentage: 0,
+          transactionCount: 0,
+   
+        },
+        {
+          id: 5,
           name: "Transportation",
           amount: 0,
           percentage: 0,
           transactionCount: 0,
+      
         },
         {
-          id: 2,
-          name: "Food",
+          id: 6,
+          name: "Personal",
           amount: 0,
           percentage: 0,
           transactionCount: 0,
+       
         },
         {
-          id: 3,
-          name: "Accommodation",
+          id: 7,
+          name: "Pets",
           amount: 0,
           percentage: 0,
           transactionCount: 0,
+
+        },
+        {
+          id: 8,
+          name: "Utilities",
+          amount: 0,
+          percentage: 0,
+          transactionCount: 0,
+  
+        },
+        {
+          id: 9,
+          name: "Entertainment",
+          amount: 0,
+          percentage: 0,
+          transactionCount: 0,
+     
+        },
+        {
+          id: 10,
+          name: "Groceries",
+          amount: 0,
+          percentage: 0,
+          transactionCount: 0,
+         
         }
       ],
       transactions: [],
@@ -342,8 +401,8 @@ const filteredLogs = logs.filter(log =>
               style={styles.logGradient}
             >
               <View style={styles.logContent}>
-                <Text style={[styles.logName, {color: theme.text}]}>{item.logTitle}</Text>
-                <Text style={[styles.logAmount, {color: theme.text}]}>{formatCurrency(item.totalAmount)}</Text>
+                <Text style={[styles.logName, {color: '#fff'}]}>{item.logTitle}</Text>
+                <Text style={[styles.logAmount, {color: '#fff'}]}>{formatCurrency(item.totalAmount)}</Text>
                 <Text style={[styles.logDate, {color: theme.subtext}]}>{item.date}</Text>
                 
                 <View style={styles.actionsRow}>
@@ -442,13 +501,13 @@ const filteredLogs = logs.filter(log =>
               <Text style={[styles.emptyText, {color: theme.text}]}>
                 {searchQuery.length > 0 
                   ? "No logs match your search" 
-                  : "You haven't created any logs yet"}
+                  : "You haven't created any logs yet..."}
               </Text>
               <TouchableOpacity 
                 style={styles.emptyButton}
                 onPress={() => setShowNewLogModal(true)}
               >
-                <Text style={[styles.emptyButtonText, {color: theme.text}]}>Create Your First Log</Text>
+                <Text style={[styles.emptyButtonText, {color: '#fff'}]}>Create Your First Log</Text>
               </TouchableOpacity>
             </View>
           }
@@ -592,17 +651,26 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 8,
+    shadowColor: "#080808",
+    shadowOpacity: .5,
+    shadowRadius: 1,
   },
   logAmount: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 8,
+    shadowColor: "#080808",
+    shadowOpacity: .5,
+    shadowRadius: 1,
   },
   logDate: {
     fontSize: 14,
     color: '#CCCCCC',
     marginBottom: 16,
+    shadowColor: "#080808",
+    shadowOpacity: .1,
+    shadowRadius: 1,
   },
   actionsRow: {
     flexDirection: 'row',
@@ -618,6 +686,9 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     marginLeft: 8,
     fontSize: 16,
+    shadowColor: "#080808",
+    shadowOpacity: .5,
+    shadowRadius: 1,
   },
   // Delete actions styling
   deleteButtonContainer: {

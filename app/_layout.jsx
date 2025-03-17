@@ -1,4 +1,5 @@
 import React from 'react';
+import {SafeAreaView} from 'react-native'
 import { Slot, Stack } from 'expo-router';
 import { AuthProvider } from '../contexts/AuthContext';
 //import {LogProvider} from '../contexts/LogContext';
@@ -35,7 +36,7 @@ export default function RootLayout() {
         </AuthProvider>
         
       </GestureHandlerRootView> 
-    </SafeAreaProvider>
+      </SafeAreaProvider>
     </>
   );
 }
