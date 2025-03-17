@@ -8,15 +8,17 @@ import {
   Alert,
   Image,
   ActivityIndicator,
-  StatusBar
+  SafeAreaView
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import {useTheme} from '../../contexts/ThemeContext'
 //import { StatusBar } from 'expo-status-bar';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login, signInWithGoogle, isLoading, error } = useAuth();
+  const {theme} = useTheme();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -38,9 +40,10 @@ export default function LoginScreen() {
 
   return (
     <>
+    <SafeAreaView style={[styles.container, {backgroundColor: theme.background}]}>
     <View style={styles.container}>
     {/* <StatusBar style="auto" backgroundColor="red" translucent={true}  /> */}
-    <StatusBar barStyle={"light-content"} backgroundColor={'#ccc'}></StatusBar>
+    
       <Text style={styles.title}>Welcome to MoneyLog</Text>
       
       <View style={styles.inputContainer}>
@@ -99,6 +102,7 @@ export default function LoginScreen() {
       
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
+    </SafeAreaView>
     </>
   );
 }
