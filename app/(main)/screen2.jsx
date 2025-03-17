@@ -376,7 +376,7 @@ const filteredLogs = logs.filter(log =>
         </Swipeable>
       </Animated.View>
     );
-  }, [openSwipeableId, closeOpenSwipeable, itemBeingDeleted, slideOutAnim, navigateToExpenseScreen]);
+  }, [openSwipeableId, closeOpenSwipeable, itemBeingDeleted, slideOutAnim, navigateToExpenseScreen, theme]);
 
       // Show loading indicator while currentLog is being fetched
       if (isLoading) {
@@ -429,9 +429,9 @@ const filteredLogs = logs.filter(log =>
         
         {/* Logs List */}
         <FlatList
-          //key={`logs-${logs.length}`} // This forces a re-render when logs.length changes
+          key={`logs-${logs.length}-${theme.isDarkMode}`} // This forces a re-render when logs.length changes
           data={filteredLogs}
-          //extraData={logs} // FlatList will re-render when logs.length changes
+          extraData={[logs, theme]} // FlatList will re-render when logs.length changes
           renderItem={renderLogItem}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.listContainer}
