@@ -22,27 +22,60 @@ export default function LoginScreen() {
   // Animation for pulsing logo
   const pulseAnim = useRef(new Animated.Value(1)).current;
   
-  // Start pulsing animation
+  // Entrance animations
+  const logoSlideAnim = useRef(new Animated.Value(-200)).current; // Start above the screen
+  const buttonsSlideAnim = useRef(new Animated.Value(200)).current; // Start below the screen
+  const fadeAnim = useRef(new Animated.Value(0)).current; // Fade in animation for text
+  
+  // Start animations when component mounts
   useEffect(() => {
-    const pulse = Animated.sequence([
-      Animated.timing(pulseAnim, {
-        toValue: 1.1,
-        duration: 1000,
+    // First play entrance animations
+    Animated.parallel([
+      // Fade in the text
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
         useNativeDriver: true,
       }),
-      Animated.timing(pulseAnim, {
-        toValue: 1,
-        duration: 1000,
+      // Slide down the logo
+      Animated.spring(logoSlideAnim, {
+        toValue: 0,
+        tension: 50,
+        friction: 7,
         useNativeDriver: true,
-      })
-    ]);
-    
-    // Loop the animation
-    Animated.loop(pulse).start();
+      }),
+      // Slide up the buttons
+      Animated.spring(buttonsSlideAnim, {
+        toValue: 0,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      // After entrance animations complete, start the pulse animation
+      const pulse = Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        })
+      ]);
+      
+      // Loop the pulse animation
+      Animated.loop(pulse).start();
+    });
     
     return () => {
-      // Clean up animation when component unmounts
+      // Clean up animations when component unmounts
       pulseAnim.stopAnimation();
+      logoSlideAnim.stopAnimation();
+      buttonsSlideAnim.stopAnimation();
+      fadeAnim.stopAnimation();
     };
   }, []);
   
@@ -72,11 +105,16 @@ export default function LoginScreen() {
     >
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.contentContainer}>
-          {/* Pulsing App Logo */}
+          {/* Logo slides down from the top */}
           <Animated.View 
             style={[
               styles.logoContainer, 
-              { transform: [{ scale: pulseAnim }] }
+              { 
+                transform: [
+                  { translateY: logoSlideAnim },
+                  { scale: pulseAnim }
+                ] 
+              }
             ]}
           >
             <View style={[styles.logoCircle, { backgroundColor: theme.accent }]}>
@@ -87,70 +125,83 @@ export default function LoginScreen() {
             </View>
           </Animated.View>
           
-          {/* App Title */}
-          <Text style={[styles.title, { color: theme.text }]}>Moneylog</Text>
-          <Text style={[styles.subtitle, { color: theme.subtext }]}>Actually track your expenses</Text>
+          {/* App Title and Subtitle fade in */}
+          <Animated.Text style={[styles.title, { color: theme.text, opacity: fadeAnim }]}>
+            Moneylog
+          </Animated.Text>
+          <Animated.Text style={[styles.subtitle, { color: theme.subtext, opacity: fadeAnim }]}>
+            Actually track your expenses
+          </Animated.Text>
           
-          {/* Sign in with Google button */}
-          <TouchableOpacity
-            style={[styles.signInButton, { 
-              backgroundColor: theme.card,
-              borderColor: theme.divider,
-              marginTop: 60
-            }]}
-            onPress={handleGoogleSignIn}
-            disabled={isLoading}
-          >
-            {isLoading && isLoading === 'google' ? (
-              <ActivityIndicator color={theme.accent} size="small" />
-            ) : (
-              <>
-                <Image 
-                  source={require('../../assets/images/google-logo.png')} 
-                  style={styles.buttonIcon}
-                />
-                <Text style={[styles.buttonText, { color: theme.text }]}>
-                  Sign in with Google
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
-          
-          {/* Sign in with Apple button */}
-          <TouchableOpacity
-            style={[styles.signInButton, { 
-              backgroundColor: isDarkMode ? '#000' : '#fff',
-              borderColor: theme.divider,
-              marginTop: 16
-            }]}
-            onPress={handleAppleSignIn}
-            disabled={isLoading}
-          >
-            {isLoading && isLoading === 'apple' ? (
-              <ActivityIndicator color={isDarkMode ? '#fff' : '#000'} size="small" />
-            ) : (
-              <>
-                <Ionicons 
-                  name="logo-apple" 
-                  size={24} 
-                  color={isDarkMode ? '#fff' : '#000'} 
-                  style={styles.buttonIcon} 
-                />
-                <Text style={[styles.buttonText, { 
-                  color: isDarkMode ? '#fff' : '#000',
-                  fontWeight: '600'
-                }]}>
-                  Sign in with Apple
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
-          
-          {/* Error message */}
-          {error && <Text style={[styles.errorText, { color: theme.error }]}>{error}</Text>}
+          {/* Buttons container slides up from the bottom */}
+          <Animated.View style={{ 
+            width: '100%', 
+            alignItems: 'center',
+            transform: [{ translateY: buttonsSlideAnim }]
+          }}>
+            {/* Sign in with Google button */}
+            <TouchableOpacity
+              style={[styles.signInButton, { 
+                backgroundColor: theme.card,
+                borderColor: theme.divider,
+                marginTop: 60
+              }]}
+              onPress={handleGoogleSignIn}
+              disabled={isLoading}
+            >
+              {isLoading && isLoading === 'google' ? (
+                <ActivityIndicator color={theme.accent} size="small" />
+              ) : (
+                <>
+                  <Image 
+                    source={require('../../assets/images/google-logo.png')} 
+                    style={styles.buttonIcon}
+                  />
+                  <Text style={[styles.buttonText, { color: theme.text }]}>
+                    Sign in with Google
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+            
+            {/* Sign in with Apple button */}
+            <TouchableOpacity
+              style={[styles.signInButton, { 
+                backgroundColor: isDarkMode ? '#000' : '#fff',
+                borderColor: theme.divider,
+                marginTop: 16
+              }]}
+              onPress={handleAppleSignIn}
+              disabled={isLoading}
+            >
+              {isLoading && isLoading === 'apple' ? (
+                <ActivityIndicator color={isDarkMode ? '#fff' : '#000'} size="small" />
+              ) : (
+                <>
+                  <Ionicons 
+                    name="logo-apple" 
+                    size={24} 
+                    color={isDarkMode ? '#fff' : '#000'} 
+                    style={styles.buttonIcon} 
+                  />
+                  <Text style={[styles.buttonText, { 
+                    color: isDarkMode ? '#fff' : '#000',
+                    fontWeight: '600'
+                  }]}>
+                    Sign in with Apple
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+            
+            {/* Error message */}
+            {error && <Text style={[styles.errorText, { color: theme.error }]}>{error}</Text>}
+          </Animated.View>
           
           {/* App version */}
-          <Text style={[styles.versionText, { color: theme.subtext }]}>Version 1.0.0</Text>
+          <Animated.Text style={[styles.versionText, { color: theme.subtext, opacity: fadeAnim }]}>
+            Version 1.0.0
+          </Animated.Text>
         </View>
       </SafeAreaView>
     </LinearGradient>

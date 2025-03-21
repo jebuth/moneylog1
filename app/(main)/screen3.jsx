@@ -14,27 +14,20 @@ import {
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-//import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
-
-// Import theme context (create this context to manage theme)
-// import { useThemeContext } from '../../contexts/ThemeContext';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
-  const {theme, isDarkMode, toggleTheme} = useTheme();
+  const { theme, isDarkMode, toggleTheme } = useTheme();
   
-  // Replace with useThemeContext hook when implemented
-  //const [isDarkMode, setIsDarkMode] = useState(true);
   const [isPro, setIsPro] = useState(false); // This would come from user data in a real app
   
-  // Toggle theme
-  // const toggleTheme = () => {
-  //   setIsDarkMode(previous => !previous);
-  //   // When using ThemeContext:
-  //   // themeContext.toggleTheme();
-  // };
+  // Gradient colors based on theme
+  const gradientColors = isDarkMode 
+    ? ['#121212', '#1f1f1f', '#2a2a2a'] // Dark theme gradient
+    : ['#f0f2f5', '#e2e7f0', '#d4dcea']; // Light theme gradient
   
   // Handle subscription
   const handleSubscribe = () => {
@@ -91,116 +84,123 @@ export default function SettingsScreen() {
   const appVersion = Constants.expoConfig?.version || '1.0.0';
   
   return (
-    // <SafeAreaView style={[styles.container, { backgroundColor }]}>
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* <StatusBar style={isDarkMode ? "light" : "dark"} /> */}
-      {/* <StatusBar barStyle={ isDarkMode ? "light-content" : "dark-content"} /> */}
-      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
-      
-      <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>Settings</Text>
-      </View>
-      
-      <ScrollView style={styles.scrollView}>
-        {/* Account Section */}
-        <View style={[styles.section, { backgroundColor: theme.card }]}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Account</Text>
-          
-          <View style={styles.accountInfo}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{user?.email ? user.email[0].toUpperCase() : 'U'}</Text>
-            </View>
-            <View style={styles.userDetails}>
-              <Text style={[styles.userName, { color: theme.text }]}>{user?.name || 'User'}</Text>
-              <Text style={[styles.userEmail, { color: theme.subtext }]}>{user?.email || 'user@example.com'}</Text>
-            </View>
-          </View>
-          
-          {!isPro && (
-            <TouchableOpacity 
-              style={styles.proButton}
-              onPress={handleSubscribe}
-            >
-              <View style={styles.proButtonContent}>
-                <Ionicons name="star" size={20} color="#FFFFFF" />
-                <Text style={styles.proButtonText}>Upgrade to Pro</Text>
+    <LinearGradient
+      colors={gradientColors}
+      style={styles.container}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
+      <SafeAreaView style={styles.safeAreaContainer}>
+        <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
+        
+        <View style={styles.header}>
+          <Text style={[styles.headerTitle, { color: theme.text }]}>Settings</Text>
+        </View>
+        
+        <ScrollView style={styles.scrollView}>
+          {/* Account Section */}
+          <View style={[styles.section, { backgroundColor: theme.card }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text, borderBottomColor: theme.divider }]}>Account</Text>
+            
+            <View style={styles.accountInfo}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{user?.email ? user.email[0].toUpperCase() : 'U'}</Text>
               </View>
-            </TouchableOpacity>
-          )}
-          
-          {isPro && (
-            <View style={styles.proStatus}>
-              <Ionicons name="star" size={20} color="#FFD700" />
-              <Text style={[styles.proStatusText, { color: theme.text }]}>Pro Subscription Active</Text>
+              <View style={styles.userDetails}>
+                <Text style={[styles.userName, { color: theme.text }]}>{user?.name || 'User'}</Text>
+                <Text style={[styles.userEmail, { color: theme.subtext }]}>{user?.email || 'user@example.com'}</Text>
+              </View>
             </View>
-          )}
-        </View>
-        
-        {/* Appearance Section */}
-        <View style={[styles.section, { backgroundColor: theme.card }]}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Appearance</Text>
-          
-          <View style={styles.settingRow}>
-            <View style={styles.settingLabelContainer}>
-              <Ionicons name="moon-outline" size={22} color={theme.text} style={styles.settingIcon} />
-              <Text style={[styles.settingLabel, { color: theme.text }]}>Dark Mode</Text>
-            </View>
-            <Switch
-              value={isDarkMode}
-              onValueChange={toggleTheme}
-              trackColor={{ false: '#767577', true: '#5C5CFF' }}
-              thumbColor={isDarkMode ? '#FFFFFF' : '#FFFFFF'}
-              ios_backgroundColor="#3e3e3e"
-            />
+            
+            {!isPro && (
+              <TouchableOpacity 
+                style={styles.proButton}
+                onPress={handleSubscribe}
+              >
+                <View style={styles.proButtonContent}>
+                  <Ionicons name="star" size={20} color="#FFFFFF" />
+                  <Text style={styles.proButtonText}>Upgrade to Pro</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+            
+            {isPro && (
+              <View style={styles.proStatus}>
+                <Ionicons name="star" size={20} color="#FFD700" />
+                <Text style={[styles.proStatusText, { color: theme.text }]}>Pro Subscription Active</Text>
+              </View>
+            )}
           </View>
-        </View>
-        
-        {/* Legal Section */}
-        <View style={[styles.section, { backgroundColor: theme.card }]}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Legal</Text>
           
-          <TouchableOpacity
-            style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: theme.divider }]}
-            onPress={openPrivacyPolicy}
-          >
-            <View style={styles.settingLabelContainer}>
-              <Ionicons name="lock-closed-outline" size={22} color={theme.text} style={styles.settingIcon} />
-              <Text style={[styles.settingLabel, { color: theme.text }]}>Privacy Policy</Text>
+          {/* Appearance Section */}
+          <View style={[styles.section, { backgroundColor: theme.card }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text, borderBottomColor: theme.divider }]}>Appearance</Text>
+            
+            <View style={styles.settingRow}>
+              <View style={styles.settingLabelContainer}>
+                <Ionicons name="moon-outline" size={22} color={theme.text} style={styles.settingIcon} />
+                <Text style={[styles.settingLabel, { color: theme.text }]}>Dark Mode</Text>
+              </View>
+              <Switch
+                value={isDarkMode}
+                onValueChange={toggleTheme}
+                trackColor={{ false: '#767577', true: '#5C5CFF' }}
+                thumbColor={isDarkMode ? '#FFFFFF' : '#FFFFFF'}
+                ios_backgroundColor="#3e3e3e"
+              />
             </View>
-            <Ionicons name="chevron-forward" size={20} color={theme.subtext} />
+          </View>
+          
+          {/* Legal Section */}
+          <View style={[styles.section, { backgroundColor: theme.card }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text, borderBottomColor: theme.divider }]}>Legal</Text>
+            
+            <TouchableOpacity
+              style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: theme.divider }]}
+              onPress={openPrivacyPolicy}
+            >
+              <View style={styles.settingLabelContainer}>
+                <Ionicons name="lock-closed-outline" size={22} color={theme.text} style={styles.settingIcon} />
+                <Text style={[styles.settingLabel, { color: theme.text }]}>Privacy Policy</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={theme.subtext} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={styles.settingRow}
+              onPress={openTermsOfService}
+            >
+              <View style={styles.settingLabelContainer}>
+                <Ionicons name="document-text-outline" size={22} color={theme.text} style={styles.settingIcon} />
+                <Text style={[styles.settingLabel, { color: theme.text }]}>Terms of Service</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={theme.subtext} />
+            </TouchableOpacity>
+          </View>
+          
+          {/* Sign Out Button */}
+          <TouchableOpacity
+            style={[styles.signOutButton, { backgroundColor: theme.card, borderWidth: 1, borderColor: theme.red }]}
+            onPress={handleSignOut}
+          >
+            <Text style={[styles.signOutText, { color: theme.red }]}>SIGN OUT</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity
-            style={styles.settingRow}
-            onPress={openTermsOfService}
-          >
-            <View style={styles.settingLabelContainer}>
-              <Ionicons name="document-text-outline" size={22} color={theme.text} style={styles.settingIcon} />
-              <Text style={[styles.settingLabel, { color: theme.text }]}>Terms of Service</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={theme.subtext} />
-          </TouchableOpacity>
-        </View>
-        
-        {/* Sign Out Button */}
-        <TouchableOpacity
-          style={[styles.signOutButton, { backgroundColor: theme.card, borderWidth: 1, borderColor: theme.red }]}
-          onPress={handleSignOut}
-        >
-          <Text style={[styles.signOutText, { color: theme.red }]}>SIGN OUT</Text>
-        </TouchableOpacity>
-        
-        {/* App Version */}
-        <Text style={[styles.versionText, { color: theme.subtext }]}>
-          Version {appVersion}
-        </Text>
-      </ScrollView>
-    </SafeAreaView>
+          {/* App Version */}
+          <Text style={[styles.versionText, { color: theme.subtext }]}>
+            Version {appVersion}
+          </Text>
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  safeAreaContainer: {
     flex: 1,
     paddingTop: Platform.OS === 'ios' ? 0 : Constants.statusBarHeight,
   },
@@ -232,7 +232,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
   },
   settingRow: {
     flexDirection: 'row',
