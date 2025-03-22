@@ -119,7 +119,7 @@ export default function LoginScreen() {
           >
             <View style={[styles.logoCircle, { backgroundColor: theme.accent }]}>
               <Image 
-                source={require('../../assets/images/moneylog-logo-nbg.png')} 
+                source={require('../../assets/images/icon.png')} 
                 style={styles.moneylogIcon}
               />
             </View>
