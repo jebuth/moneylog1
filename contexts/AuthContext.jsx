@@ -722,7 +722,13 @@ const updateLog = async (amount, description, categoryName, date) => {
       return;
     }
     
-    amount = toFixedNumber(amount, 2);
+      // Remove commas and other non-numeric characters except decimal point
+    const cleanAmount = amount.toString().replace(/[^\d.-]/g, '');
+    
+    amount = toFixedNumber(cleanAmount, 2);
+
+    console.log('AuthContext.jsx updatelog')
+    console.log(amount)
     
     // Create transaction object
     let newTransaction = {
@@ -746,6 +752,10 @@ const updateLog = async (amount, description, categoryName, date) => {
     const currentAmount = typeof updatedLog.totalAmount === 'number' ? updatedLog.totalAmount : 0;
     updatedLog.totalAmount = parseFloat((currentAmount + amount).toFixed(2));
     
+
+    console.log('currentAmount: ' + currentAmount);
+    console.log('updatedLog.totalAmount: ' + updatedLog.totalAmount);
+
     // Update categories
     if (updatedLog.categories && updatedLog.categories.length > 0) {
       updatedLog.categories = updatedLog.categories.map(category => {
@@ -770,15 +780,15 @@ const updateLog = async (amount, description, categoryName, date) => {
       }
     }
 
-    console.log('before calling firestore')
-    console.log('updatedLog.Id: ' + updateLog.id);
-    console.log('currentLog.id: ' + currentLog.id);
+    // console.log('before calling firestore')
+    // console.log('updatedLog.Id: ' + updatedLog.id);
+    // console.log('currentLog.id: ' + currentLog.id);
 
     // Update in Firestore
     const logRef = doc(db, 'logs', updatedLog.id);
 
-    console.log('logref: ')
-    console.log(logRef)
+    // console.log('logref: ')
+    // console.log(logRef)
 
     await updateDoc(logRef, {
       totalAmount: updatedLog.totalAmount,
@@ -787,7 +797,7 @@ const updateLog = async (amount, description, categoryName, date) => {
       updatedAt: new Date().toISOString()
     });
     
-    console.log('after calling firestore')
+    // console.log('after calling firestore')
 
     // Update local state
     const updatedLogs = logs.map(log => 
@@ -809,12 +819,12 @@ const deleteLog = async (logId) => {
       throw new Error('No authenticated user');
     }
     
-    console.log('Calling deleteLog with logId: ' + logId)
+    //console.log('Calling deleteLog with logId: ' + logId)
 
     // Delete from Firestore
     await deleteDoc(doc(db, 'logs', logId));
     
-    console.log('After deleteLog')
+    //console.log('After deleteLog')
 
     // Update local state
     setLogs(logs.filter(log => log.id !== logId));
@@ -822,7 +832,7 @@ const deleteLog = async (logId) => {
     // If deleted log is current log, clear currentLog
     if (currentLog && currentLog.id === logId) {
 
-      console.log("deleted log is current log")
+      //console.log("deleted log is current log")
 
       const remainingLogs = logs.filter(log => log.id !== logId);
       setCurrentLog(remainingLogs.length > 0 ? remainingLogs[0] : null);

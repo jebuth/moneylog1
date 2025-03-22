@@ -420,7 +420,9 @@ export default function ExpenseTracker() {
             </View>
             
             <View style={styles.categoryAmount}>
-              <Text style={[styles.amountText, {color: theme.text}]}>${currentLog.categories[0].amount}</Text>
+              <Text style={[styles.amountText, {color: theme.text}]}>${currentLog.categories[0].amount.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2})}</Text>
               <Text style={[styles.percentageText, {color: theme.subtext}]}>{currentLog.categories[0].percentage}%</Text>
             </View>
           </TouchableOpacity>
@@ -474,7 +476,9 @@ export default function ExpenseTracker() {
                     </View>
                     
                     <View style={styles.categoryAmount}>
-                      <Text style={[styles.amountText, {color: theme.text}]}>${category.amount}</Text>
+                      <Text style={[styles.amountText, {color: theme.text}]}>${category.amount.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2})}</Text>
                       <Text style={[styles.percentageText, {color: theme.subtext}]}>{category.percentage}%</Text>
                     </View>
                   </TouchableOpacity>
