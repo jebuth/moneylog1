@@ -107,6 +107,10 @@ export function AuthProvider({ children }) {
           
           // Save user to AsyncStorage
           saveUserToStorage(appUser);
+
+          // Save user to Firestore (add this line)
+          await saveUserToFirestore(firebaseUser.uid, appUser);
+        
           
           // Fetch user logs from Firestore
           await fetchUserLogs(firebaseUser.uid);
@@ -131,6 +135,38 @@ export function AuthProvider({ children }) {
   }, []);
 
 
+  // Add this function to your AuthContext provider
+const saveUserToFirestore = async (userId, userData) => {
+  try {
+    // Reference to the user document
+    const userRef = doc(db, 'users', userId);
+    
+    // Check if user already exists
+    const userDoc = await getDoc(userRef);
+    
+    if (!userDoc.exists()) {
+      // User doesn't exist, create a new document
+      await setDoc(userRef, {
+        ...userData,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      console.log('User added to Firestore');
+    } else {
+      // User exists, update the document
+      await updateDoc(userRef, {
+        ...userData,
+        updatedAt: new Date().toISOString()
+      });
+      console.log('User updated in Firestore');
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error saving user to Firestore:', error);
+    return false;
+  }
+};
 
   // Function to fetch user logs from Firestore
   const fetchUserLogs = async (userId) => {
@@ -572,10 +608,22 @@ export function AuthProvider({ children }) {
 
     const createInitialLogs = async (userId) => {
       try {
+
+        // get the current month and year
+        // Get current date
+        const date = new Date();
+
+        // Method 1: Using toLocaleString
+        const monthAndDate = date.toLocaleString('en-US', { 
+          month: 'long',
+          year: 'numeric'
+        });
+        
+
         // Create a sample log
         const sampleLog = {
           userId: userId,
-          logTitle: 'March 2025',
+          logTitle: monthAndDate,
           totalAmount: 0,
           date: new Date().toISOString().split('T')[0],
           categories: [
