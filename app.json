@@ -11,7 +11,8 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.moneylog"
+      "bundleIdentifier": "com.anonymous.moneylog",
+      "icon": "./assets/images/icon.png" 
     },
     "android": {
       "adaptiveIcon": {

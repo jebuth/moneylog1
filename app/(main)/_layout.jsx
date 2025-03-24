@@ -31,7 +31,7 @@ export default function MainLayout() {
     <Tab.Navigator
       initialRouteName="screen2"
       tabBarPosition="bottom"
-      screenOptions={{
+      screenOptions={({ route }) => ({
         tabBarActiveTintColor: '#5C5CFF',
         tabBarInactiveTintColor: '#999',
         tabBarStyle: {
@@ -45,14 +45,16 @@ export default function MainLayout() {
           display: 'none'
           //backgroundColor: '#121212',
         },
-        swipeEnabled: true,
+        // Disable swipe navigation only for screen2
+        // swipeEnabled: route.name !== 'screen2',
+        swipeEnabled: false,
         animationEnabled: true,
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '600',
         },
         tabBarShowIcon: true,
-      }}
+      })}
     >
       <Tab.Screen
         name="screen1"
