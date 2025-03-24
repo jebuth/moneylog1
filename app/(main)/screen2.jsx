@@ -51,7 +51,7 @@ export default function LogsListScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showNewLogModal, setShowNewLogModal] = useState(false);
   const [newLogName, setNewLogName] = useState('');
-  const [newLogAmount, setNewLogAmount] = useState('');
+  //const [newLogAmount, setNewLogAmount] = useState('');
   
   // State for handling animated deletion
   const [itemBeingDeleted, setItemBeingDeleted] = useState(null);
@@ -116,17 +116,22 @@ export default function LogsListScreen() {
   
   // Handle creating a new log
   const handleCreateNewLog = async () => {
-    if (newLogName.trim() === '' || newLogAmount.trim() === '') {
-      alert('Enter both a log title and starting amount');
+    // if (newLogName.trim() === '' || newLogAmount.trim() === '') {
+    //   alert('Enter both a log title and starting amount');
+    //   return;
+    // }
+    
+    if (newLogName.trim() === '') {
+      alert('Enter a log title.');
       return;
     }
+
+    //const amount = parseFloat(newLogAmount.replace(/[^0-9.]/g, ''));
     
-    const amount = parseFloat(newLogAmount.replace(/[^0-9.]/g, ''));
-    
-    if (isNaN(amount)) {
-      alert('Enter a valid amount');
-      return;
-    }
+    // if (isNaN(amount)) {
+    //   alert('Enter a valid amount');
+    //   return;
+    // }
 
     const logData = {
       userId: user.id,
@@ -219,7 +224,7 @@ export default function LogsListScreen() {
     setSearchQuery('')
     setShowNewLogModal(false);
     setNewLogName('');
-    setNewLogAmount('');
+    //setNewLogAmount('');
   };
   
   // Handle deleting a log with animation
@@ -268,26 +273,26 @@ export default function LogsListScreen() {
   };
   
   // Handle amount input formatting
-  const handleAmountChange = (text) => {
-    // Remove all non-numeric characters
-    const numericValue = text.replace(/[^0-9]/g, '');
+  // const handleAmountChange = (text) => {
+  //   // Remove all non-numeric characters
+  //   const numericValue = text.replace(/[^0-9]/g, '');
     
-    if (numericValue === '') {
-      setNewLogAmount('');
-      return;
-    }
+  //   if (numericValue === '') {
+  //     //setNewLogAmount('');
+  //     return;
+  //   }
     
-    // Convert to cents (e.g., "234" becomes "2.34")
-    const cents = parseInt(numericValue);
+  //   // Convert to cents (e.g., "234" becomes "2.34")
+  //   const cents = parseInt(numericValue);
     
-    // Format with commas and two decimal places
-    const formattedAmount = new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(cents / 100);
+  //   // Format with commas and two decimal places
+  //   const formattedAmount = new Intl.NumberFormat('en-US', {
+  //     minimumFractionDigits: 2,
+  //     maximumFractionDigits: 2,
+  //   }).format(cents / 100);
     
-    setNewLogAmount(formattedAmount);
-  };
+  //   setNewLogAmount(formattedAmount);
+  // };
   
   // Render right actions (delete button) for swipeable
   const renderRightActions = (progress, dragX, item) => {
@@ -520,7 +525,7 @@ export default function LogsListScreen() {
                   onChangeText={setNewLogName}
                 />
                 
-                <Text style={[styles.inputLabel, {color: theme.subtext}]}>Initial Budget</Text>
+                {/* <Text style={[styles.inputLabel, {color: theme.subtext}]}>Initial Budget</Text>
                 <View style={[styles.amountInputContainer, {backgroundColor: theme.background}]}>
                   <Text style={[styles.currencySymbol, {color: theme.text}]}>$</Text>
                   <TextInput
@@ -531,7 +536,7 @@ export default function LogsListScreen() {
                     value={newLogAmount}
                     onChangeText={handleAmountChange}
                   />
-                </View>
+                </View> */}
                 
                 <View style={styles.modalButtons}>
                   <TouchableOpacity 
@@ -539,7 +544,7 @@ export default function LogsListScreen() {
                     onPress={() => {
                       setShowNewLogModal(false);
                       setNewLogName('');
-                      setNewLogAmount('');
+                      //setNewLogAmount('');
                     }}
                   >
                     <Text style={[styles.cancelButtonText, {color: theme.red}]}>CANCEL</Text>

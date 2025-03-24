@@ -111,11 +111,8 @@ export function AuthProvider({ children }) {
           // Save user to Firestore (add this line)
           await saveUserToFirestore(firebaseUser.uid, appUser);
         
-          
           // Fetch user logs from Firestore
           await fetchUserLogs(firebaseUser.uid);
-
-
 
         } catch (error) {
           console.error('Error handling user authentication:', error);

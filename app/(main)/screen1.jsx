@@ -645,8 +645,12 @@ const styles = StyleSheet.create({
   },
   // Categories Section
   categoriesContainer: {
-    marginHorizontal: 16,
-    marginTop: 60,
+    // marginHorizontal: 16,
+    // marginTop: 60,
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 30, // Adjust this value as needed for bottom spacing
   },
   categoryCard: {
     flexDirection: 'row',
