@@ -356,11 +356,11 @@ export default function LogsListScreen() {
           friction={2}
           rightThreshold={40}
         >
-          <TouchableOpacity 
+          <View 
             style={styles.logItem}
             onPress={() => {
               // Navigate to this log
-              navigateToExpenseScreen(item);
+              //navigateToExpenseScreen(item);
             }}
             onLayout={(event) => {
               // Store the height of each item for animation
@@ -381,7 +381,7 @@ export default function LogsListScreen() {
                 
                 <View style={styles.actionsRow}>
                   <TouchableOpacity 
-                    style={styles.iconButton}
+                    style={[styles.iconButton]}
                     onPress={() => {
                       // Navigate to expense tracking screen with this log
                       navigateToExpenseScreen(item);
@@ -405,7 +405,7 @@ export default function LogsListScreen() {
                 </View>
               </View>
             </LinearGradient>
-          </TouchableOpacity>
+          </View>
         </Swipeable>
       </Animated.View>
     );
