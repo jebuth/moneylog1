@@ -1,5 +1,9 @@
 {
   "expo": {
+    "extra": {
+      "eas": {
+          "projectId": "78048b3b-4612-409c-840f-f831c93d1c47"
+      }},
     "entryPoint": "expo-router/entry",
     "name": "moneylog",
     "slug": "moneylog",
