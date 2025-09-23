@@ -1,50 +1,21 @@
 {
-  "expo": {
-    "extra": {
-      "eas": {
+    "expo": {
+      "name": "Moneylog",
+      "slug": "moneylog",
+      "version": "1.0.0",
+      "extra": {
+        "eas": {
           "projectId": "78048b3b-4612-409c-840f-f831c93d1c47"
-      }},
-    "entryPoint": "expo-router/entry",
-    "name": "moneylog",
-    "slug": "moneylog",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "moneylog",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.moneylog",
-      "icon": "./assets/images/icon.png" 
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "package": "com.anonymous.moneylog"
-    },
-    "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
-    },
-    "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+        },
+        "firebase": {
+          "apiKey": "AIzaSyDFTjj_EVjrNYw3jXg41HzqRqFmW8ZxqTE",
+          "authDomain": "moneylog-firebase.firebaseapp.com",
+          "projectId": "moneylog-firebase",
+          "storageBucket": "moneylog-firebase.firebasestorage.app",
+          "messagingSenderId": "579389584086",
+          "appId": "1:579389584086:web:36fa4086fbb5c407d60f77",
+          "googleIOSClientId": "1089638738424-kg7p2rok7t16i03043secdfqg8svg5b2.apps.googleusercontent.com"
         }
-      ]
-    ],
-    "experiments": {
-      "typedRoutes": true
-    },
-    "scheme": "moneylog"
+      }
+    }
   }
-}
