@@ -42,6 +42,9 @@ export default function ExpenseTracker() {
   
   // Update local state when currentLog changes
   useEffect(() => {
+    console.log('loginScreen useEffect')
+    console.log('currentLog:')
+    console.log(currentLog)
     if (currentLog) {
       setlogTitle(currentLog.logTitle);
       setTotalAmount(currentLog.totalAmount);
