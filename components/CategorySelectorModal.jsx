@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   modalContainer: {
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    minHeight: height * 0.6,
+    minHeight: height,
     maxHeight: height * 0.8,
     overflow: 'hidden',
   },
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 18,
+    paddingVertical: 8,
     marginBottom: 5,
     backgroundColor: '#1D1D1D',
     borderTopWidth: 1,

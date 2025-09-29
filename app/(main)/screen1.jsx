@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,14 +6,10 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  StatusBar,
-  Platform,
   Dimensions,
-  Animated,
   Alert,
   ActivityIndicator
 } from 'react-native';
-import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -28,12 +24,6 @@ export default function ExpenseTracker() {
   const { theme, isDarkMode } = useTheme();
   const router = useRouter();
   
-  // Animation values for entrance animations
-  const headerAnim = useRef(new Animated.Value(-300)).current; // Start above the screen
-  const formAnim = useRef(new Animated.Value(500)).current; // Start below the screen
-  const categoryAnim = useRef(new Animated.Value(500)).current; // Start below the screen
-  const fadeAnim = useRef(new Animated.Value(0)).current; // For fade in
-  
   // Trip information from currentLog
   const [logTitle, setlogTitle] = useState(currentLog ? currentLog.logTitle : 'New Trip');
   const [totalAmount, setTotalAmount] = useState(currentLog ? currentLog.totalAmount : 0);
@@ -43,8 +33,7 @@ export default function ExpenseTracker() {
   // Update local state when currentLog changes
   useEffect(() => {
     console.log('loginScreen useEffect')
-    console.log('currentLog:')
-    console.log(currentLog)
+    console.log('currentLog:', currentLog)
     if (currentLog) {
       setlogTitle(currentLog.logTitle);
       setTotalAmount(currentLog.totalAmount);
@@ -53,65 +42,21 @@ export default function ExpenseTracker() {
     }
   }, [logs, currentLog]);
 
-  // Animation effect for entrance animations
-  useEffect(() => {
-    // Only run entrance animations if we have a currentLog
-    if (!isLoading && currentLog) {
-      // Start animations with slight delays for sequence
-      Animated.sequence([
-        // Fade in the whole screen
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 0,
-          useNativeDriver: true,
-        }),
-        // Then animate elements in sequence
-        Animated.parallel([
-          // Header slides down
-          Animated.spring(headerAnim, {
-            toValue: 0,
-            tension: 10,
-            friction: 7,
-            useNativeDriver: true,
-          }),
-          // Form slides up with a slight delay
-          Animated.timing(formAnim, {
-            toValue: 0,
-            duration: 600,
-            delay: 200,
-            useNativeDriver: true,
-          }),
-          // Category slides up with more delay
-          Animated.timing(categoryAnim, {
-            toValue: 0,
-            duration: 300,
-            delay: 400,
-            useNativeDriver: true,
-          }),
-        ]),
-      ]).start();
-    }
-  }, [currentLog]); // Re-run when currentLog changes
-
   // Input states
   const [inputAmount, setInputAmount] = useState('');
   const [description, setDescription] = useState('');
   
-  // Animation states for category selector
-  const [categoriesExpanded, setCategoriesExpanded] = useState(false);
-  const slideAnim = useRef(new Animated.Value(height)).current;
-  
   // Category selection
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [categoriesExpanded, setCategoriesExpanded] = useState(false);
 
   // Gradient colors based on theme
   const gradientColors = isDarkMode 
-    ? ['#121212', '#1f1f1f', '#2a2a2a'] // Dark theme gradient
-    : ['#f0f2f5', '#e2e7f0', '#d4dcea']; // Light theme gradient
+    ? ['#121212', '#1f1f1f', '#2a2a2a'] 
+    : ['#f0f2f5', '#e2e7f0', '#d4dcea'];
 
   // Handle amount input changes
   const handleAmountChange = (text) => {
-    // Remove all non-numeric characters
     const numericValue = text.replace(/[^0-9]/g, '');
     
     if (numericValue === '') {
@@ -119,10 +64,7 @@ export default function ExpenseTracker() {
       return;
     }
     
-    // Convert to cents (e.g., "234" becomes "2.34")
     const cents = parseInt(numericValue);
-    
-    // Format with commas and two decimal places
     const formattedAmount = new Intl.NumberFormat('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -145,28 +87,13 @@ export default function ExpenseTracker() {
     closeCategoryModal();
   };
 
-  // Animation functions for categories expansion
+  // Categories expansion handlers
   const expandCategories = () => {
     setCategoriesExpanded(true);
-    
-    // Start with slide animation from bottom
-    slideAnim.setValue(height);
-    Animated.spring(slideAnim, {
-      toValue: 0,
-      tension: 50,
-      friction: 8,
-      useNativeDriver: true,
-    }).start();
   };
 
   const collapseCategories = () => {
-    Animated.timing(slideAnim, {
-      toValue: height,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => {
-      setCategoriesExpanded(false);
-    });
+    setCategoriesExpanded(false);
   };
 
   // Log the expense
@@ -180,9 +107,7 @@ export default function ExpenseTracker() {
       return;
     }
     
-    // Update log
     updateLog(inputAmount, description, selectedCategory.name, new Date());
-    // Reset form
     setInputAmount('');
     setDescription('');
     setSelectedCategory({});
@@ -246,171 +171,125 @@ export default function ExpenseTracker() {
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
-      <Animated.View 
-        style={[
-          styles.contentContainer, 
-          { opacity: fadeAnim } // Fade in the entire content
-        ]}
-      >
+      <View style={styles.contentContainer}>
         {/* Header Card with Trip Name and Amount */}
-        <Animated.View 
-          style={{ 
-            transform: [{ translateY: headerAnim }],  // Slide down from top
-          }}
+        <LinearGradient
+          colors={theme.gradient}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerCard}
         >
-          <LinearGradient
-            colors={theme.gradient}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.headerCard}
-          >
-            <View style={styles.headerContent}>
-              <Text style={[styles.logTitle, {color: "#FFF"}]}>{logTitle}</Text>
-              <Text style={[styles.totalAmount, {color: "#FFF"}]}>${totalAmount.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              })}</Text>
-              
-              <View style={styles.quickCategoryContainer}>
-                <TouchableOpacity
-                  style={[styles.quickCategoryButton, {backgroundColor: '#42404F' }]}
-                  onPress={() => {
-                    Alert.alert(
-                      "Analytics",
-                      "This feature is coming soon.",
-                      [{ text: "OK" }]
-                    );
-                  }}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', top: 10 }}>
-                      <Ionicons name="analytics-outline" size={35} color="#999" />
-                  </View>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.quickCategoryButton, { backgroundColor: '#42404F' }]}
-                  onPress={() => {
-                    Alert.alert(
-                      "View Chart",
-                      "This feature is coming soon.",
-                      [{ text: "OK" }]
-                    );
-                  }}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', top: 10 }}>
-                      <Ionicons name="list-outline" size={35} color="#999" />
-                  </View>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.quickCategoryButton, { backgroundColor: '#42404F' }]}
-                  onPress={() => {
-                    Alert.alert(
-                      "View Stats",
-                      "This feature is coming soon.",
-                      [{ text: "OK" }]
-                    );
-                  }}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', top: 12 }}>
-                    <Ionicons name="pie-chart-outline" size={30} color="#999" />
-                  </View>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.quickCategoryButton, { backgroundColor: '#42404F' }]}
-                  onPress={() => {
-                    Alert.alert(
-                      "Duplicate Log",
-                      "This feature is coming soon.",
-                      [{ text: "OK" }]
-                    );
-                  }}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', top: 10 }}>
-                      <Ionicons name="duplicate-outline" size={35} color="#999" />
-                  </View>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </LinearGradient>
-        </Animated.View>
-        
-        {/* Input Form - slides up from bottom */}
-        <Animated.View 
-          style={{
-            transform: [{ translateY: formAnim }] // Slide up from bottom
-          }}
-        >
-          <View style={[styles.formContainer, {backgroundColor: theme.card}]}>
-            {/* Row 1: Amount and Category side by side */}
-            <View style={{flexDirection: 'row', height: 90}}>
-              {/* Amount Input */}
-              <View style={{flex: 0.75}}>
-                <Text style={[styles.inputLabel, {color: theme.text}]}>AMOUNT</Text>
-                <View style={[styles.amountContainer, {backgroundColor: theme.background}]}>
-                  <Text style={styles.dollarSign}>$</Text>
-                  <TextInput
-                    style={[styles.amountInput, {color: theme.text}]}
-                    value={inputAmount}
-                    onChangeText={handleAmountChange}
-                    keyboardType="numeric"
-                    placeholder="0.00"
-                    placeholderTextColor="#666"
-                  />
+          <View style={styles.headerContent}>
+            <Text style={[styles.logTitle, {color: "#FFF"}]}>{logTitle}</Text>
+            <Text style={[styles.totalAmount, {color: "#FFF"}]}>${totalAmount.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            })}</Text>
+            
+            <View style={styles.quickCategoryContainer}>
+              <TouchableOpacity
+                style={[styles.quickCategoryButton, {backgroundColor: '#42404F' }]}
+                onPress={() => Alert.alert("Analytics", "This feature is coming soon.", [{ text: "OK" }])}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', top: 10 }}>
+                  <Ionicons name="analytics-outline" size={35} color="#999" />
                 </View>
-              </View>
-              
-              {/* Category Selector */}
-              <View style={{flex: 1}}>
-                <Text style={[styles.inputLabel, {color: theme.text}]}>CATEGORY</Text>
-                <TouchableOpacity 
-                  style={[styles.categorySelector, {backgroundColor: theme.background}]}
-                  onPress={openCategoryModal}
-                >
-                  <Text style={[styles.categorySelectorText, {color: theme.subtext}]}>
-                    {selectedCategory.name || "Select Category"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-            
-            {/* Row 2: Description Input */}
-            <View style={styles.inputSection}>
-              <Text style={[styles.inputLabel, {color: theme.text}]}>DESCRIPTION</Text>
-              <TextInput
-                style={[styles.descriptionInput, {backgroundColor: theme.background, color: theme.text}]}
-                value={description}
-                onChangeText={setDescription}
-                placeholder="Enter description"
-                placeholderTextColor="#666"
-                multiline={false}
-              />
-            </View>
-            
-            {/* Row 3: Action Buttons */}
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity 
-                style={[styles.clearButton, {backgroundColor: theme.card, borderWidth: 1, borderColor: theme.red}]}
-                onPress={handleClearForm}
-              >
-                <Text style={[styles.clearButtonText, {color: theme.red}]}>CLEAR</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.logButton, {backgroundColor: theme.purple}]}
-                onPress={handleLogExpense}
+              <TouchableOpacity
+                style={[styles.quickCategoryButton, { backgroundColor: '#42404F' }]}
+                onPress={() => Alert.alert("View Chart", "This feature is coming soon.", [{ text: "OK" }])}
               >
-                <Text style={[styles.logButtonText]}>LOG</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', top: 10 }}>
+                  <Ionicons name="list-outline" size={35} color="#999" />
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.quickCategoryButton, { backgroundColor: '#42404F' }]}
+                onPress={() => Alert.alert("View Stats", "This feature is coming soon.", [{ text: "OK" }])}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', top: 12 }}>
+                  <Ionicons name="pie-chart-outline" size={30} color="#999" />
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.quickCategoryButton, { backgroundColor: '#42404F' }]}
+                onPress={() => Alert.alert("Duplicate Log", "This feature is coming soon.", [{ text: "OK" }])}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', top: 10 }}>
+                  <Ionicons name="duplicate-outline" size={35} color="#999" />
+                </View>
               </TouchableOpacity>
             </View>
           </View>
-        </Animated.View>
+        </LinearGradient>
         
-        {/* Bottom Categories Section - slides up with delay */}
-        <Animated.View 
-          style={[
-            styles.categoriesContainer,
-            { transform: [{ translateY: categoryAnim }] } // Slide up from bottom with delay
-          ]}
-        >
+        {/* Input Form */}
+        <View style={[styles.formContainer, {backgroundColor: theme.card}]}>
+          {/* Row 1: Amount and Category side by side */}
+          <View style={{flexDirection: 'row', height: 90}}>
+            {/* Amount Input */}
+            <View style={{flex: 0.75}}>
+              <Text style={[styles.inputLabel, {color: theme.text}]}>AMOUNT</Text>
+              <View style={[styles.amountContainer, {backgroundColor: theme.background}]}>
+                <Text style={styles.dollarSign}>$</Text>
+                <TextInput
+                  style={[styles.amountInput, {color: theme.text}]}
+                  value={inputAmount}
+                  onChangeText={handleAmountChange}
+                  keyboardType="numeric"
+                  placeholder="0.00"
+                  placeholderTextColor="#666"
+                />
+              </View>
+            </View>
+            
+            {/* Category Selector */}
+            <View style={{flex: 1}}>
+              <Text style={[styles.inputLabel, {color: theme.text}]}>CATEGORY</Text>
+              <TouchableOpacity 
+                style={[styles.categorySelector, {backgroundColor: theme.background}]}
+                onPress={openCategoryModal}
+              >
+                <Text style={[styles.categorySelectorText, {color: theme.subtext}]}>
+                  {selectedCategory.name || "Select Category"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          
+          {/* Row 2: Description Input */}
+          <View style={styles.inputSection}>
+            <Text style={[styles.inputLabel, {color: theme.text}]}>DESCRIPTION</Text>
+            <TextInput
+              style={[styles.descriptionInput, {backgroundColor: theme.background, color: theme.text}]}
+              value={description}
+              onChangeText={setDescription}
+              placeholder="Enter description"
+              placeholderTextColor="#666"
+              multiline={false}
+            />
+          </View>
+          
+          {/* Row 3: Action Buttons */}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity 
+              style={[styles.clearButton, {backgroundColor: theme.card, borderWidth: 1, borderColor: theme.red}]}
+              onPress={handleClearForm}
+            >
+              <Text style={[styles.clearButtonText, {color: theme.red}]}>CLEAR</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.logButton, {backgroundColor: theme.purple}]}
+              onPress={handleLogExpense}
+            >
+              <Text style={[styles.logButtonText]}>LOG</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        
+        {/* Bottom Categories Section */}
+        <View style={styles.categoriesContainer}>
           <TouchableOpacity 
             style={[styles.categoryCard, {backgroundColor: theme.card}]}
             onPress={expandCategories}
@@ -429,7 +308,7 @@ export default function ExpenseTracker() {
               <Text style={[styles.percentageText, {color: theme.subtext}]}>{currentLog.categories[0].percentage}%</Text>
             </View>
           </TouchableOpacity>
-        </Animated.View>
+        </View>
         
         {/* Category Selection Modal */}
         <CategorySelectorModal
@@ -448,12 +327,7 @@ export default function ExpenseTracker() {
               onPress={collapseCategories}
             />
             
-            <Animated.View
-              style={[
-                styles.expandedCategoriesContainer,
-                { backgroundColor: theme.card, transform: [{ translateY: slideAnim }] }
-              ]}
-            >
+            <View style={[styles.expandedCategoriesContainer, { backgroundColor: theme.card }]}>
               <View style={styles.expandedHeader}>
                 <View style={styles.expandedHandleBar} />
                 <Text style={[styles.expandedTitle, {color: theme.text}]}>Categories</Text>
@@ -494,10 +368,10 @@ export default function ExpenseTracker() {
               >
                 <Text style={[styles.closeButtonText, {color: theme.red}]}>Close</Text>
               </TouchableOpacity>
-            </Animated.View>
+            </View>
           </View>
         )}
-      </Animated.View>
+      </View>
     </LinearGradient>
   );
 }
@@ -556,7 +430,6 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     marginHorizontal: 10,
   },
-  // Form Styles
   formContainer: {
     marginHorizontal: 16,
     marginTop: 20,
@@ -646,14 +519,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 16,
   },
-  // Categories Section
   categoriesContainer: {
-    // marginHorizontal: 16,
-    // marginTop: 60,
     position: 'absolute',
     left: 16,
     right: 16,
-    bottom: 30, // Adjust this value as needed for bottom spacing
+    bottom: 30,
   },
   categoryCard: {
     flexDirection: 'row',
@@ -696,7 +566,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 2,
   },
-  // Expanded Categories Modal
   expandedModalContainer: {
     position: 'absolute',
     top: 0,
@@ -733,13 +602,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   expandedScrollView: {
-    padding: 16,
+    //padding: 16,
+    padding: 8,
     maxHeight: height * 0.5,
   },
   expandedCategoryItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
+    // paddingVertical: 16,
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
@@ -754,7 +625,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  // If !currentLog
   noLogTitle: {
     fontSize: 24,
     fontWeight: 'bold',
