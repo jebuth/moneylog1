@@ -324,10 +324,8 @@ export default function LogsListScreen() {
   
   // Render individual log item using the proper pattern for React hooks
   const renderLogItem = useCallback(({ item, index }) => {
-    // If this item is being deleted, apply the slide animation
     const isBeingDeleted = item.id === itemBeingDeleted;
     
-    // Animation style when being deleted
     const animatedStyle = isBeingDeleted ? {
       transform: [{ translateX: slideOutAnim }]
     } : {};
@@ -342,7 +340,6 @@ export default function LogsListScreen() {
           }}
           renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, item)}
           onSwipeableOpen={() => {
-            // Close any previously opened swipeable
             if (openSwipeableId && openSwipeableId !== item.id) {
               swipeableRefs.current[openSwipeableId]?.close();
             }
@@ -356,17 +353,16 @@ export default function LogsListScreen() {
           friction={2}
           rightThreshold={40}
         >
-          <View 
+          <TouchableOpacity 
             style={styles.logItem}
             onPress={() => {
-              // Navigate to this log
-              //navigateToExpenseScreen(item);
+              navigateToExpenseScreen(item);
             }}
             onLayout={(event) => {
-              // Store the height of each item for animation
               const { height } = event.nativeEvent.layout;
               itemHeights.current[item.id] = height;
             }}
+            activeOpacity={0.9}
           >
             <LinearGradient
               colors={theme.gradient}
@@ -375,19 +371,22 @@ export default function LogsListScreen() {
               style={styles.logGradient}
             >
               <View style={styles.logContent}>
-                <Text style={[styles.logName, {color: '#fff'}]}>{item.logTitle}</Text>
-                <Text style={[styles.logAmount, {color: '#fff'}]}>{formatCurrency(item.totalAmount)}</Text>
-                <Text style={[styles.logDate, {color: theme.subtext}]}>{item.date}</Text>
+                <View style={styles.logHeader}>
+                  <View style={styles.logTitleSection}>
+                    <Text style={[styles.logName, {color: '#fff'}]}>{item.logTitle}</Text>
+                    <Text style={[styles.logDate, {color: 'rgba(255,255,255,0.7)'}]}>{item.date}</Text>
+                  </View>
+                  <Text style={[styles.logAmount, {color: '#fff'}]}>{formatCurrency(item.totalAmount)}</Text>
+                </View>
                 
                 <View style={styles.actionsRow}>
                   <TouchableOpacity 
-                    style={[styles.iconButton]}
+                    style={styles.iconButton}
                     onPress={() => {
-                      // Navigate to expense tracking screen with this log
                       navigateToExpenseScreen(item);
                     }}
                   >
-                    <Ionicons name="add-circle-outline" size={24} color="#FFF" />
+                    <Ionicons name="add-circle-outline" size={20} color="#FFF" />
                     <Text style={styles.iconButtonText}>Add Expense</Text>
                   </TouchableOpacity>
                   
@@ -395,17 +394,15 @@ export default function LogsListScreen() {
                     style={styles.iconButton}
                     onPress={() => {
                       closeOpenSwipeable();
-                      // Navigate to log details/report screen
-                      // navigation.navigate('logDetails', { logId: item.id });
                     }}
                   >
-                    <Ionicons name="analytics-outline" size={24} color="#FFF" />
+                    <Ionicons name="analytics-outline" size={20} color="#FFF" />
                     <Text style={styles.iconButtonText}>View Report</Text>
                   </TouchableOpacity>
                 </View>
               </View>
             </LinearGradient>
-          </View>
+          </TouchableOpacity>
         </Swipeable>
       </Animated.View>
     );
@@ -441,7 +438,7 @@ export default function LogsListScreen() {
           
           {/* Header */}
           <View style={styles.header}>
-            <Text style={[styles.headerTitle, {color: theme.text}]}>My Logs</Text>
+            <Text style={[styles.headerTitle, {color: theme.text}]}>Logs</Text>
             <TouchableOpacity 
               style={styles.createButton}
               onPress={() => {
@@ -455,10 +452,10 @@ export default function LogsListScreen() {
           
           {/* Search Bar */}
           <View style={[styles.searchContainer, {backgroundColor: theme.card}]}>
-            <Ionicons name="search" size={20} color="#999" style={styles.searchIcon} />
+            {/* <Ionicons name="search" size={20} color="#999" style={styles.searchIcon} /> */}
             <TextInput
               style={[styles.searchInput, {color: theme.text}]}
-              placeholder="Search logs..."
+              placeholder="Search"
               placeholderTextColor="#999"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -619,70 +616,81 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 120, // Extra space at bottom
+    paddingBottom: 120,
   },
   logItem: {
-    marginBottom: 16,
+    marginBottom: 12,
     borderRadius: 16,
     overflow: 'hidden',
-    elevation: 5,
+    elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    backgroundColor: '#121212', // Background to avoid transparency when swiping
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    backgroundColor: '#121212',
   },
   logGradient: {
     borderRadius: 16,
   },
   logContent: {
-    padding: 16,
+    padding: 14,
+  },
+  logHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  logTitleSection: {
+    flex: 1,
+    marginRight: 12,
   },
   logName: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
-    shadowColor: "#080808",
-    shadowOpacity: .9,
-    shadowRadius: 5,
+    marginBottom: 4,
+    shadowColor: "#000",
+    shadowOpacity: .6,
+    shadowRadius: 2,
   },
   logAmount: {
-    fontSize: 28,
+    //fontSize: 22,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
-    shadowColor: "#080808",
-    shadowOpacity: .9,
-    shadowRadius: 5,
+    //textAlign: 'right',
+    shadowColor: "#000",
+    shadowOpacity: .6,
+    shadowRadius: 2,
   },
   logDate: {
-    fontSize: 14,
-    marginBottom: 16,
-    shadowColor: "#080808",
-    shadowOpacity: .1,
-    shadowRadius: 1,
+    fontSize: 13,
+    opacity: 0.8,
   },
   actionsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.15)',
   },
   iconButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 4,
+    marginRight: 20,
   },
   iconButtonText: {
     color: '#FFFFFF',
-    marginLeft: 8,
-    fontSize: 16,
-    shadowColor: "#080808",
-    shadowOpacity: .5,
+    marginLeft: 6,
+    fontSize: 14,
+    opacity: 0.9,
+    shadowColor: "#000",
+    shadowOpacity: .4,
     shadowRadius: 1,
   },
-  // Delete actions styling
   deleteButtonContainer: {
     width: 100,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   deleteButton: {
     flex: 1,
@@ -718,7 +726,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  // Modal Styles
   modalContainer: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -728,7 +735,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24, // Extra padding for iOS
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
   },
   modalHandle: {
     width: 40,
@@ -753,21 +760,6 @@ const styles = StyleSheet.create({
     padding: 16,
     fontSize: 16,
     marginBottom: 24,
-  },
-  amountInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 24,
-  },
-  currencySymbol: {
-    fontSize: 18,
-    marginRight: 8,
-  },
-  amountInput: {
-    flex: 1,
-    fontSize: 18,
   },
   modalButtons: {
     flexDirection: 'row',
