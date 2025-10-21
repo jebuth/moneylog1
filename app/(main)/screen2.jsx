@@ -57,9 +57,10 @@ export default function LogsListScreen() {
   const [itemBeingDeleted, setItemBeingDeleted] = useState(null);
   
   // Gradient colors based on theme
-  const gradientColors = isDarkMode 
-    ? ['#121212', '#1f1f1f', '#2a2a2a'] // Dark theme gradient
-    : ['#f0f2f5', '#e2e7f0', '#d4dcea']; // Light theme gradient
+  // app background
+  // const gradientColors = isDarkMode 
+  // ? ['#12141A', '#1E2028', '#2A2C38']  // Medium contrast
+  // : ['#C5CBEB', '#DCE0F4', '#F0F2FA']
   
   // Configure custom animation for list changes
   const configureLayoutAnimation = () => {
@@ -241,7 +242,6 @@ export default function LogsListScreen() {
           text: "Delete", 
           onPress: async () => {
             setItemBeingDeleted(logId);
-            // here!
             await deleteLog(logId)
             // Animate the item sliding away
             slideOutAnim.setValue(0);
@@ -365,18 +365,18 @@ export default function LogsListScreen() {
             activeOpacity={0.9}
           >
             <LinearGradient
-              colors={theme.gradient}
-              start={{ x: 0.5, y: 0 }}
-              end={{ x: 1, y: 1 }}
+              colors={theme.cardGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
               style={styles.logGradient}
             >
               <View style={styles.logContent}>
                 <View style={styles.logHeader}>
                   <View style={styles.logTitleSection}>
-                    <Text style={[styles.logName, {color: '#fff'}]}>{item.logTitle}</Text>
-                    <Text style={[styles.logDate, {color: 'rgba(255,255,255,0.7)'}]}>{item.date}</Text>
+                    <Text style={[styles.logName, {color: theme.text}]}>{item.logTitle}</Text>
+                    <Text style={[styles.logAmount, {color: theme.text}]}>{formatCurrency(item.totalAmount)}</Text>
                   </View>
-                  <Text style={[styles.logAmount, {color: '#fff'}]}>{formatCurrency(item.totalAmount)}</Text>
+                  <Text style={[styles.logDate, {color: theme.text}]}>{item.date}</Text>
                 </View>
                 
                 <View style={styles.actionsRow}>
@@ -386,8 +386,8 @@ export default function LogsListScreen() {
                       navigateToExpenseScreen(item);
                     }}
                   >
-                    <Ionicons name="add-circle-outline" size={20} color="#FFF" />
-                    <Text style={styles.iconButtonText}>Add Expense</Text>
+                    <Ionicons name="add-circle-outline" size={20} color={theme.text} />
+                    <Text style={[styles.iconButtonText, {color:theme.text}]}>Add Expense</Text>
                   </TouchableOpacity>
                   
                   <TouchableOpacity 
@@ -396,8 +396,8 @@ export default function LogsListScreen() {
                       closeOpenSwipeable();
                     }}
                   >
-                    <Ionicons name="analytics-outline" size={20} color="#FFF" />
-                    <Text style={styles.iconButtonText}>View Report</Text>
+                    <Ionicons name="analytics-outline" size={20} color={theme.text} />
+                    <Text style={[styles.iconButtonText, {color: theme.text}]}>View Report</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -412,7 +412,7 @@ export default function LogsListScreen() {
   if (isLoading) {
     return (
       <LinearGradient
-        colors={gradientColors}
+        colors={theme.backgroundGradient}
         style={styles.container}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -428,7 +428,7 @@ export default function LogsListScreen() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <LinearGradient
-        colors={gradientColors}
+        colors={theme.backgroundGradient}
         style={styles.container}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -586,7 +586,8 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#5C5CFF',
+    backgroundColor: '#5749C5', // purple
+    //backgroundColor: '#68a8d4', // light blue
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -627,7 +628,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 3,
-    backgroundColor: '#121212',
+    //backgroundColor: '#121212',
+    borderColor: '#68a8d4', // blue border
+    borderWidth: .2,
   },
   logGradient: {
     borderRadius: 16,
@@ -636,30 +639,29 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   logHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'column',
     marginBottom: 12,
   },
   logTitleSection: {
-    flex: 1,
-    marginRight: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
   },
   logName: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 4,
-    shadowColor: "#000",
-    shadowOpacity: .6,
-    shadowRadius: 2,
+    flex: 1,
+    marginRight: 12,
+    //shadowColor: "#000",
+    //shadowOpacity: .1,
+    //shadowRadius: 2,
   },
   logAmount: {
-    //fontSize: 22,
     fontSize: 18,
-    fontWeight: 'bold',
-    //textAlign: 'right',
+    fontWeight: 'light',
     shadowColor: "#000",
-    shadowOpacity: .6,
+    shadowOpacity: .1,
     shadowRadius: 2,
   },
   logDate: {
@@ -677,16 +679,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 4,
-    marginRight: 20,
   },
   iconButtonText: {
-    color: '#FFFFFF',
+    //color: '#FFFFFF',
     marginLeft: 6,
     fontSize: 14,
     opacity: 0.9,
     shadowColor: "#000",
-    shadowOpacity: .4,
-    shadowRadius: 1,
+    //shadowOpacity: .1,
+    //shadowRadius: 1,
   },
   deleteButtonContainer: {
     width: 100,

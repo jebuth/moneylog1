@@ -17,7 +17,14 @@ export const lightTheme = {
   input: '#FFFFFF',
   inputBorder: '#CCCCCC',
   red: '#FF3B30',
-  gradient : ['#B2AAEE', '#887ED6', '#5749C5', '#2917AD'],
+  iconColor: '#68a8d4',
+  iconColorSecondary: '#000',
+  backgroundGradient: ['#C5CBEB', '#DCE0F4', '#F0F2FA'],
+  cardGradient: [
+    'rgba(255, 255, 255, .7)',
+    'rgba(255, 255, 255, .5)',
+    'rgba(255, 255, 255, .3)'
+  ],
   purple: '#5749C5'
 };
 
@@ -36,7 +43,14 @@ export const darkTheme = {
   input: '#2A2A2A',
   inputBorder: '#444444',
   red: '#FF3B30',
-  gradient: ['#0F0F0F', '#1B1928', '#251E58', '#3F339F'],
+  iconColor: '#68a8d4',
+  iconColorSecondary: '#FFF',
+  backgroundGradient:['#12141A', '#1E2028', '#2A2C38'],
+  cardGradient: [
+    'rgba(32, 36, 45, 0.7)', 
+    'rgba(25, 28, 35, 0.5)',    
+    'rgba(18, 20, 26, 0.3)',    // Just a touch of blue
+  ],
   purple: '#5749C5'
 };
 

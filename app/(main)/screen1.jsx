@@ -51,9 +51,9 @@ export default function ExpenseTracker() {
   const [categoriesExpanded, setCategoriesExpanded] = useState(false);
 
   // Gradient colors based on theme
-  const gradientColors = isDarkMode 
-    ? ['#121212', '#1f1f1f', '#2a2a2a'] 
-    : ['#f0f2f5', '#e2e7f0', '#d4dcea'];
+  // const gradientColors = isDarkMode 
+  //   ? ['#121212', '#1f1f1f', '#2a2a2a'] 
+  //   : ['#f0f2f5', '#e2e7f0', '#d4dcea'];
 
   // Handle amount input changes
   const handleAmountChange = (text) => {
@@ -124,7 +124,7 @@ export default function ExpenseTracker() {
   if (isLoading && !currentLog) {
     return (
       <LinearGradient
-        colors={gradientColors}
+        colors={theme.backgroundGradient}
         style={styles.container}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -141,7 +141,7 @@ export default function ExpenseTracker() {
   if (!currentLog) {
     return (
       <LinearGradient
-        colors={gradientColors}
+        colors={theme.backgroundGradient}
         style={styles.container}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -166,7 +166,7 @@ export default function ExpenseTracker() {
 
   return (
     <LinearGradient
-      colors={gradientColors}
+      colors={theme.backgroundGradient}
       style={styles.container}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
@@ -174,49 +174,50 @@ export default function ExpenseTracker() {
       <View style={styles.contentContainer}>
         {/* Header Card with Trip Name and Amount */}
         <LinearGradient
-          colors={theme.gradient}
-          start={{ x: 0.5, y: 0 }}
+          colors={theme.cardGradient}
+          start={{ x: 1, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.headerCard}
         >
           <View style={styles.headerContent}>
-            <Text style={[styles.logTitle, {color: "#FFF"}]}>{logTitle}</Text>
-            <Text style={[styles.totalAmount, {color: "#FFF"}]}>${totalAmount.toLocaleString(undefined, {
+            <Text style={[styles.logTitle, {color: theme.text}]}>{logTitle}</Text>
+            <Text style={[styles.totalAmount, {color: theme.text}]}>${totalAmount.toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
             })}</Text>
             
             <View style={styles.quickCategoryContainer}>
               <TouchableOpacity
-                style={[styles.quickCategoryButton, {backgroundColor: '#42404F' }]}
+                //style={[styles.quickCategoryButton, {backgroundColor: '#42404F' }]}
+                style={[styles.quickCategoryButton, {backgroundColor: theme.purple }]}
                 onPress={() => Alert.alert("Analytics", "This feature is coming soon.", [{ text: "OK" }])}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', top: 10 }}>
-                  <Ionicons name="analytics-outline" size={35} color="#999" />
+                  <Ionicons name="analytics-outline" size={35} color='#DDD' />
                 </View>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.quickCategoryButton, { backgroundColor: '#42404F' }]}
+                style={[styles.quickCategoryButton, { backgroundColor: theme.purple }]}
                 onPress={() => Alert.alert("View Chart", "This feature is coming soon.", [{ text: "OK" }])}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', top: 10 }}>
-                  <Ionicons name="list-outline" size={35} color="#999" />
+                  <Ionicons name="list-outline" size={35} color="#DDD" />
                 </View>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.quickCategoryButton, { backgroundColor: '#42404F' }]}
+                style={[styles.quickCategoryButton, { backgroundColor: theme.purple }]}
                 onPress={() => Alert.alert("View Stats", "This feature is coming soon.", [{ text: "OK" }])}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', top: 12 }}>
-                  <Ionicons name="pie-chart-outline" size={30} color="#999" />
+                  <Ionicons name="pie-chart-outline" size={30} color="#DDD" />
                 </View>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.quickCategoryButton, { backgroundColor: '#42404F' }]}
+                style={[styles.quickCategoryButton, { backgroundColor: theme.purple }]}
                 onPress={() => Alert.alert("Duplicate Log", "This feature is coming soon.", [{ text: "OK" }])}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', top: 10 }}>
-                  <Ionicons name="duplicate-outline" size={35} color="#999" />
+                  <Ionicons name="duplicate-outline" size={35} color="#DDD" />
                 </View>
               </TouchableOpacity>
             </View>
@@ -224,7 +225,12 @@ export default function ExpenseTracker() {
         </LinearGradient>
         
         {/* Input Form */}
-        <View style={[styles.formContainer, {backgroundColor: theme.card}]}>
+        <LinearGradient 
+          colors={theme.cardGradient}
+          style={styles.formContainer}
+          start={{ x: 1, y: 0 }}
+          end={{ x: 1, y: 1 }}>
+        {/* <View style={[styles.formContainer, {backgroundColor: theme.gradient}]}> */}
           {/* Row 1: Amount and Category side by side */}
           <View style={{flexDirection: 'row', height: 90}}>
             {/* Amount Input */}
@@ -286,7 +292,8 @@ export default function ExpenseTracker() {
               <Text style={[styles.logButtonText]}>LOG</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        {/* </View> */}
+        </LinearGradient>
         
         {/* Bottom Categories Section */}
         <View style={styles.categoriesContainer}>
@@ -395,6 +402,8 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     height: 220,
     overflow: 'hidden',
+    borderColor: '#68a8d4', // blue border
+    borderWidth: .2,
   },
   headerContent: {
     padding: 24,
@@ -405,17 +414,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
     marginBottom: 8,
-    shadowColor: "#080808",
-    shadowOpacity: .5,
-    shadowRadius: 1,
+    //shadowColor: "#080808",
+    //shadowOpacity: 0,
+    //shadowRadius: 1,
   },
   totalAmount: {
     fontSize: 36,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 24,
-    shadowOpacity: .5,
-    shadowRadius: 1,
+    // shadowOpacity: 0,
+    // shadowRadius: 1,
   },
   quickCategoryContainer: {
     flexDirection: 'row',
@@ -435,11 +444,13 @@ const styles = StyleSheet.create({
     marginTop: 20,
     borderRadius: 16,
     padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    // shadowColor: "#000",
+    // shadowOffset: { width: 0, height: 4 },
+    // shadowOpacity: 0.3,
+    // shadowRadius: 4,
     elevation: 8,
+    borderColor: '#68a8d4', // blue border
+    borderWidth: .2,
   },
   inputSection: {
     marginBottom: 16,

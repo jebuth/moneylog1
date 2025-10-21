@@ -25,9 +25,9 @@ export default function SettingsScreen() {
   const [isPro, setIsPro] = useState(false); // This would come from user data in a real app
   
   // Gradient colors based on theme
-  const gradientColors = isDarkMode 
-    ? ['#121212', '#1f1f1f', '#2a2a2a'] // Dark theme gradient
-    : ['#f0f2f5', '#e2e7f0', '#d4dcea']; // Light theme gradient
+  // const gradientColors = isDarkMode 
+  //   ? ['#121212', '#1f1f1f', '#2a2a2a'] // Dark theme gradient
+  //   : ['#f0f2f5', '#e2e7f0', '#d4dcea']; // Light theme gradient
   
   // Handle subscription
   const handleSubscribe = () => {
@@ -85,7 +85,7 @@ export default function SettingsScreen() {
   
   return (
     <LinearGradient
-      colors={gradientColors}
+      colors={theme.backgroundGradient}
       style={styles.container}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
@@ -99,7 +99,12 @@ export default function SettingsScreen() {
         
         <ScrollView style={styles.scrollView}>
           {/* Account Section */}
-          <View style={[styles.section, { backgroundColor: theme.card }]}>
+          {/* <View style={[styles.section, { backgroundColor: theme.card }]}> */}
+          <LinearGradient 
+          colors={theme.cardGradient}
+          style={styles.section}
+          start={{ x: 1, y: 0 }}
+          end={{ x: 1, y: 1 }}>
             <Text style={[styles.sectionTitle, { color: theme.text, borderBottomColor: theme.divider }]}>Account</Text>
             
             <View style={styles.accountInfo}>
@@ -130,10 +135,15 @@ export default function SettingsScreen() {
                 <Text style={[styles.proStatusText, { color: theme.text }]}>Pro Subscription Active</Text>
               </View>
             )}
-          </View>
+          {/* </View> */}
+          </LinearGradient>
           
           {/* Appearance Section */}
-          <View style={[styles.section, { backgroundColor: theme.card }]}>
+          <LinearGradient
+          colors={theme.cardGradient}
+          style={styles.section}
+          start={{ x: 1, y: 0 }}
+          end={{ x: 1, y: 1 }}>
             <Text style={[styles.sectionTitle, { color: theme.text, borderBottomColor: theme.divider }]}>Appearance</Text>
             
             <View style={styles.settingRow}>
@@ -149,10 +159,14 @@ export default function SettingsScreen() {
                 ios_backgroundColor="#3e3e3e"
               />
             </View>
-          </View>
+          </LinearGradient>
           
           {/* Legal Section */}
-          <View style={[styles.section, { backgroundColor: theme.card }]}>
+          <LinearGradient
+          colors={theme.cardGradient}
+          style={styles.section}
+          start={{ x: 1, y: 0 }}
+          end={{ x: 1, y: 1 }}>
             <Text style={[styles.sectionTitle, { color: theme.text, borderBottomColor: theme.divider }]}>Legal</Text>
             
             <TouchableOpacity
@@ -176,7 +190,7 @@ export default function SettingsScreen() {
               </View>
               <Ionicons name="chevron-forward" size={20} color={theme.subtext} />
             </TouchableOpacity>
-          </View>
+          </LinearGradient>
           
           {/* Sign Out Button */}
           <TouchableOpacity
@@ -225,6 +239,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
+    borderColor: '#68a8d4', // blue border
+    borderWidth: .2,
   },
   sectionTitle: {
     fontSize: 16,
