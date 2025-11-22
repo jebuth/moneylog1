@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import CategorySelectorModal from '../../components/CategorySelectorModal';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import {CategoryIcons} from '../../constants/CategoryIcons';
 
 const { width, height } = Dimensions.get('window');
 
@@ -48,12 +49,6 @@ export default function ExpenseTracker() {
   
   // Category selection
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
-  const [categoriesExpanded, setCategoriesExpanded] = useState(false);
-
-  // Gradient colors based on theme
-  // const gradientColors = isDarkMode 
-  //   ? ['#121212', '#1f1f1f', '#2a2a2a'] 
-  //   : ['#f0f2f5', '#e2e7f0', '#d4dcea'];
 
   // Handle amount input changes
   const handleAmountChange = (text) => {
@@ -85,15 +80,6 @@ export default function ExpenseTracker() {
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
     closeCategoryModal();
-  };
-
-  // Categories expansion handlers
-  const expandCategories = () => {
-    setCategoriesExpanded(true);
-  };
-
-  const collapseCategories = () => {
-    setCategoriesExpanded(false);
   };
 
   // Log the expense
@@ -171,7 +157,11 @@ export default function ExpenseTracker() {
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
-      <View style={styles.contentContainer}>
+      <ScrollView 
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header Card with Trip Name and Amount */}
         <LinearGradient
           colors={theme.cardGradient}
@@ -188,7 +178,6 @@ export default function ExpenseTracker() {
             
             <View style={styles.quickCategoryContainer}>
               <TouchableOpacity
-                //style={[styles.quickCategoryButton, {backgroundColor: '#42404F' }]}
                 style={[styles.quickCategoryButton, {backgroundColor: theme.purple }]}
                 onPress={() => Alert.alert("Analytics", "This feature is coming soon.", [{ text: "OK" }])}
               >
@@ -229,8 +218,8 @@ export default function ExpenseTracker() {
           colors={theme.cardGradient}
           style={styles.formContainer}
           start={{ x: 1, y: 0 }}
-          end={{ x: 1, y: 1 }}>
-        {/* <View style={[styles.formContainer, {backgroundColor: theme.gradient}]}> */}
+          end={{ x: 1, y: 1 }}
+        >
           {/* Row 1: Amount and Category side by side */}
           <View style={{flexDirection: 'row', height: 90}}>
             {/* Amount Input */}
@@ -292,30 +281,58 @@ export default function ExpenseTracker() {
               <Text style={[styles.logButtonText]}>LOG</Text>
             </TouchableOpacity>
           </View>
-        {/* </View> */}
         </LinearGradient>
         
-        {/* Bottom Categories Section */}
-        <View style={styles.categoriesContainer}>
-          <TouchableOpacity 
-            style={[styles.categoryCard, {backgroundColor: theme.card}]}
-            onPress={expandCategories}
-          >
-            <View style={[styles.categoryIcon, { backgroundColor: '#5C5CFF' }]} />
-            
-            <View style={styles.categoryInfo}>
-              <Text style={[styles.categoryName, {color: theme.text}]}>{currentLog.categories[0].name}</Text>
-              <Text style={[styles.transactionCount, {color: theme.subtext}]}>{currentLog.categories[0].transactionCount} transactions</Text>
-            </View>
-            
-            <View style={styles.categoryAmount}>
-              <Text style={[styles.amountText, {color: theme.text}]}>${currentLog.categories[0].amount.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2})}</Text>
-              <Text style={[styles.percentageText, {color: theme.subtext}]}>{currentLog.categories[0].percentage}%</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+        {/* Categories List Card */}
+        <LinearGradient
+          colors={theme.cardGradient}
+          start={{ x: 1, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.categoriesCard}
+        >
+          <View style={styles.categoriesList}>
+            {Array.isArray(categories) && categories.length > 0 ? (
+              categories.map((category, index) => (
+                <TouchableOpacity
+                  key={category.id}
+                  style={[
+                    styles.categoryItem,
+                    index === categories.length - 1 && styles.lastCategoryItem
+                  ]}
+                  onPress={() => setSelectedCategory(category)}
+                >
+
+                  <Ionicons name={CategoryIcons[category.name]} size={24} color={theme.subtext} style={styles.categoryIcon} />
+                                    
+                  <View style={styles.categoryInfo}>
+                    <Text style={[styles.categoryName, {color: theme.text}]}>{category.name}</Text>
+                    <Text style={[styles.transactionCount, {color: theme.subtext}]}>
+                      {category.transactionCount} transactions
+                    </Text>
+                  </View>
+                  
+                  <View style={styles.categoryAmount}>
+                    <Text style={[styles.amountText, {color: theme.text}]}>
+                      ${category.amount.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                      })}
+                    </Text>
+                    <Text style={[styles.percentageText, {color: theme.subtext}]}>
+                      {category.percentage}%
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.emptyCategories}>
+                <Text style={[styles.emptyCategoriesText, {color: theme.subtext}]}>
+                  No categories available
+                </Text>
+              </View>
+            )}
+          </View>
+        </LinearGradient>
         
         {/* Category Selection Modal */}
         <CategorySelectorModal
@@ -324,61 +341,7 @@ export default function ExpenseTracker() {
           onSelect={handleCategorySelect}
           categories={categories}
         />
-        
-        {/* Categories Expansion Modal */}
-        {categoriesExpanded && (
-          <View style={styles.expandedModalContainer}>
-            <TouchableOpacity
-              style={styles.expandedDismissArea}
-              activeOpacity={1}
-              onPress={collapseCategories}
-            />
-            
-            <View style={[styles.expandedCategoriesContainer, { backgroundColor: theme.card }]}>
-              <View style={styles.expandedHeader}>
-                <View style={styles.expandedHandleBar} />
-                <Text style={[styles.expandedTitle, {color: theme.text}]}>Categories</Text>
-              </View>
-              
-              <ScrollView style={styles.expandedScrollView}>
-                {categories.map((category) => (
-                  <TouchableOpacity
-                    key={category.id}
-                    style={styles.expandedCategoryItem}
-                    onPress={() => {
-                      setSelectedCategory(category);
-                      collapseCategories();
-                    }}
-                  >
-                    <View style={[styles.categoryIcon, { backgroundColor: category.color || '#5C5CFF' }]} />
-                    
-                    <View style={styles.categoryInfo}>
-                      <Text style={[styles.categoryName, {color: theme.text}]}>{category.name}</Text>
-                      <Text style={[styles.transactionCount, {color: theme.subtext}]}>
-                        {currentLog.categories.find(c => c.name === category.name)?.transactionCount || 0} transactions
-                      </Text>
-                    </View>
-                    
-                    <View style={styles.categoryAmount}>
-                      <Text style={[styles.amountText, {color: theme.text}]}>${category.amount.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2})}</Text>
-                      <Text style={[styles.percentageText, {color: theme.subtext}]}>{category.percentage}%</Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-              
-              <TouchableOpacity
-                style={[styles.closeButton, {borderWidth: 1, borderColor: theme.red, backgroundColor: theme.card}]}
-                onPress={collapseCategories}
-              >
-                <Text style={[styles.closeButtonText, {color: theme.red}]}>Close</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-      </View>
+      </ScrollView>
     </LinearGradient>
   );
 }
@@ -387,8 +350,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  contentContainer: {
+  scrollContainer: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 30,
   },
   loadingContainer: {
     flex: 1,
@@ -402,7 +368,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     height: 220,
     overflow: 'hidden',
-    borderColor: '#68a8d4', // blue border
+    borderColor: '#68a8d4',
     borderWidth: .2,
   },
   headerContent: {
@@ -414,17 +380,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
     marginBottom: 8,
-    //shadowColor: "#080808",
-    //shadowOpacity: 0,
-    //shadowRadius: 1,
   },
   totalAmount: {
     fontSize: 36,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 24,
-    // shadowOpacity: 0,
-    // shadowRadius: 1,
   },
   quickCategoryContainer: {
     flexDirection: 'row',
@@ -434,9 +395,9 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   quickCategoryButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     marginHorizontal: 10,
   },
   formContainer: {
@@ -444,12 +405,8 @@ const styles = StyleSheet.create({
     marginTop: 20,
     borderRadius: 16,
     padding: 16,
-    // shadowColor: "#000",
-    // shadowOffset: { width: 0, height: 4 },
-    // shadowOpacity: 0.3,
-    // shadowRadius: 4,
     elevation: 8,
-    borderColor: '#68a8d4', // blue border
+    borderColor: '#68a8d4',
     borderWidth: .2,
   },
   inputSection: {
@@ -530,111 +487,70 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 16,
   },
-  categoriesContainer: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 30,
+  categoriesCard: {
+    marginHorizontal: 16,
+    marginTop: 20,
+    borderRadius: 16,
+    padding: 16,
+    elevation: 8,
+    borderColor: '#68a8d4',
+    borderWidth: .2,
   },
-  categoryCard: {
+  categoriesHeader: {
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  categoriesTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  categoriesSubtitle: {
+    fontSize: 14,
+  },
+  categoriesList: {
+    // Container for all category items
+  },
+  categoryItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 56,
-    marginBottom: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 6,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  lastCategoryItem: {
+    borderBottomWidth: 0,
   },
   categoryIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    // width: 40,
+    // height: 40,
+    borderRadius: 20,
     marginRight: 16,
   },
   categoryInfo: {
     flex: 1,
   },
   categoryName: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '600',
   },
   transactionCount: {
-    fontSize: 14,
-    marginTop: 4,
+    fontSize: 13,
+    marginTop: 2,
   },
   categoryAmount: {
     alignItems: 'flex-end',
     marginRight: 8
   },
   amountText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   percentageText: {
-    fontSize: 14,
+    fontSize: 13,
     marginTop: 2,
-  },
-  expandedModalContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'flex-end',
-  },
-  expandedDismissArea: {
-    flex: 1,
-  },
-  expandedCategoriesContainer: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingBottom: 30,
-    maxHeight: height * 0.7,
-    width: '100%',
-  },
-  expandedHeader: {
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
-  },
-  expandedHandleBar: {
-    width: 40,
-    height: 5,
-    backgroundColor: '#999',
-    borderRadius: 3,
-    marginBottom: 12,
-  },
-  expandedTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  expandedScrollView: {
-    //padding: 16,
-    padding: 8,
-    maxHeight: height * 0.5,
-  },
-  expandedCategoryItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    // paddingVertical: 16,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
-  },
-  closeButton: {
-    padding: 16,
-    alignItems: 'center',
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 8,
-  },
-  closeButtonText: {
-    fontWeight: 'bold',
-    fontSize: 16,
   },
   noLogTitle: {
     fontSize: 24,

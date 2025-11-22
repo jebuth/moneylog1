@@ -139,6 +139,7 @@ export default function LogsListScreen() {
       logTitle: newLogName,
       totalAmount: 0,
       date: new Date().toISOString().split('T')[0],
+      
       categories: [
         {
           id: 1,
@@ -485,13 +486,13 @@ export default function LogsListScreen() {
                 <Text style={[styles.emptyText, {color: theme.text}]}>
                   {searchQuery.length > 0 
                     ? "No logs match your search" 
-                    : "You haven't created any logs yet..."}
+                    : "You haven't added any logs yet..."}
                 </Text>
                 <TouchableOpacity 
                   style={styles.emptyButton}
                   onPress={() => setShowNewLogModal(true)}
                 >
-                  <Text style={[styles.emptyButtonText, {color: '#fff'}]}>Create Your First Log</Text>
+                  <Text style={[styles.emptyButtonText, {color: '#fff'}]}>Add Your First Log</Text>
                 </TouchableOpacity>
               </View>
             }
@@ -511,12 +512,12 @@ export default function LogsListScreen() {
               <View style={[styles.modalContent, {backgroundColor: theme.card}]}>
                 <View style={styles.modalHandle} />
                 
-                <Text style={[styles.modalTitle, {color: theme.text}]}>Create New Log</Text>
+                <Text style={[styles.modalTitle, {color: theme.text}]}>New Log</Text>
                 
-                <Text style={[styles.inputLabel, {color: theme.subtext}]}>Log Title</Text>
+                <Text style={[styles.inputLabel, {color: theme.subtext}]}>Title</Text>
                 <TextInput
                   style={[styles.modalInput, {backgroundColor: theme.background, color: theme.text}]}
-                  placeholder="Enter log name"
+                  placeholder="Enter log title"
                   placeholderTextColor="#999"
                   value={newLogName}
                   onChangeText={setNewLogName}
@@ -551,7 +552,7 @@ export default function LogsListScreen() {
                     style={styles.createLogButton}
                     onPress={handleCreateNewLog}
                   >
-                    <Text style={styles.createLogButtonText}>CREATE LOG</Text>
+                    <Text style={styles.createLogButtonText}>ADD</Text>
                   </TouchableOpacity>
                 </View>
               </View>

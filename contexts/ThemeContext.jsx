@@ -19,7 +19,12 @@ export const lightTheme = {
   red: '#FF3B30',
   iconColor: '#68a8d4',
   iconColorSecondary: '#000',
-  backgroundGradient: ['#C5CBEB', '#DCE0F4', '#F0F2FA'],
+  //backgroundGradient: ['#C5CBEB', '#DCE0F4', '#F0F2FA'],
+  backgroundGradient: [
+    'rgba(175, 182, 215, 1)',  // Darker but still soft
+    'rgba(200, 205, 230, 1)',
+    'rgba(220, 223, 240, 1)'
+  ],
   cardGradient: [
     'rgba(255, 255, 255, .7)',
     'rgba(255, 255, 255, .5)',
@@ -43,9 +48,13 @@ export const darkTheme = {
   input: '#2A2A2A',
   inputBorder: '#444444',
   red: '#FF3B30',
-  iconColor: '#68a8d4',
+  iconColor: '#42404F',
   iconColorSecondary: '#FFF',
-  backgroundGradient:['#12141A', '#1E2028', '#2A2C38'],
+  backgroundGradient: [
+    'rgba(20, 22, 28, 1)',
+    'rgba(30, 32, 40, 1)', 
+    'rgba(42, 44, 56, 1)'
+  ],
   cardGradient: [
     'rgba(32, 36, 45, 0.7)', 
     'rgba(25, 28, 35, 0.5)',    
