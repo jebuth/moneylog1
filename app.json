@@ -1,21 +1,29 @@
 {
-    "expo": {
-      "name": "Moneylog",
-      "slug": "moneylog",
-      "version": "1.0.0",
-      "extra": {
-        "eas": {
-          "projectId": "78048b3b-4612-409c-840f-f831c93d1c47"
-        },
-        "firebase": {
-          "apiKey": "AIzaSyDFTjj_EVjrNYw3jXg41HzqRqFmW8ZxqTE",
-          "authDomain": "moneylog-firebase.firebaseapp.com",
-          "projectId": "moneylog-firebase",
-          "storageBucket": "moneylog-firebase.firebasestorage.app",
-          "messagingSenderId": "579389584086",
-          "appId": "1:579389584086:web:36fa4086fbb5c407d60f77",
-          "googleIOSClientId": "1089638738424-kg7p2rok7t16i03043secdfqg8svg5b2.apps.googleusercontent.com"
-        }
+  "expo": {
+    "name": "Moneylog",
+    "slug": "moneylog",
+    "version": "1.0.0",
+    "ios": {
+      "bundleIdentifier": "com.moneylog.moneylog",
+      "icon": "./assets/icon.png",
+      "supportsTablet": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "78048b3b-4612-409c-840f-f831c93d1c47"
+      },
+      "firebase": {
+        "apiKey": "AIzaSyDFTjj_EVjrNYw3jXg41HzqRqFmW8ZxqTE",
+        "authDomain": "moneylog-firebase.firebaseapp.com",
+        "projectId": "moneylog-firebase",
+        "storageBucket": "moneylog-firebase.firebasestorage.app",
+        "messagingSenderId": "579389584086",
+        "appId": "1:579389584086:web:36fa4086fbb5c407d60f77",
+        "googleIOSClientId": "1089638738424-kg7p2rok7t16i03043secdfqg8svg5b2.apps.googleusercontent.com"
       }
+    },
+    "android": {
+      "package": "com.moneylog.moneylog"
     }
   }
+}

@@ -1,4 +1,4 @@
-package com.justinbuth91.moneylog
+package com.moneylog.moneylog
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
