@@ -38,3 +38,4 @@ app.config.js
 *.tsbuildinfo
 
 app-example
+ios/
