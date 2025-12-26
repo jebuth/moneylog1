@@ -4,7 +4,7 @@
     "slug": "moneylog",
     "version": "1.0.0",
     "ios": {
-      "bundleIdentifier": "com.moneylog.moneylog",
+      "bundleIdentifier": "com.anonymous.moneylog",
       "icon": "./assets/icon.png",
       "supportsTablet": true
     },
@@ -23,7 +23,7 @@
       }
     },
     "android": {
-      "package": "com.moneylog.moneylog"
+      "package": "com.anonymous.moneylog"
     }
   }
 }

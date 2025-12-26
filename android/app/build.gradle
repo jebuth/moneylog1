@@ -86,9 +86,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.moneylog.moneylog'
+    namespace 'com.anonymous.moneylog'
     defaultConfig {
-        applicationId 'com.moneylog.moneylog'
+        applicationId 'com.anonymous.moneylog'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

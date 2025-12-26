@@ -126,12 +126,12 @@ export default function LoginScreen() {
           </Animated.View>
           
           {/* App Title and Subtitle fade in */}
-          <Animated.Text style={[styles.title, { color: theme.text, opacity: fadeAnim }]}>
-            Moneylog
-          </Animated.Text>
-          <Animated.Text style={[styles.subtitle, { color: theme.subtext, opacity: fadeAnim }]}>
-            Actually track your expenses
-          </Animated.Text>
+          {/* <Animated.Text style={[styles.title, { color: theme.text, opacity: fadeAnim }]}>
+            moneylog
+          </Animated.Text> */}
+          {/* <Animated.Text style={[styles.subtitle, { color: theme.subtext, opacity: fadeAnim }]}>
+            
+          </Animated.Text> */}
           
           {/* Buttons container slides up from the bottom */}
           <Animated.View style={{ 

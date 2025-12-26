@@ -1,4 +1,4 @@
-package com.moneylog.moneylog
+package com.anonymous.moneylog
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

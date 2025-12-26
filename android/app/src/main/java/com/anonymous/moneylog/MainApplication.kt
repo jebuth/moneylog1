@@ -1,4 +1,4 @@
-package com.moneylog.moneylog
+package com.anonymous.moneylog
 
 import android.app.Application
 import android.content.res.Configuration
