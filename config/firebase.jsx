@@ -10,8 +10,6 @@ export const firebaseConfig = {
 };
 
 export const googleAuthConfig = {
-    // webClientId: GOOGLE_WEB_CLIENT_ID, not used
-    // androidClientId: GOOGLE_ANDROID_CLIENT_ID, not used
-    //iosClientId: GOOGLE_IOS_CLIENT_ID,
     iosClientId: Constants.expoConfig.extra.firebase.googleIOSClientId,
+    androidClientId: Constants.expoConfig.extra.firebase.googleAndroidClientId,
 };

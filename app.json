@@ -2,11 +2,21 @@
   "expo": {
     "name": "Moneylog",
     "slug": "moneylog",
+    "scheme": "moneylog",
     "version": "1.0.0",
     "ios": {
-        "bundleIdentifier": "com.anonymous.moneylog",
+      "bundleIdentifier": "com.anonymous.moneylog",
       "icon": "./assets/icon.png",
       "supportsTablet": true
+    },
+    "android": {
+      "package": "com.anonymous.moneylog",
+      "icon": "./assets/icon.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "googleServicesFile": "./google-services.json"
     },
     "extra": {
       "eas": {
@@ -19,11 +29,9 @@
         "storageBucket": "moneylog-firebase.firebasestorage.app",
         "messagingSenderId": "579389584086",
         "appId": "1:579389584086:web:36fa4086fbb5c407d60f77",
-        "googleIOSClientId": "1089638738424-kg7p2rok7t16i03043secdfqg8svg5b2.apps.googleusercontent.com"
+        "googleIOSClientId": "1089638738424-kg7p2rok7t16i03043secdfqg8svg5b2.apps.googleusercontent.com",
+        "googleAndroidClientId": "YOUR_ANDROID_CLIENT_ID_HERE"
       }
-    },
-    "android": {
-      "package": "com.anonymous.moneylog"
     }
   }
 }

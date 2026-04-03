@@ -55,11 +55,8 @@ export function AuthProvider({ children }) {
 
   // Google Auth setup
   const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: Platform.OS === 'ios' ? googleAuthConfig.iosClientId : (Platform.OS === 'android' ? ANDROID_CLIENT_ID : WEB_CLIENT_ID),
-    //androidClientId: ANDROID_CLIENT_ID,
-    iosClientId:googleAuthConfig.iosClientId
-    //webClientId: WEB_CLIENT_ID,
-    //expoClientId: WEB_CLIENT_ID,
+    iosClientId: googleAuthConfig.iosClientId,
+    androidClientId: googleAuthConfig.androidClientId,
   });
 
   // Handle the Google sign-in response
