@@ -31,10 +31,66 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
+const DARK = {
+  bg:           '#0f0f0f',
+  headerTitle:  '#fff',
+  searchBg:     '#141414',
+  searchBorder: '#222',
+  searchText:   '#fff',
+  searchHolder: '#555',
+  cardBg:       '#141414',
+  cardBorder:   '#222',
+  cardLeft:     '#222',
+  title:        '#fff',
+  meta:         '#555',
+  amount:       '#fff',
+  chevron:      '#444',
+  emptyIcon:    '#333',
+  emptyText:    '#666',
+  loaderText:   '#aaa',
+  modalCardBg:  '#141414',
+  modalBorder:  '#222',
+  modalIconBg:  '#1e1e1e',
+  modalInputBg: '#1e1e1e',
+  modalInputBorder: '#2a2a2a',
+  modalInputText:   '#fff',
+  modalHolder:  '#555',
+  modalCancel:  '#555',
+};
+
+const LIGHT = {
+  bg:           '#EEF2F7',
+  headerTitle:  '#0A1628',
+  searchBg:     '#FFFFFF',
+  searchBorder: '#D8E2EE',
+  searchText:   '#0A1628',
+  searchHolder: '#A8BACE',
+  cardBg:       '#FFFFFF',
+  cardBorder:   '#D8E2EE',
+  cardLeft:     '#D8E2EE',
+  title:        '#0A1628',
+  meta:         '#4A6FA5',
+  amount:       '#0A1628',
+  chevron:      '#A8BACE',
+  emptyIcon:    '#A8BACE',
+  emptyText:    '#4A6FA5',
+  loaderText:   '#4A6FA5',
+  modalCardBg:  '#FFFFFF',
+  modalBorder:  '#D8E2EE',
+  modalIconBg:  '#EEF2F7',
+  modalInputBg: '#EEF2F7',
+  modalInputBorder: '#D8E2EE',
+  modalInputText:   '#0A1628',
+  modalHolder:  '#A8BACE',
+  modalCancel:  '#8BA3C0',
+};
+
 export default function LogsListScreen() {
   const { isLoading, user, logs, setLogs, currentLog, setCurrentLog, addLog, deleteLog } = useAuth();
-  const { theme, isDarkMode } = useTheme();
+  const { isDarkMode } = useTheme();
   const navigation = useNavigation();
+
+  const t = isDarkMode ? DARK : LIGHT;
 
   const [openSwipeableId, setOpenSwipeableId]   = useState(null);
   const swipeableRefs                           = useRef({});
@@ -163,30 +219,30 @@ export default function LogsListScreen() {
           rightThreshold={40}
         >
           <TouchableOpacity
-            style={[styles.card, isSelected && styles.cardSelected]}
+            style={[styles.card, { backgroundColor: t.cardBg, borderColor: t.cardBorder, borderLeftColor: isSelected ? '#5C5CFF' : t.cardLeft }]}
             onPress={() => navigateToExpenseScreen(item)}
             activeOpacity={0.85}
           >
             <View style={styles.left}>
-              <Text style={styles.title} numberOfLines={1}>{item.logTitle}</Text>
-              <Text style={styles.meta}>{item.date}  ·  {totalTx} transactions</Text>
+              <Text style={[styles.title, { color: t.title }]} numberOfLines={1}>{item.logTitle}</Text>
+              <Text style={[styles.meta, { color: t.meta }]}>{item.date}  ·  {totalTx} transactions</Text>
             </View>
             <View style={styles.right}>
-              <Text style={styles.amount}>{formatCurrency(item.totalAmount)}</Text>
-              <Ionicons name="chevron-forward" size={18} color="#444" />
+              <Text style={[styles.amount, { color: t.amount }]}>{formatCurrency(item.totalAmount)}</Text>
+              <Ionicons name="chevron-forward" size={18} color={t.chevron} />
             </View>
           </TouchableOpacity>
         </Swipeable>
       </Animated.View>
     );
-  }, [openSwipeableId, itemBeingDeleted, slideOutAnim, navigateToExpenseScreen, currentLog]);
+  }, [openSwipeableId, itemBeingDeleted, slideOutAnim, navigateToExpenseScreen, currentLog, t]);
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: t.bg }]}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color="#5C5CFF" />
-          <Text style={{ color: '#aaa', marginTop: 20 }}>Loading log data...</Text>
+          <Text style={{ color: t.loaderText, marginTop: 20 }}>Loading log data...</Text>
         </View>
       </View>
     );
@@ -194,27 +250,27 @@ export default function LogsListScreen() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: t.bg }]}>
         <SafeAreaView style={styles.safe}>
-          <StatusBar style="light" />
+          <StatusBar style={isDarkMode ? 'light' : 'dark'} />
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>Logs</Text>
+            <Text style={[styles.headerTitle, { color: t.headerTitle }]}>Logs</Text>
             <TouchableOpacity style={styles.addLogBtn} onPress={() => { closeOpenSwipeable(); setShowNewLogModal(true); }}>
               <Ionicons name="add" size={26} color="#FFF" />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.searchBar}>
+          <View style={[styles.searchBar, { backgroundColor: t.searchBg, borderColor: t.searchBorder }]}>
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: t.searchText }]}
               placeholder="Search"
-              placeholderTextColor="#555"
+              placeholderTextColor={t.searchHolder}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
             {searchQuery.length > 0 && (
               <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Ionicons name="close-circle" size={18} color="#555" />
+                <Ionicons name="close-circle" size={18} color={t.searchHolder} />
               </TouchableOpacity>
             )}
           </View>
@@ -229,8 +285,8 @@ export default function LogsListScreen() {
             removeClippedSubviews={false}
             ListEmptyComponent={
               <View style={{ alignItems: 'center', marginTop: 60, padding: 32 }}>
-                <Ionicons name="document-text-outline" size={48} color="#333" style={{ marginBottom: 16 }} />
-                <Text style={{ color: '#666', fontSize: 16, textAlign: 'center', marginBottom: 24 }}>
+                <Ionicons name="document-text-outline" size={48} color={t.emptyIcon} style={{ marginBottom: 16 }} />
+                <Text style={{ color: t.emptyText, fontSize: 16, textAlign: 'center', marginBottom: 24 }}>
                   {searchQuery.length > 0 ? 'No logs match your search' : "You haven't added any logs yet..."}
                 </Text>
                 {searchQuery.length === 0 && (
@@ -245,14 +301,14 @@ export default function LogsListScreen() {
 
         <Modal visible={showNewLogModal} animationType="fade" transparent onRequestClose={closeModal}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={MB.overlay}>
-            <View style={MB.card}>
-              <View style={MB.iconWrap}>
+            <View style={[MB.card, { backgroundColor: t.modalCardBg, borderColor: t.modalBorder }]}>
+              <View style={[MB.iconWrap, { backgroundColor: t.modalIconBg }]}>
                 <Ionicons name="document-text-outline" size={32} color="#5C5CFF" />
               </View>
               <TextInput
-                style={MB.input}
+                style={[MB.input, { backgroundColor: t.modalInputBg, borderColor: t.modalInputBorder, color: t.modalInputText }]}
                 placeholder="What are you tracking?"
-                placeholderTextColor="#555"
+                placeholderTextColor={t.modalHolder}
                 value={newLogName}
                 onChangeText={setNewLogName}
                 autoFocus
@@ -261,7 +317,7 @@ export default function LogsListScreen() {
                 <Text style={MB.addTxt}>Create Log</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={closeModal}>
-                <Text style={MB.cancelTxt}>Cancel</Text>
+                <Text style={[MB.cancelTxt, { color: t.modalCancel }]}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </KeyboardAvoidingView>
@@ -272,21 +328,20 @@ export default function LogsListScreen() {
 }
 
 const styles = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: '#0f0f0f' },
+  container:    { flex: 1 },
   safe:         { flex: 1, paddingTop: Platform.OS === 'ios' ? 0 : Constants.statusBarHeight },
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 },
-  headerTitle:  { fontSize: 28, fontWeight: 'bold', color: '#fff' },
+  headerTitle:  { fontSize: 28, fontWeight: 'bold' },
   addLogBtn:    { width: 44, height: 44, borderRadius: 22, backgroundColor: '#5C5CFF', alignItems: 'center', justifyContent: 'center' },
-  searchBar:    { flexDirection: 'row', alignItems: 'center', backgroundColor: '#141414', borderRadius: 12, marginHorizontal: 16, marginBottom: 12, paddingHorizontal: 14, height: 46, borderWidth: 1, borderColor: '#222' },
-  searchInput:  { flex: 1, color: '#fff', fontSize: 15 },
+  searchBar:    { flexDirection: 'row', alignItems: 'center', borderRadius: 12, marginHorizontal: 16, marginBottom: 12, paddingHorizontal: 14, height: 46, borderWidth: 1 },
+  searchInput:  { flex: 1, fontSize: 15 },
   list:         { paddingHorizontal: 16, paddingBottom: 120 },
-  card:         { flexDirection: 'row', alignItems: 'center', backgroundColor: '#141414', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#222', borderLeftWidth: 4, borderLeftColor: '#222' },
-  cardSelected: { borderLeftColor: '#5C5CFF' },
+  card:         { flexDirection: 'row', alignItems: 'center', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderLeftWidth: 4 },
   left:         { flex: 1, marginRight: 12 },
-  title:        { fontSize: 16, fontWeight: '600', color: '#fff', marginBottom: 4 },
-  meta:         { fontSize: 12, color: '#555' },
+  title:        { fontSize: 16, fontWeight: '600', marginBottom: 4 },
+  meta:         { fontSize: 12 },
   right:        { alignItems: 'flex-end', gap: 6 },
-  amount:       { fontSize: 15, fontWeight: '700', color: '#fff' },
+  amount:       { fontSize: 15, fontWeight: '700' },
   deleteWrap:   { width: 90, marginBottom: 8 },
   deleteBtn:    { flex: 1, backgroundColor: '#FF3B30', justifyContent: 'center', alignItems: 'center', borderTopRightRadius: 12, borderBottomRightRadius: 12 },
   deleteTxt:    { color: '#fff', fontWeight: 'bold', fontSize: 12, marginTop: 4 },
