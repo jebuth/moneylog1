@@ -25,5 +25,5 @@ export default function Index() {
   // }
 
   // Authenticated with currentLog - proceed to expense tracker
-  //return <Redirect href="/(main)/screen1" />;
+  return <Redirect href="/(main)/screen1" />;
 }
