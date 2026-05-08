@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -19,16 +19,14 @@ import {
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { useNavigation } from '@react-navigation/native';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
-// Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
@@ -37,759 +35,306 @@ export default function LogsListScreen() {
   const { isLoading, user, logs, setLogs, currentLog, setCurrentLog, addLog, deleteLog } = useAuth();
   const { theme, isDarkMode } = useTheme();
   const navigation = useNavigation();
-  
-  // Track currently opened swipeable item
-  const [openSwipeableId, setOpenSwipeableId] = useState(null);
-  // Map to store references to swipeables
-  const swipeableRefs = useRef({});
-  // Store item heights for animation
-  const itemHeights = useRef({});
-  // Animation value for deletion
-  const slideOutAnim = useRef(new Animated.Value(0)).current;
 
-  // State for search and new log creation
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showNewLogModal, setShowNewLogModal] = useState(false);
-  const [newLogName, setNewLogName] = useState('');
-  //const [newLogAmount, setNewLogAmount] = useState('');
-  
-  // State for handling animated deletion
+  const [openSwipeableId, setOpenSwipeableId]   = useState(null);
+  const swipeableRefs                           = useRef({});
+  const itemHeights                             = useRef({});
+  const slideOutAnim                            = useRef(new Animated.Value(0)).current;
+  const [searchQuery, setSearchQuery]           = useState('');
+  const [showNewLogModal, setShowNewLogModal]   = useState(false);
+  const [newLogName, setNewLogName]             = useState('');
   const [itemBeingDeleted, setItemBeingDeleted] = useState(null);
-  
-  // Gradient colors based on theme
-  // app background
-  // const gradientColors = isDarkMode 
-  // ? ['#12141A', '#1E2028', '#2A2C38']  // Medium contrast
-  // : ['#C5CBEB', '#DCE0F4', '#F0F2FA']
-  
-  // Configure custom animation for list changes
+
   const configureLayoutAnimation = () => {
     LayoutAnimation.configureNext({
       duration: 300,
-      create: {
-        type: LayoutAnimation.Types.easeInEaseOut,
-        property: LayoutAnimation.Properties.opacity,
-      },
-      update: {
-        type: LayoutAnimation.Types.easeInEaseOut,
-      },
-      delete: {
-        type: LayoutAnimation.Types.easeInEaseOut,
-        property: LayoutAnimation.Properties.opacity,
-      },
+      create:  { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
+      update:  { type: LayoutAnimation.Types.easeInEaseOut },
+      delete:  { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
     });
   };
 
-  // Filtered logs based on search query
-  const filteredLogs = logs.filter(log => 
+  const filteredLogs = logs.filter(log =>
     log && log.logTitle && log.logTitle.toLowerCase().includes(searchQuery.toLowerCase())
   );
-  
-  // Close any open swipeable
+
   const closeOpenSwipeable = useCallback(() => {
     if (openSwipeableId && swipeableRefs.current[openSwipeableId]) {
       swipeableRefs.current[openSwipeableId].close();
       setOpenSwipeableId(null);
     }
   }, [openSwipeableId]);
-  
-  // Navigate to expense screen with the selected log
+
   const navigateToExpenseScreen = useCallback((log) => {
-    // Close any open swipeable
     closeOpenSwipeable();
-    
     if (!log) {
-      // Show alert if no log is available
-      Alert.alert(
-        "No Log Selected",
-        "Please create a trip first before adding expenses.",
-        [{ text: "OK" }]
-      );
+      Alert.alert('No Log Selected', 'Please create a trip first before adding expenses.', [{ text: 'OK' }]);
       return;
     }
-    
-    // Set the current log in context
     setCurrentLog(log);
-    
-    // Navigate to screen1
     navigation.navigate('screen1');
   }, [closeOpenSwipeable, navigation, setCurrentLog]);
-  
-  // Handle creating a new log
+
   const handleCreateNewLog = async () => {
-    // if (newLogName.trim() === '' || newLogAmount.trim() === '') {
-    //   alert('Enter both a log title and starting amount');
-    //   return;
-    // }
-    
-    if (newLogName.trim() === '') {
-      alert('Enter a log title.');
-      return;
-    }
-
-    //const amount = parseFloat(newLogAmount.replace(/[^0-9.]/g, ''));
-    
-    // if (isNaN(amount)) {
-    //   alert('Enter a valid amount');
-    //   return;
-    // }
-
+    if (newLogName.trim() === '') { alert('Enter a log title.'); return; }
     const logData = {
       userId: user.id,
       logTitle: newLogName,
       totalAmount: 0,
       date: new Date().toISOString().split('T')[0],
-      
       categories: [
-        {
-          id: 1,
-          name: "Restaurants",
-          amount: 0,
-          percentage: 0,
-          transactionCount: 0,
-        },
-        {
-          id: 2,
-          name: "Gifts",
-          amount: 0,
-          percentage: 0,
-          transactionCount: 0,
-        },
-        {
-          id: 3,
-          name: "Health/Medical",
-          amount: 0,
-          percentage: 0,
-          transactionCount: 0,
-        },
-        {
-          id: 4,
-          name: "Home",
-          amount: 0,
-          percentage: 0,
-          transactionCount: 0,
-        },
-        {
-          id: 5,
-          name: "Transportation",
-          amount: 0,
-          percentage: 0,
-          transactionCount: 0,
-        },
-        {
-          id: 6,
-          name: "Personal",
-          amount: 0,
-          percentage: 0,
-          transactionCount: 0,
-        },
-        {
-          id: 7,
-          name: "Pets",
-          amount: 0,
-          percentage: 0,
-          transactionCount: 0,
-        },
-        {
-          id: 8,
-          name: "Utilities",
-          amount: 0,
-          percentage: 0,
-          transactionCount: 0,
-        },
-        {
-          id: 9,
-          name: "Entertainment",
-          amount: 0,
-          percentage: 0,
-          transactionCount: 0,
-        },
-        {
-          id: 10,
-          name: "Groceries",
-          amount: 0,
-          percentage: 0,
-          transactionCount: 0,
-        }
+        { id: 1,  name: 'Restaurants',    amount: 0, percentage: 0, transactionCount: 0 },
+        { id: 2,  name: 'Gifts',          amount: 0, percentage: 0, transactionCount: 0 },
+        { id: 3,  name: 'Health/Medical', amount: 0, percentage: 0, transactionCount: 0 },
+        { id: 4,  name: 'Home',           amount: 0, percentage: 0, transactionCount: 0 },
+        { id: 5,  name: 'Transportation', amount: 0, percentage: 0, transactionCount: 0 },
+        { id: 6,  name: 'Personal',       amount: 0, percentage: 0, transactionCount: 0 },
+        { id: 7,  name: 'Pets',           amount: 0, percentage: 0, transactionCount: 0 },
+        { id: 8,  name: 'Utilities',      amount: 0, percentage: 0, transactionCount: 0 },
+        { id: 9,  name: 'Entertainment',  amount: 0, percentage: 0, transactionCount: 0 },
+        { id: 10, name: 'Groceries',      amount: 0, percentage: 0, transactionCount: 0 },
       ],
       transactions: [],
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
-
     let addedLog = await addLog(logData);
-
-    // Animate new item
     configureLayoutAnimation();
-    
     setLogs([addedLog, ...logs]);
-    setSearchQuery('')
+    setSearchQuery('');
     setShowNewLogModal(false);
     setNewLogName('');
-    //setNewLogAmount('');
   };
-  
-  // Handle deleting a log with animation
+
   const handleDeleteLog = async (logId) => {
-    Alert.alert(
-      "Delete Log",
-      "Are you sure you want to delete this log? This cannot be undone.",
-      [
-        {
-          text: "Cancel",
-          style: "cancel"
+    Alert.alert('Delete Log', 'Are you sure you want to delete this log? This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete', style: 'destructive',
+        onPress: async () => {
+          setItemBeingDeleted(logId);
+          await deleteLog(logId);
+          slideOutAnim.setValue(0);
+          Animated.timing(slideOutAnim, { toValue: -width, duration: 400, useNativeDriver: true }).start(() => {
+            setLogs(logs.filter(log => log.id !== logId));
+            setOpenSwipeableId(null);
+            setItemBeingDeleted(null);
+          });
         },
-        { 
-          text: "Delete", 
-          onPress: async () => {
-            setItemBeingDeleted(logId);
-            await deleteLog(logId)
-            // Animate the item sliding away
-            slideOutAnim.setValue(0);
-            Animated.timing(slideOutAnim, {
-              toValue: -width,
-              duration: 400,
-              useNativeDriver: true
-            }).start(() => {
-              // After animation completes, remove the item
-              setLogs(logs.filter(log => log.id !== logId));
-              setOpenSwipeableId(null);
-              setItemBeingDeleted(null);
-            });
-          },
-          style: "destructive"
-        }
-      ]
-    );
+      },
+    ]);
   };
-  
-  // Format currency
-  const formatCurrency = (amount) => {
-    return amount.toLocaleString('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
-  };
-  
-  // Handle amount input formatting
-  // const handleAmountChange = (text) => {
-  //   // Remove all non-numeric characters
-  //   const numericValue = text.replace(/[^0-9]/g, '');
-    
-  //   if (numericValue === '') {
-  //     //setNewLogAmount('');
-  //     return;
-  //   }
-    
-  //   // Convert to cents (e.g., "234" becomes "2.34")
-  //   const cents = parseInt(numericValue);
-    
-  //   // Format with commas and two decimal places
-  //   const formattedAmount = new Intl.NumberFormat('en-US', {
-  //     minimumFractionDigits: 2,
-  //     maximumFractionDigits: 2,
-  //   }).format(cents / 100);
-    
-  //   setNewLogAmount(formattedAmount);
-  // };
-  
-  // Render right actions (delete button) for swipeable
+
+  const formatCurrency = (amount) =>
+    amount.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const closeModal = () => { setShowNewLogModal(false); setNewLogName(''); };
+
   const renderRightActions = (progress, dragX, item) => {
-    const trans = dragX.interpolate({
-      inputRange: [-100, 0],
-      outputRange: [0, 100],
-      extrapolate: 'clamp',
-    });
-    
+    const trans = dragX.interpolate({ inputRange: [-100, 0], outputRange: [0, 100], extrapolate: 'clamp' });
     return (
-      <Animated.View 
-        style={[
-          styles.deleteButtonContainer,
-          {
-            transform: [{ translateX: trans }],
-          }
-        ]}
-      >
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => handleDeleteLog(item.id)}
-        >
-          <Ionicons name="trash-outline" size={24} color="#FFF" />
-          <Text style={styles.deleteButtonText}>Delete</Text>
+      <Animated.View style={[styles.deleteWrap, { transform: [{ translateX: trans }] }]}>
+        <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDeleteLog(item.id)}>
+          <Ionicons name="trash-outline" size={22} color="#FFF" />
+          <Text style={styles.deleteTxt}>Delete</Text>
         </TouchableOpacity>
       </Animated.View>
     );
   };
-  
-  // Render individual log item using the proper pattern for React hooks
-  const renderLogItem = useCallback(({ item, index }) => {
+
+  const renderItem = useCallback(({ item }) => {
+    const isSelected = currentLog?.id === item.id;
+    const totalTx = Array.isArray(item.categories)
+      ? item.categories.reduce((s, c) => s + (c.transactionCount || 0), 0)
+      : 0;
     const isBeingDeleted = item.id === itemBeingDeleted;
-    
-    const animatedStyle = isBeingDeleted ? {
-      transform: [{ translateX: slideOutAnim }]
-    } : {};
-    
+
     return (
-      <Animated.View style={animatedStyle}>
+      <Animated.View style={isBeingDeleted ? { transform: [{ translateX: slideOutAnim }] } : {}}>
         <Swipeable
-          ref={ref => {
-            if (ref) {
-              swipeableRefs.current[item.id] = ref;
-            }
-          }}
-          renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, item)}
+          ref={ref => { if (ref) swipeableRefs.current[item.id] = ref; }}
+          renderRightActions={(p, d) => renderRightActions(p, d, item)}
           onSwipeableOpen={() => {
-            if (openSwipeableId && openSwipeableId !== item.id) {
-              swipeableRefs.current[openSwipeableId]?.close();
-            }
+            if (openSwipeableId && openSwipeableId !== item.id) swipeableRefs.current[openSwipeableId]?.close();
             setOpenSwipeableId(item.id);
           }}
-          onSwipeableClose={() => {
-            if (openSwipeableId === item.id) {
-              setOpenSwipeableId(null);
-            }
-          }}
+          onSwipeableClose={() => { if (openSwipeableId === item.id) setOpenSwipeableId(null); }}
           friction={2}
           rightThreshold={40}
         >
           <TouchableOpacity
-            style={[styles.logItem, currentLog?.id === item.id && styles.logItemSelected]}
-            onPress={() => {
-              navigateToExpenseScreen(item);
-            }}
-            onLayout={(event) => {
-              const { height } = event.nativeEvent.layout;
-              itemHeights.current[item.id] = height;
-            }}
-            activeOpacity={0.9}
+            style={[styles.card, isSelected && styles.cardSelected]}
+            onPress={() => navigateToExpenseScreen(item)}
+            activeOpacity={0.85}
           >
-            <LinearGradient
-              colors={theme.cardGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              style={styles.logGradient}
-            >
-              <View style={styles.logContent}>
-                <View style={styles.logHeader}>
-                  <View style={styles.logTitleSection}>
-                    <Text style={[styles.logName, {color: theme.text}]}>{item.logTitle}</Text>
-                    <Text style={[styles.logAmount, {color: theme.text}]}>{formatCurrency(item.totalAmount)}</Text>
-                  </View>
-                  <Text style={[styles.logDate, {color: theme.text}]}>{item.date}</Text>
-                </View>
-                
-                <View style={styles.actionsRow}>
-                  <TouchableOpacity 
-                    style={styles.iconButton}
-                    onPress={() => {
-                      navigateToExpenseScreen(item);
-                    }}
-                  >
-                    <Ionicons name="add-circle-outline" size={20} color={theme.text} />
-                    <Text style={[styles.iconButtonText, {color:theme.text}]}>Add Expense</Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity 
-                    style={styles.iconButton}
-                    onPress={() => {
-                      closeOpenSwipeable();
-                    }}
-                  >
-                    <Ionicons name="analytics-outline" size={20} color={theme.text} />
-                    <Text style={[styles.iconButtonText, {color: theme.text}]}>View Report</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </LinearGradient>
+            <View style={styles.left}>
+              <Text style={styles.title} numberOfLines={1}>{item.logTitle}</Text>
+              <Text style={styles.meta}>{item.date}  ·  {totalTx} transactions</Text>
+            </View>
+            <View style={styles.right}>
+              <Text style={styles.amount}>{formatCurrency(item.totalAmount)}</Text>
+              <Ionicons name="chevron-forward" size={18} color="#444" />
+            </View>
           </TouchableOpacity>
         </Swipeable>
       </Animated.View>
     );
-  }, [openSwipeableId, closeOpenSwipeable, itemBeingDeleted, slideOutAnim, navigateToExpenseScreen, theme, currentLog]);
+  }, [openSwipeableId, itemBeingDeleted, slideOutAnim, navigateToExpenseScreen, currentLog]);
 
-  // Show loading indicator while currentLog is being fetched
   if (isLoading) {
     return (
-      <LinearGradient
-        colors={theme.backgroundGradient}
-        style={styles.container}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
+      <View style={styles.container}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color={theme.accent} />
-          <Text style={{ color: theme.text, marginTop: 20 }}>Loading log data...</Text>
+          <ActivityIndicator size="large" color="#5C5CFF" />
+          <Text style={{ color: '#aaa', marginTop: 20 }}>Loading log data...</Text>
         </View>
-      </LinearGradient>
+      </View>
     );
   }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <LinearGradient
-        colors={theme.backgroundGradient}
-        style={styles.container}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <SafeAreaView style={styles.safeAreaContainer}>
-          <StatusBar style={isDarkMode ? "light" : "dark"} />
-          
-          {/* Header */}
+      <View style={styles.container}>
+        <SafeAreaView style={styles.safe}>
+          <StatusBar style="light" />
           <View style={styles.header}>
-            <Text style={[styles.headerTitle, {color: theme.text}]}>Logs</Text>
-            <TouchableOpacity 
-              style={styles.createButton}
-              onPress={() => {
-                closeOpenSwipeable();
-                setShowNewLogModal(true);
-              }}
-            >
-              <Ionicons name="add" size={28} color="#FFF" />
+            <Text style={styles.headerTitle}>Logs</Text>
+            <TouchableOpacity style={styles.addLogBtn} onPress={() => { closeOpenSwipeable(); setShowNewLogModal(true); }}>
+              <Ionicons name="add" size={26} color="#FFF" />
             </TouchableOpacity>
           </View>
-          
-          {/* Search Bar */}
-          <View style={[styles.searchContainer, {backgroundColor: theme.card}]}>
-            {/* <Ionicons name="search" size={20} color="#999" style={styles.searchIcon} /> */}
+
+          <View style={styles.searchBar}>
             <TextInput
-              style={[styles.searchInput, {color: theme.text}]}
+              style={styles.searchInput}
               placeholder="Search"
-              placeholderTextColor="#999"
+              placeholderTextColor="#555"
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
             {searchQuery.length > 0 && (
-              <TouchableOpacity 
-                style={styles.clearSearch}
-                onPress={() => setSearchQuery('')}
-              >
-                <Ionicons name="close-circle" size={20} color="#999" />
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Ionicons name="close-circle" size={18} color="#555" />
               </TouchableOpacity>
             )}
           </View>
-          
-          {/* Logs List */}
+
           <FlatList
-            key={`logs-${logs.length}-${isDarkMode}`} // This forces a re-render when logs.length changes
             data={filteredLogs}
-            extraData={[logs, theme, currentLog]}
-            renderItem={renderLogItem}
+            extraData={[logs, currentLog]}
+            renderItem={renderItem}
             keyExtractor={item => item.id}
-            contentContainerStyle={styles.listContainer}
+            contentContainerStyle={styles.list}
             onScroll={closeOpenSwipeable}
-            removeClippedSubviews={false} // Important for animations
+            removeClippedSubviews={false}
             ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Text style={[styles.emptyText, {color: theme.text}]}>
-                  {searchQuery.length > 0 
-                    ? "No logs match your search" 
-                    : "You haven't added any logs yet..."}
+              <View style={{ alignItems: 'center', marginTop: 60, padding: 32 }}>
+                <Ionicons name="document-text-outline" size={48} color="#333" style={{ marginBottom: 16 }} />
+                <Text style={{ color: '#666', fontSize: 16, textAlign: 'center', marginBottom: 24 }}>
+                  {searchQuery.length > 0 ? 'No logs match your search' : "You haven't added any logs yet..."}
                 </Text>
-                <TouchableOpacity 
-                  style={styles.emptyButton}
-                  onPress={() => setShowNewLogModal(true)}
-                >
-                  <Text style={[styles.emptyButtonText, {color: '#fff'}]}>Add Your First Log</Text>
-                </TouchableOpacity>
+                {searchQuery.length === 0 && (
+                  <TouchableOpacity style={styles.emptyBtn} onPress={() => setShowNewLogModal(true)}>
+                    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 15 }}>Add Your First Log</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             }
           />
-          
-          {/* Create New Log Modal */}
-          <Modal
-            visible={showNewLogModal}
-            animationType="slide"
-            transparent={true}
-            onRequestClose={() => setShowNewLogModal(false)}
-          >
-            <KeyboardAvoidingView
-              behavior={Platform.OS === "ios" ? "padding" : "height"}
-              style={styles.modalContainer}
-            >
-              <View style={[styles.modalContent, {backgroundColor: theme.card}]}>
-                <View style={styles.modalHandle} />
-                
-                <Text style={[styles.modalTitle, {color: theme.text}]}>New Log</Text>
-                
-                <Text style={[styles.inputLabel, {color: theme.subtext}]}>Title</Text>
-                <TextInput
-                  style={[styles.modalInput, {backgroundColor: theme.background, color: theme.text}]}
-                  placeholder="Enter log title"
-                  placeholderTextColor="#999"
-                  value={newLogName}
-                  onChangeText={setNewLogName}
-                />
-                
-                {/* <Text style={[styles.inputLabel, {color: theme.subtext}]}>Initial Budget</Text>
-                <View style={[styles.amountInputContainer, {backgroundColor: theme.background}]}>
-                  <Text style={[styles.currencySymbol, {color: theme.text}]}>$</Text>
-                  <TextInput
-                    style={[styles.amountInput, {color: theme.text}]}
-                    placeholder="0.00"
-                    placeholderTextColor="#999"
-                    keyboardType="numeric"
-                    value={newLogAmount}
-                    onChangeText={handleAmountChange}
-                  />
-                </View> */}
-                
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity 
-                    style={[styles.cancelButton, {backgroundColor: theme.card, borderWidth:1, borderColor: theme.red}]}
-                    onPress={() => {
-                      setShowNewLogModal(false);
-                      setNewLogName('');
-                      //setNewLogAmount('');
-                    }}
-                  >
-                    <Text style={[styles.cancelButtonText, {color: theme.red}]}>CANCEL</Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity 
-                    style={styles.createLogButton}
-                    onPress={handleCreateNewLog}
-                  >
-                    <Text style={styles.createLogButtonText}>ADD</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </KeyboardAvoidingView>
-          </Modal>
         </SafeAreaView>
-      </LinearGradient>
+
+        <Modal visible={showNewLogModal} animationType="fade" transparent onRequestClose={closeModal}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={MB.overlay}>
+            <View style={MB.card}>
+              <View style={MB.iconWrap}>
+                <Ionicons name="document-text-outline" size={32} color="#5C5CFF" />
+              </View>
+              <TextInput
+                style={MB.input}
+                placeholder="What are you tracking?"
+                placeholderTextColor="#555"
+                value={newLogName}
+                onChangeText={setNewLogName}
+                autoFocus
+              />
+              <TouchableOpacity style={MB.addBtn} onPress={handleCreateNewLog}>
+                <Text style={MB.addTxt}>Create Log</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={closeModal}>
+                <Text style={MB.cancelTxt}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
+        </Modal>
+      </View>
     </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  safeAreaContainer: {
-    flex: 1,
-    paddingTop: Platform.OS === 'ios' ? 0 : Constants.statusBarHeight,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-  },
-  createButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#5749C5', // purple
-    //backgroundColor: '#68a8d4', // light blue
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    margin: 16,
-    paddingHorizontal: 12,
-    height: 50,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    height: 50,
-    fontSize: 16,
-  },
-  clearSearch: {
-    padding: 4,
-  },
-  listContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 120,
-  },
-  logItem: {
-    marginBottom: 12,
-    borderRadius: 16,
-    overflow: 'hidden',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    borderColor: '#68a8d4',
-    borderWidth: .2,
-  },
-  logItemSelected: {
-    borderColor: '#5C5CFF',
-    borderWidth: 1.5,
-  },
-  logGradient: {
-    borderRadius: 16,
-  },
-  logContent: {
-    padding: 14,
-  },
-  logHeader: {
-    flexDirection: 'column',
-    marginBottom: 12,
-  },
-  logTitleSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  logName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    flex: 1,
-    marginRight: 12,
-    //shadowColor: "#000",
-    //shadowOpacity: .1,
-    //shadowRadius: 2,
-  },
-  logAmount: {
-    fontSize: 18,
-    fontWeight: 'light',
-    shadowColor: "#000",
-    shadowOpacity: .1,
-    shadowRadius: 2,
-  },
-  logDate: {
-    fontSize: 13,
-    opacity: 0.8,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.15)',
-  },
-  iconButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  iconButtonText: {
-    //color: '#FFFFFF',
-    marginLeft: 6,
-    fontSize: 14,
-    opacity: 0.9,
-    shadowColor: "#000",
-    //shadowOpacity: .1,
-    //shadowRadius: 1,
-  },
-  deleteButtonContainer: {
-    width: 100,
-    marginBottom: 12,
-  },
-  deleteButton: {
-    flex: 1,
-    backgroundColor: '#FF3B30',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderTopRightRadius: 16,
-    borderBottomRightRadius: 16,
-  },
-  deleteButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    marginTop: 4,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-    marginTop: 60,
-  },
-  emptyText: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  emptyButton: {
-    backgroundColor: '#5C5CFF',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-  },
-  emptyButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-  },
-  modalHandle: {
-    width: 40,
-    height: 5,
-    backgroundColor: '#999',
-    borderRadius: 3,
-    alignSelf: 'center',
-    marginBottom: 24,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  inputLabel: {
-    fontSize: 16,
-    marginBottom: 8,
-  },
-  modalInput: {
-    borderRadius: 8,
-    padding: 16,
-    fontSize: 16,
-    marginBottom: 24,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  cancelButton: {
-    flex: 0.48,
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  createLogButton: {
-    flex: 0.48,
-    backgroundColor: '#5C5CFF',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-  },
-  createLogButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  container:    { flex: 1, backgroundColor: '#0f0f0f' },
+  safe:         { flex: 1, paddingTop: Platform.OS === 'ios' ? 0 : Constants.statusBarHeight },
+  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 },
+  headerTitle:  { fontSize: 28, fontWeight: 'bold', color: '#fff' },
+  addLogBtn:    { width: 44, height: 44, borderRadius: 22, backgroundColor: '#5C5CFF', alignItems: 'center', justifyContent: 'center' },
+  searchBar:    { flexDirection: 'row', alignItems: 'center', backgroundColor: '#141414', borderRadius: 12, marginHorizontal: 16, marginBottom: 12, paddingHorizontal: 14, height: 46, borderWidth: 1, borderColor: '#222' },
+  searchInput:  { flex: 1, color: '#fff', fontSize: 15 },
+  list:         { paddingHorizontal: 16, paddingBottom: 120 },
+  card:         { flexDirection: 'row', alignItems: 'center', backgroundColor: '#141414', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#222', borderLeftWidth: 4, borderLeftColor: '#222' },
+  cardSelected: { borderLeftColor: '#5C5CFF' },
+  left:         { flex: 1, marginRight: 12 },
+  title:        { fontSize: 16, fontWeight: '600', color: '#fff', marginBottom: 4 },
+  meta:         { fontSize: 12, color: '#555' },
+  right:        { alignItems: 'flex-end', gap: 6 },
+  amount:       { fontSize: 15, fontWeight: '700', color: '#fff' },
+  deleteWrap:   { width: 90, marginBottom: 8 },
+  deleteBtn:    { flex: 1, backgroundColor: '#FF3B30', justifyContent: 'center', alignItems: 'center', borderTopRightRadius: 12, borderBottomRightRadius: 12 },
+  deleteTxt:    { color: '#fff', fontWeight: 'bold', fontSize: 12, marginTop: 4 },
+  emptyBtn:     { backgroundColor: '#5C5CFF', paddingVertical: 12, paddingHorizontal: 28, borderRadius: 10 },
+});
+
+// ── Modal toggle pill ─────────────────────────────────────────────────────────
+const mToggle = StyleSheet.create({
+  btn:    { backgroundColor: 'rgba(92,92,255,0.85)', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, alignItems: 'center' },
+  small:  { color: '#ccc', fontSize: 9, fontWeight: '600', letterSpacing: 1 },
+  letter: { color: '#fff', fontSize: 16, fontWeight: 'bold', lineHeight: 18 },
+});
+
+// ── Modal A — Bottom sheet ────────────────────────────────────────────────────
+const MA = StyleSheet.create({
+  wrap:      { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
+  sheet:     { backgroundColor: '#141414', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: Platform.OS === 'ios' ? 40 : 24, borderWidth: 1, borderColor: '#222' },
+  row:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
+  handle:    { width: 40, height: 4, backgroundColor: '#333', borderRadius: 2 },
+  title:     { fontSize: 20, fontWeight: 'bold', color: '#fff', marginBottom: 20 },
+  label:     { fontSize: 11, fontWeight: '700', color: '#555', letterSpacing: 1, marginBottom: 6 },
+  input:     { backgroundColor: '#1e1e1e', borderRadius: 10, padding: 14, fontSize: 15, color: '#fff', marginBottom: 24, borderWidth: 1, borderColor: '#2a2a2a' },
+  btns:      { flexDirection: 'row', gap: 10 },
+  cancelBtn: { flex: 1, height: 48, borderRadius: 10, borderWidth: 1, borderColor: '#ff4444', alignItems: 'center', justifyContent: 'center' },
+  cancelTxt: { color: '#ff4444', fontWeight: '700' },
+  addBtn:    { flex: 1, height: 48, borderRadius: 10, backgroundColor: '#5C5CFF', alignItems: 'center', justifyContent: 'center' },
+  addTxt:    { color: '#fff', fontWeight: '700', fontSize: 15 },
+});
+
+// ── Modal B — Centered dialog ─────────────────────────────────────────────────
+const MB = StyleSheet.create({
+  overlay:   { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.75)', padding: 24 },
+  card:      { width: '100%', backgroundColor: '#141414', borderRadius: 24, padding: 24, borderWidth: 1, borderColor: '#222', alignItems: 'center' },
+  iconWrap:  { width: 60, height: 60, borderRadius: 30, backgroundColor: '#1e1e1e', alignItems: 'center', justifyContent: 'center', marginBottom: 16, marginTop: 8 },
+  title:     { fontSize: 20, fontWeight: 'bold', color: '#fff', marginBottom: 20 },
+  input:     { width: '100%', backgroundColor: '#1e1e1e', borderRadius: 12, padding: 14, fontSize: 15, color: '#fff', marginBottom: 20, borderWidth: 1, borderColor: '#2a2a2a', textAlign: 'center' },
+  addBtn:    { width: '100%', height: 50, borderRadius: 14, backgroundColor: '#5C5CFF', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  addTxt:    { color: '#fff', fontWeight: '700', fontSize: 16 },
+  cancelTxt: { color: '#555', fontSize: 14, paddingVertical: 4 },
+});
+
+// ── Modal C — Immersive input ─────────────────────────────────────────────────
+const MC = StyleSheet.create({
+  wrap:   { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
+  sheet:  { backgroundColor: '#0f0f0f', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: Platform.OS === 'ios' ? 48 : 24, borderTopWidth: 1, borderColor: '#222' },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 },
+  addBtn: { backgroundColor: '#5C5CFF', paddingHorizontal: 18, paddingVertical: 8, borderRadius: 20 },
+  addTxt: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  hint:   { fontSize: 13, color: '#555', fontWeight: '600', letterSpacing: 1, marginBottom: 12 },
+  input:  { fontSize: 28, fontWeight: 'bold', color: '#fff', borderBottomWidth: 1, borderBottomColor: '#2a2a2a', paddingBottom: 12, marginBottom: 8 },
 });
