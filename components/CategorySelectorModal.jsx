@@ -17,7 +17,7 @@ import { CategoryIcons } from '../constants/CategoryIcons';
 // Get screen dimensions
 const { height, width } = Dimensions.get('window');
 
-const CategorySelectorModal = ({ visible, onClose, onSelect, categories }) => {
+const CategorySelectorModal = ({ visible, onClose, onSelect, categories, selectedCategory }) => {
   // Animation for sliding up
   const slideAnim = useRef(new Animated.Value(height)).current;
   
@@ -99,7 +99,7 @@ const CategorySelectorModal = ({ visible, onClose, onSelect, categories }) => {
               {categories.map((category, index) => (
                 <TouchableOpacity
                   key={index}
-                  style={styles.categoryItem}
+                  style={[styles.categoryItem, selectedCategory?.name === category.name && styles.categoryItemSelected]}
                   onPress={() => {
                     // First select the category
                     onSelect(category);
@@ -109,6 +109,7 @@ const CategorySelectorModal = ({ visible, onClose, onSelect, categories }) => {
                 >
                   <Ionicons name={CategoryIcons[category.name]} size={24} color='white' style={styles.categoryIcon} />
                   <Text style={styles.categoryName}>{category.name}</Text>
+                  <Text style={styles.categoryAmount}>${category.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -153,30 +154,42 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   categoryList: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
     backgroundColor: '#1D1D1D',
   },
   categoryListContent: {
+    paddingTop: 12,
     paddingBottom: 50,
   },
   categoryItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    marginBottom: 5,
-    backgroundColor: '#1D1D1D',
-    borderTopWidth: 1,
-    borderColor: "gray"
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: '#2a2a2a',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#3a3a3a',
+  },
+  categoryItemSelected: {
+    borderColor: '#5C5CFF',
+    backgroundColor: '#2a2a45',
   },
   categoryIcon: {
     marginRight: 16,
   },
   categoryName: {
-    fontSize: 18,
+    flex: 1,
+    fontSize: 16,
     color: 'white',
-    fontWeight: '600',
-    letterSpacing: 0.5,
+    fontWeight: '500',
+  },
+  categoryAmount: {
+    fontSize: 15,
+    color: 'white',
+    opacity: 0.6,
+    fontWeight: '500',
   },
 });
 

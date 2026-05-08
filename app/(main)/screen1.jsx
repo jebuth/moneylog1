@@ -340,6 +340,7 @@ export default function ExpenseTracker() {
           onClose={closeCategoryModal}
           onSelect={handleCategorySelect}
           categories={categories}
+          selectedCategory={selectedCategory}
         />
       </ScrollView>
     </LinearGradient>
