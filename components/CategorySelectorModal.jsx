@@ -11,6 +11,8 @@ import {
   StatusBar
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { CategoryIcons } from '../constants/CategoryIcons';
 
 // Get screen dimensions
 const { height, width } = Dimensions.get('window');
@@ -89,8 +91,9 @@ const CategorySelectorModal = ({ visible, onClose, onSelect, categories }) => {
               </View>
             </View>
             
-            <ScrollView 
+            <ScrollView
               style={styles.categoryList}
+              contentContainerStyle={styles.categoryListContent}
               showsVerticalScrollIndicator={false}
             >
               {categories.map((category, index) => (
@@ -104,7 +107,7 @@ const CategorySelectorModal = ({ visible, onClose, onSelect, categories }) => {
                     onClose();
                   }}
                 >
-                  <View style={[styles.categoryIcon, { backgroundColor: category.color }]} />
+                  <Ionicons name={CategoryIcons[category.name]} size={24} color='white' style={styles.categoryIcon} />
                   <Text style={styles.categoryName}>{category.name}</Text>
                 </TouchableOpacity>
               ))}
@@ -127,8 +130,7 @@ const styles = StyleSheet.create({
   modalContainer: {
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    minHeight: height,
-    maxHeight: height * 0.8,
+    height: height * 0.7,
     overflow: 'hidden',
   },
   modalGradient: {
@@ -152,8 +154,10 @@ const styles = StyleSheet.create({
   },
   categoryList: {
     paddingHorizontal: 24,
-    paddingBottom: 50, // Extra padding at bottom for safe area
-    backgroundColor: '#1D1D1D'
+    backgroundColor: '#1D1D1D',
+  },
+  categoryListContent: {
+    paddingBottom: 50,
   },
   categoryItem: {
     flexDirection: 'row',
@@ -166,9 +170,6 @@ const styles = StyleSheet.create({
     borderColor: "gray"
   },
   categoryIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
     marginRight: 16,
   },
   categoryName: {
