@@ -354,8 +354,8 @@ export default function LogsListScreen() {
           friction={2}
           rightThreshold={40}
         >
-          <TouchableOpacity 
-            style={styles.logItem}
+          <TouchableOpacity
+            style={[styles.logItem, currentLog?.id === item.id && styles.logItemSelected]}
             onPress={() => {
               navigateToExpenseScreen(item);
             }}
@@ -407,7 +407,7 @@ export default function LogsListScreen() {
         </Swipeable>
       </Animated.View>
     );
-  }, [openSwipeableId, closeOpenSwipeable, itemBeingDeleted, slideOutAnim, navigateToExpenseScreen, theme]);
+  }, [openSwipeableId, closeOpenSwipeable, itemBeingDeleted, slideOutAnim, navigateToExpenseScreen, theme, currentLog]);
 
   // Show loading indicator while currentLog is being fetched
   if (isLoading) {
@@ -475,7 +475,7 @@ export default function LogsListScreen() {
           <FlatList
             key={`logs-${logs.length}-${isDarkMode}`} // This forces a re-render when logs.length changes
             data={filteredLogs}
-            extraData={[logs, theme]} // FlatList will re-render when logs.length changes
+            extraData={[logs, theme, currentLog]}
             renderItem={renderLogItem}
             keyExtractor={item => item.id}
             contentContainerStyle={styles.listContainer}
@@ -629,9 +629,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 3,
-    //backgroundColor: '#121212',
-    borderColor: '#68a8d4', // blue border
+    borderColor: '#68a8d4',
     borderWidth: .2,
+  },
+  logItemSelected: {
+    borderColor: '#5C5CFF',
+    borderWidth: 1.5,
   },
   logGradient: {
     borderRadius: 16,

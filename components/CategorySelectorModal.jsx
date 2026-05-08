@@ -85,11 +85,6 @@ const CategorySelectorModal = ({ visible, onClose, onSelect, categories, selecte
             colors={['#21233f', '#252545', '#232343']}
             style={styles.modalGradient}
           >
-            <View style={styles.modalHeader}>
-              <View style={styles.downArrow}>
-                <Text style={styles.arrowText}>↓</Text>
-              </View>
-            </View>
             
             <ScrollView
               style={styles.categoryList}
@@ -138,20 +133,6 @@ const styles = StyleSheet.create({
     flex: 1,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-  },
-  modalHeader: {
-    alignItems: 'center',
-    paddingVertical: 25,
-    backgroundColor: '#1D1D1D',
-  },
-  downArrow: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  arrowText: {
-    fontSize: 24,
-    color: 'white',
-    opacity: 0.5,
   },
   categoryList: {
     paddingHorizontal: 16,
