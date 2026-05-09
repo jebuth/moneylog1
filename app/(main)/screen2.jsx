@@ -300,8 +300,9 @@ export default function LogsListScreen() {
         </SafeAreaView>
 
         <Modal visible={showNewLogModal} animationType="fade" transparent onRequestClose={closeModal}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={MB.overlay}>
-            <View style={[MB.card, { backgroundColor: t.modalCardBg, borderColor: t.modalBorder }]}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+            <TouchableOpacity style={MB.overlay} activeOpacity={1} onPress={closeModal}>
+            <View style={[MB.card, { backgroundColor: t.modalCardBg, borderColor: t.modalBorder }]} onStartShouldSetResponder={() => true}>
               <View style={[MB.iconWrap, { backgroundColor: t.modalIconBg }]}>
                 <Ionicons name="document-text-outline" size={32} color="#5C5CFF" />
               </View>
@@ -320,6 +321,7 @@ export default function LogsListScreen() {
                 <Text style={[MB.cancelTxt, { color: t.modalCancel }]}>Cancel</Text>
               </TouchableOpacity>
             </View>
+            </TouchableOpacity>
           </KeyboardAvoidingView>
         </Modal>
       </View>

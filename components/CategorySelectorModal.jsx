@@ -36,25 +36,27 @@ const CategorySelectorModal = ({ visible, onClose, onSelect, categories, selecte
   const [modalVisible, setModalVisible] = useState(false);
 
   const t = isDarkMode ? {
-    sheet:       '#0f0f0f',
-    handle:      '#2a2a2a',
-    headerBorder:'#1a1a1a',
-    headerTitle: '#555',
-    divider:     '#141414',
-    name:        '#777',
-    amount:      '#444',
-    icon:        '#555',
-    statusBar:   'light-content',
+    sheet:        '#0f0f0f',
+    handle:       '#2a2a2a',
+    headerBorder: '#1a1a1a',
+    headerTitle:  '#555',
+    divider:      '#141414',
+    name:         '#777',
+    amount:       '#444',
+    icon:         '#555',
+    selectedText: '#ffffff',
+    statusBar:    'light-content',
   } : {
-    sheet:       '#FFFFFF',
-    handle:      '#D8E2EE',
-    headerBorder:'#EEF2F7',
-    headerTitle: '#4A6FA5',
-    divider:     '#EEF2F7',
-    name:        '#1A2A40',
-    amount:      '#4A6FA5',
-    icon:        '#8BA3C0',
-    statusBar:   'dark-content',
+    sheet:        '#FFFFFF',
+    handle:       '#D8E2EE',
+    headerBorder: '#EEF2F7',
+    headerTitle:  '#4A6FA5',
+    divider:      '#EEF2F7',
+    name:         '#1A2A40',
+    amount:       '#4A6FA5',
+    icon:         '#8BA3C0',
+    selectedText: '#0A1628',
+    statusBar:    'dark-content',
   };
 
   useEffect(() => {
@@ -99,10 +101,10 @@ const CategorySelectorModal = ({ visible, onClose, onSelect, categories, selecte
         <Animated.View style={[styles.sheet, { backgroundColor: t.sheet, transform: [{ translateY: slideAnim }] }]}>
           <View style={[styles.handle, { backgroundColor: t.handle }]} />
           <View style={[styles.header, { borderBottomColor: t.headerBorder }]}>
-            <Text style={[styles.headerTitle, { color: t.headerTitle }]}>Select Category</Text>
+            <Text style={[styles.headerTitle, { color: t.headerTitle }]}>Category Select</Text>
           </View>
           <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-            {categories.map((category, index) => {
+            {[...categories].sort((a, b) => b.amount - a.amount).map((category, index) => {
               const color = CATEGORY_COLORS[category.name] || '#888';
               const isSelected = selectedCategory?.name === category.name;
               return (
@@ -112,9 +114,9 @@ const CategorySelectorModal = ({ visible, onClose, onSelect, categories, selecte
                   onPress={() => handleSelect(category)}
                   activeOpacity={0.6}
                 >
-                  <Ionicons name={CategoryIcons[category.name]} size={18} color={isSelected ? color : t.icon} style={{ marginRight: 14 }} />
-                  <Text style={[styles.name, { color: isSelected ? color : t.name }]}>{category.name}</Text>
-                  <Text style={[styles.amount, { color: isSelected ? color : t.amount, opacity: isSelected ? 1 : 0.8 }]}>
+                  <Ionicons name={CategoryIcons[category.name]} size={18} color={color} style={{ marginRight: 14 }} />
+                  <Text style={[styles.name, { color: isSelected ? t.selectedText : t.name }]}>{category.name}</Text>
+                  <Text style={[styles.amount, { color: isSelected ? t.selectedText : t.amount, opacity: isSelected ? 1 : 0.8 }]}>
                     ${category.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </Text>
                 </TouchableOpacity>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  Animated
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -111,6 +112,23 @@ export default function ExpenseTracker() {
   const [inputAmount, setInputAmount]                   = useState('');
   const [description, setDescription]                   = useState('');
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const rowAnims                                        = useRef({});
+  const prevSortedIds                                   = useRef(null);
+  const ROW_HEIGHT                                      = 45;
+  const shakeAmount                                     = useRef(new Animated.Value(0)).current;
+  const shakeCategory                                   = useRef(new Animated.Value(0)).current;
+  const shakeDesc                                       = useRef(new Animated.Value(0)).current;
+
+  const triggerShake = (anim) => {
+    anim.setValue(0);
+    Animated.sequence([
+      Animated.timing(anim, { toValue: -6, duration: 50, useNativeDriver: true }),
+      Animated.timing(anim, { toValue:  6, duration: 50, useNativeDriver: true }),
+      Animated.timing(anim, { toValue: -2, duration: 50, useNativeDriver: true }),
+      Animated.timing(anim, { toValue:  2, duration: 50, useNativeDriver: true }),
+      Animated.timing(anim, { toValue:  0, duration: 50, useNativeDriver: true }),
+    ]).start();
+  };
 
   const handleAmountChange = (text) => {
     const numericValue = text.replace(/[^0-9]/g, '');
@@ -189,10 +207,10 @@ export default function ExpenseTracker() {
 
         {/* Form */}
         <View style={[s.card, { backgroundColor: t.cardBg, borderColor: t.cardBorder }]}>
-          <View style={{ flexDirection: 'row', marginBottom: 14 }}>
+          <View style={{ flexDirection: 'row', marginBottom: 14, gap: 8 }}>
             <View style={{ flex: 0.75 }}>
               <Text style={[s.label, { color: t.label }]}>AMOUNT</Text>
-              <View style={[s.amountRow, { backgroundColor: t.fieldBg, borderColor: t.fieldBorder }]}>
+              <Animated.View style={[s.amountRow, { backgroundColor: t.fieldBg, borderColor: t.fieldBorder, transform: [{ translateX: shakeAmount }] }]}>
                 <Text style={[s.dollar, { color: t.dollar }]}>$</Text>
                 <TextInput
                   style={[s.input, { color: t.inputText }]}
@@ -202,49 +220,94 @@ export default function ExpenseTracker() {
                   placeholder="0.00"
                   placeholderTextColor={t.placeholder}
                 />
-              </View>
+              </Animated.View>
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[s.label, { color: t.label }]}>CATEGORY</Text>
-              <TouchableOpacity style={[s.catBtn, { backgroundColor: t.fieldBg, borderColor: t.fieldBorder }]} onPress={openCategoryModal}>
-                <Text style={[s.catBtnText, { color: selectedCategory.name ? t.catSelected : t.catPlaceholder }]}>
-                  {selectedCategory.name || 'Select'}
-                </Text>
-              </TouchableOpacity>
+              <Animated.View style={{ transform: [{ translateX: shakeCategory }] }}>
+                <TouchableOpacity style={[s.catBtn, { backgroundColor: t.fieldBg, borderColor: t.fieldBorder }]} onPress={openCategoryModal}>
+                  <Text style={[s.catBtnText, { color: selectedCategory.name ? t.catSelected : t.catPlaceholder }]}>
+                    {selectedCategory.name || ''}
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
             </View>
           </View>
 
           <Text style={[s.label, { color: t.label }]}>DESCRIPTION</Text>
-          <TextInput
-            style={[s.descInput, { backgroundColor: t.fieldBg, borderColor: t.fieldBorder, color: t.inputText }]}
-            value={description}
-            onChangeText={setDescription}
-            placeholder="Enter description"
-            placeholderTextColor={t.placeholder}
-          />
+          <Animated.View style={{ transform: [{ translateX: shakeDesc }] }}>
+            <TextInput
+              style={[s.descInput, { backgroundColor: t.fieldBg, borderColor: t.fieldBorder, color: t.inputText }]}
+              value={description}
+              onChangeText={setDescription}
+              placeholder=""
+              placeholderTextColor={t.placeholder}
+            />
+          </Animated.View>
 
-          <View style={{ flexDirection: 'row', marginTop: 16, gap: 8 }}>
-            <TouchableOpacity style={[s.clearBtn, { borderColor: t.clearBorder }]} onPress={handleClearForm}>
-              <Text style={[s.clearBtnText, { color: t.clearText }]}>CLEAR</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[s.logBtn, { backgroundColor: t.logBtnBg }]} onPress={handleLogExpense}>
-              <Text style={s.logBtnText}>LOG</Text>
-            </TouchableOpacity>
-          </View>
+          {(() => {
+            const amountFilled = !!inputAmount && inputAmount !== '0.00';
+            const enabled = amountFilled && !!description && !!selectedCategory.name;
+            return (
+              <View style={{ flexDirection: 'row', marginTop: 16, gap: 8 }}>
+                <TouchableOpacity style={[s.clearBtn, { borderColor: t.clearBorder }]} onPress={handleClearForm}>
+                  <Text style={[s.clearBtnText, { color: t.clearText }]}>CLEAR</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.logBtn, { backgroundColor: enabled ? t.logBtnBg : t.fieldBg, borderWidth: enabled ? 0 : 1, borderColor: t.fieldBorder }]}
+                  onPress={enabled ? handleLogExpense : () => {
+                    if (!amountFilled) triggerShake(shakeAmount);
+                    if (!selectedCategory.name) triggerShake(shakeCategory);
+                    if (!description) triggerShake(shakeDesc);
+                  }}
+                  activeOpacity={enabled ? 0.7 : 1}
+                >
+                  <Text style={[s.logBtnText, { color: enabled ? '#fff' : t.placeholder }]}>LOG</Text>
+                </TouchableOpacity>
+              </View>
+            );
+          })()}
         </View>
 
         {/* Category list */}
         <View style={[s.card, { backgroundColor: t.cardBg, borderColor: t.cardBorder }]}>
-          {Array.isArray(categories) && categories.map((cat, i) => {
+          {(() => {
+            if (!Array.isArray(categories)) return null;
+            const sorted = [...categories].sort((a, b) => b.amount - a.amount);
+            const newIds = sorted.map(c => c.id);
+
+            // Initialise any new anim values
+            sorted.forEach(cat => {
+              if (!rowAnims.current[cat.id]) rowAnims.current[cat.id] = new Animated.Value(0);
+            });
+
+            // Animate rows that changed position
+            if (prevSortedIds.current) {
+              const prev = prevSortedIds.current;
+              const anims = sorted
+                .map((cat, newIdx) => {
+                  const oldIdx = prev.indexOf(cat.id);
+                  if (oldIdx === -1 || oldIdx === newIdx) return null;
+                  const anim = rowAnims.current[cat.id];
+                  anim.setValue((oldIdx - newIdx) * ROW_HEIGHT);
+                  return Animated.spring(anim, { toValue: 0, tension: 120, friction: 9, useNativeDriver: true });
+                })
+                .filter(Boolean);
+              if (anims.length) Animated.parallel(anims).start();
+            }
+            prevSortedIds.current = newIds;
+
+            return sorted.map((cat, i) => {
             const color = CATEGORY_COLORS[cat.name] || '#888';
             return (
-              <View key={cat.id} style={[s.catRow, i < categories.length - 1 && { borderBottomWidth: 1, borderBottomColor: t.catDivider }]}>
+              <Animated.View key={cat.id} style={[s.catRow, i < sorted.length - 1 && { borderBottomWidth: 1, borderBottomColor: t.catDivider }, { transform: [{ translateY: rowAnims.current[cat.id] }] }]}>
                 <Ionicons name={CategoryIcons[cat.name]} size={20} color={color} style={{ marginRight: 14 }} />
                 <Text style={[s.catName, { color: t.catName }]}>{cat.name}</Text>
                 <Text style={[s.catAmt, { color: t.catAmt }]}>${formatAmt(cat.amount)}</Text>
-              </View>
+              </Animated.View>
             );
-          })}
+            });
+          })()}
         </View>
 
       </ScrollView>
@@ -270,7 +333,7 @@ const s = StyleSheet.create({
   quickBtn:         { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   card:             { marginHorizontal: 16, marginTop: 16, borderRadius: 16, padding: 16, borderWidth: 1 },
   label:            { fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 6 },
-  amountRow:        { flexDirection: 'row', alignItems: 'center', borderRadius: 10, paddingHorizontal: 12, height: 46, marginRight: 8, borderWidth: 1 },
+  amountRow:        { flexDirection: 'row', alignItems: 'center', borderRadius: 10, paddingHorizontal: 12, height: 46, borderWidth: 1 },
   dollar:           { fontSize: 16, marginRight: 4 },
   input:            { flex: 1, fontSize: 16 },
   catBtn:           { borderRadius: 10, height: 46, justifyContent: 'center', paddingHorizontal: 12, borderWidth: 1 },
