@@ -190,7 +190,7 @@ export default function ExpenseTracker() {
 
   return (
     <View style={[s.container, { backgroundColor: t.bg }]}>
-      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
         {/* Header */}
         <View style={[s.header, { borderBottomColor: t.headerBorder }]}>
