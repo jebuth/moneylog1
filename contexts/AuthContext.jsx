@@ -27,6 +27,8 @@ import {
 import * as Google from 'expo-auth-session/providers/google';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert, Platform } from 'react-native';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import { OAuthProvider } from 'firebase/auth';
 // Import configurations
 import { firebaseConfig, googleAuthConfig } from '../config/firebase';
 
@@ -291,6 +293,39 @@ const saveUserToFirestore = async (userId, userData) => {
     }
   };
 
+  // Apple Sign In
+  const signInWithApple = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      const provider = new OAuthProvider('apple.com');
+      const oauthCredential = provider.credential({
+        idToken: credential.identityToken,
+      });
+
+      const userCredential = await signInWithCredential(auth, oauthCredential);
+      router.replace('/(main)/screen1');
+      return { success: true };
+    } catch (error) {
+      if (error.code === 'ERR_REQUEST_CANCELED') {
+        // User cancelled — not an error
+        return { success: false, cancelled: true };
+      }
+      console.error('Apple sign-in error:', error);
+      setError(error.message || 'Failed to sign in with Apple');
+      return { success: false, error: error.message };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Logout function
   const logout = async () => {
     setIsLoading(true);
@@ -312,6 +347,51 @@ const saveUserToFirestore = async (userId, userData) => {
     }
   };
 
+
+  // Delete a transaction from the current log
+  const deleteTransaction = async (transactionId) => {
+    try {
+      if (!user || !currentLog) return;
+
+      const tx = currentLog.transactions.find(t => t.id === transactionId);
+      if (!tx) return;
+
+      const updatedLog = { ...currentLog };
+      updatedLog.transactions = updatedLog.transactions.filter(t => t.id !== transactionId);
+      updatedLog.totalAmount = parseFloat((updatedLog.totalAmount - tx.amount).toFixed(2));
+
+      updatedLog.categories = updatedLog.categories.map(cat => {
+        if (cat.name !== tx.category) return cat;
+        return {
+          ...cat,
+          amount: Math.max(0, parseFloat((cat.amount - tx.amount).toFixed(2))),
+          transactionCount: Math.max(0, (cat.transactionCount || 1) - 1),
+        };
+      });
+
+      if (updatedLog.totalAmount > 0) {
+        updatedLog.categories = updatedLog.categories.map(cat => ({
+          ...cat,
+          percentage: Math.round((cat.amount / updatedLog.totalAmount) * 100),
+        }));
+      } else {
+        updatedLog.categories = updatedLog.categories.map(cat => ({ ...cat, percentage: 0 }));
+      }
+
+      const logRef = doc(db, 'logs', updatedLog.id);
+      await updateDoc(logRef, {
+        totalAmount: updatedLog.totalAmount,
+        categories: updatedLog.categories,
+        transactions: updatedLog.transactions,
+        updatedAt: new Date().toISOString(),
+      });
+
+      setLogs(logs.map(l => l.id === updatedLog.id ? updatedLog : l));
+      setCurrentLog(updatedLog);
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+    }
+  };
 
     // crud
     // State for the current log
@@ -918,7 +998,9 @@ const deleteLog = async (logId) => {
       login,
       logout,
       signInWithGoogle,
+      signInWithApple,
       isAuthenticated: !!user,
+      deleteTransaction,
 
       // firestore crud
       logs, 

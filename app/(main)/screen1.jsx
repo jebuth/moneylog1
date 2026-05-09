@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import CategorySelectorModal from '../../components/CategorySelectorModal';
+import TransactionListModal from '../../components/TransactionListModal';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { CategoryIcons } from '../../constants/CategoryIcons';
@@ -91,7 +92,7 @@ const THEMES = {
 };
 
 export default function ExpenseTracker() {
-  const { user, logs, currentLog, updateLog, isLoading } = useAuth();
+  const { user, logs, currentLog, updateLog, deleteTransaction, isLoading } = useAuth();
   const { theme, isDarkMode } = useTheme();
   const router = useRouter();
 
@@ -112,6 +113,7 @@ export default function ExpenseTracker() {
   const [inputAmount, setInputAmount]                   = useState('');
   const [description, setDescription]                   = useState('');
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [txModalCategory, setTxModalCategory]           = useState(null);
   const rowAnims                                        = useRef({});
   const prevSortedIds                                   = useRef(null);
   const ROW_HEIGHT                                      = 45;
@@ -301,9 +303,11 @@ export default function ExpenseTracker() {
             const color = CATEGORY_COLORS[cat.name] || '#888';
             return (
               <Animated.View key={cat.id} style={[s.catRow, i < sorted.length - 1 && { borderBottomWidth: 1, borderBottomColor: t.catDivider }, { transform: [{ translateY: rowAnims.current[cat.id] }] }]}>
-                <Ionicons name={CategoryIcons[cat.name]} size={20} color={color} style={{ marginRight: 14 }} />
-                <Text style={[s.catName, { color: t.catName }]}>{cat.name}</Text>
-                <Text style={[s.catAmt, { color: t.catAmt }]}>${formatAmt(cat.amount)}</Text>
+                <TouchableOpacity style={s.catRowInner} activeOpacity={0.6} onPress={() => setTxModalCategory(cat)}>
+                  <Ionicons name={CategoryIcons[cat.name]} size={20} color={color} style={{ marginRight: 14 }} />
+                  <Text style={[s.catName, { color: t.catName }]}>{cat.name}</Text>
+                  <Text style={[s.catAmt, { color: t.catAmt }]}>${formatAmt(cat.amount)}</Text>
+                </TouchableOpacity>
               </Animated.View>
             );
             });
@@ -318,6 +322,14 @@ export default function ExpenseTracker() {
         onSelect={handleCategorySelect}
         categories={categories}
         selectedCategory={selectedCategory}
+      />
+
+      <TransactionListModal
+        visible={!!txModalCategory}
+        onClose={() => setTxModalCategory(null)}
+        category={txModalCategory}
+        transactions={currentLog?.transactions}
+        onDeleteTransaction={deleteTransaction}
       />
     </View>
   );
@@ -343,7 +355,8 @@ const s = StyleSheet.create({
   clearBtnText:     { fontWeight: '600' },
   logBtn:           { flex: 1, height: 46, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   logBtnText:       { color: '#fff', fontWeight: '700', fontSize: 15 },
-  catRow:           { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+  catRow:           { flexDirection: 'row', alignItems: 'center' },
+  catRowInner:      { flex: 1, flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
   catName:          { flex: 1, fontSize: 15 },
   catAmt:           { fontSize: 15, fontWeight: '600' },
   noLogTitle:       { fontSize: 24, fontWeight: 'bold', marginBottom: 12 },

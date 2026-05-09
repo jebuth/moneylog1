@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
   Image,
   ActivityIndicator,
   SafeAreaView,
-  Animated,
-  Alert
+  Animated
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -84,11 +83,7 @@ export default function LoginScreen() {
   };
 
   const handleAppleSignIn = async () => {
-    Alert.alert(
-      "Sign in with Apple",
-      "This feature is coming soon.",
-      [{ text: "OK", onPress: () => console.log("OK Pressed") }]
-    );
+    await signInWithApple();
   };
 
   // Gradient colors based on theme

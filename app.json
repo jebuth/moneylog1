@@ -8,6 +8,7 @@
       "bundleIdentifier": "com.anonymous.moneylog",
       "icon": "./assets/icon.png",
       "supportsTablet": true,
+      "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
