@@ -393,6 +393,23 @@ const saveUserToFirestore = async (userId, userData) => {
     }
   };
 
+  // Add new categories to the current log
+  const addCategoriesToLog = async (newCategories) => {
+    try {
+      if (!user || !currentLog) return;
+      const existingIds = new Set(currentLog.categories.map(c => c.id));
+      const toAdd = newCategories.filter(c => !existingIds.has(c.id));
+      if (toAdd.length === 0) return;
+      const updatedLog = { ...currentLog, categories: [...currentLog.categories, ...toAdd] };
+      const logRef = doc(db, 'logs', updatedLog.id);
+      await updateDoc(logRef, { categories: updatedLog.categories, updatedAt: new Date().toISOString() });
+      setLogs(logs.map(l => l.id === updatedLog.id ? updatedLog : l));
+      setCurrentLog(updatedLog);
+    } catch (error) {
+      console.error('Error adding categories:', error);
+    }
+  };
+
     // crud
     // State for the current log
     const [currentLog, setCurrentLog] = useState(null);
@@ -1001,6 +1018,7 @@ const deleteLog = async (logId) => {
       signInWithApple,
       isAuthenticated: !!user,
       deleteTransaction,
+      addCategoriesToLog,
 
       // firestore crud
       logs, 

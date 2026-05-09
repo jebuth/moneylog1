@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   SafeAreaView,
+  ScrollView,
   Platform,
   Dimensions,
   Modal,
@@ -21,11 +22,40 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { CategoryIcons } from '../../constants/CategoryIcons';
 import Constants from 'expo-constants';
 import { useNavigation } from '@react-navigation/native';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 
 const { width } = Dimensions.get('window');
+
+const ALL_CATEGORIES = [
+  { id: 9,  name: 'Entertainment' },
+  { id: 11, name: 'Fast Food' },
+  { id: 2,  name: 'Gifts' },
+  { id: 10, name: 'Groceries' },
+  { id: 3,  name: 'Health/Medical' },
+  { id: 4,  name: 'Home' },
+  { id: 6,  name: 'Personal' },
+  { id: 7,  name: 'Pets' },
+  { id: 1,  name: 'Restaurants' },
+  { id: 5,  name: 'Transportation' },
+  { id: 8,  name: 'Utilities' },
+];
+
+const CATEGORY_COLORS = {
+  'Restaurants':    '#FF6B6B',
+  'Fast Food':      '#FF8E53',
+  'Gifts':          '#FF6BD6',
+  'Health/Medical': '#4ECDC4',
+  'Home':           '#45B7D1',
+  'Transportation': '#96CEB4',
+  'Personal':       '#A78BFA',
+  'Pets':           '#FFA07A',
+  'Utilities':      '#FFD93D',
+  'Entertainment':  '#6BCB77',
+  'Groceries':      '#4D96FF',
+};
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -99,7 +129,9 @@ export default function LogsListScreen() {
   const [searchQuery, setSearchQuery]           = useState('');
   const [showNewLogModal, setShowNewLogModal]   = useState(false);
   const [newLogName, setNewLogName]             = useState('');
-  const [itemBeingDeleted, setItemBeingDeleted] = useState(null);
+  const [itemBeingDeleted, setItemBeingDeleted]     = useState(null);
+  const [modalStep, setModalStep]                     = useState(1);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState(ALL_CATEGORIES.map(c => c.id));
 
   const configureLayoutAnimation = () => {
     LayoutAnimation.configureNext({
@@ -131,25 +163,28 @@ export default function LogsListScreen() {
     navigation.navigate('screen1');
   }, [closeOpenSwipeable, navigation, setCurrentLog]);
 
-  const handleCreateNewLog = async () => {
+  const handleNextStep = () => {
     if (newLogName.trim() === '') { alert('Enter a log title.'); return; }
+    setModalStep(2);
+  };
+
+  const toggleCategory = (id) => {
+    setSelectedCategoryIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleCreateNewLog = async () => {
+    if (selectedCategoryIds.length === 0) { alert('Select at least one category.'); return; }
+    const selectedCats = ALL_CATEGORIES
+      .filter(c => selectedCategoryIds.includes(c.id))
+      .map(c => ({ id: c.id, name: c.name, amount: 0, percentage: 0, transactionCount: 0 }));
     const logData = {
       userId: user.id,
       logTitle: newLogName,
       totalAmount: 0,
       date: new Date().toISOString().split('T')[0],
-      categories: [
-        { id: 1,  name: 'Restaurants',    amount: 0, percentage: 0, transactionCount: 0 },
-        { id: 2,  name: 'Gifts',          amount: 0, percentage: 0, transactionCount: 0 },
-        { id: 3,  name: 'Health/Medical', amount: 0, percentage: 0, transactionCount: 0 },
-        { id: 4,  name: 'Home',           amount: 0, percentage: 0, transactionCount: 0 },
-        { id: 5,  name: 'Transportation', amount: 0, percentage: 0, transactionCount: 0 },
-        { id: 6,  name: 'Personal',       amount: 0, percentage: 0, transactionCount: 0 },
-        { id: 7,  name: 'Pets',           amount: 0, percentage: 0, transactionCount: 0 },
-        { id: 8,  name: 'Utilities',      amount: 0, percentage: 0, transactionCount: 0 },
-        { id: 9,  name: 'Entertainment',  amount: 0, percentage: 0, transactionCount: 0 },
-        { id: 10, name: 'Groceries',      amount: 0, percentage: 0, transactionCount: 0 },
-      ],
+      categories: selectedCats,
       transactions: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -160,6 +195,8 @@ export default function LogsListScreen() {
     setSearchQuery('');
     setShowNewLogModal(false);
     setNewLogName('');
+    setModalStep(1);
+    setSelectedCategoryIds(ALL_CATEGORIES.map(c => c.id));
   };
 
   const handleDeleteLog = async (logId) => {
@@ -184,7 +221,12 @@ export default function LogsListScreen() {
   const formatCurrency = (amount) =>
     amount.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  const closeModal = () => { setShowNewLogModal(false); setNewLogName(''); };
+  const closeModal = () => {
+    setShowNewLogModal(false);
+    setNewLogName('');
+    setModalStep(1);
+    setSelectedCategoryIds(ALL_CATEGORIES.map(c => c.id));
+  };
 
   const renderRightActions = (progress, dragX, item) => {
     const trans = dragX.interpolate({ inputRange: [-100, 0], outputRange: [0, 100], extrapolate: 'clamp' });
@@ -302,24 +344,94 @@ export default function LogsListScreen() {
         <Modal visible={showNewLogModal} animationType="fade" transparent onRequestClose={closeModal}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
             <TouchableOpacity style={MB.overlay} activeOpacity={1} onPress={closeModal}>
-            <View style={[MB.card, { backgroundColor: t.modalCardBg, borderColor: t.modalBorder }]} onStartShouldSetResponder={() => true}>
-              <View style={[MB.iconWrap, { backgroundColor: t.modalIconBg }]}>
-                <Ionicons name="document-text-outline" size={32} color="#5C5CFF" />
-              </View>
-              <TextInput
-                style={[MB.input, { backgroundColor: t.modalInputBg, borderColor: t.modalInputBorder, color: t.modalInputText }]}
-                placeholder="What are you tracking?"
-                placeholderTextColor={t.modalHolder}
-                value={newLogName}
-                onChangeText={setNewLogName}
-                autoFocus
-              />
-              <TouchableOpacity style={MB.addBtn} onPress={handleCreateNewLog}>
-                <Text style={MB.addTxt}>Create Log</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={closeModal}>
-                <Text style={[MB.cancelTxt, { color: t.modalCancel }]}>Cancel</Text>
-              </TouchableOpacity>
+            <View style={[MB.card, { backgroundColor: t.modalCardBg, borderColor: t.modalBorder, maxHeight: modalStep === 2 ? '85%' : undefined }]} onStartShouldSetResponder={() => true}>
+
+              {/* ── Step 1: Name ── */}
+              {modalStep === 1 && <>
+                <View style={[MB.iconWrap, { backgroundColor: t.modalIconBg }]}>
+                  <Ionicons name="document-text-outline" size={32} color="#5C5CFF" />
+                </View>
+                <TextInput
+                  style={[MB.input, { backgroundColor: t.modalInputBg, borderColor: t.modalInputBorder, color: t.modalInputText }]}
+                  placeholder="What are you tracking?"
+                  placeholderTextColor={t.modalHolder}
+                  value={newLogName}
+                  onChangeText={setNewLogName}
+                  autoFocus
+                />
+                <TouchableOpacity style={MB.addBtn} onPress={handleNextStep}>
+                  <Text style={MB.addTxt}>Next →</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={closeModal}>
+                  <Text style={[MB.cancelTxt, { color: t.modalCancel }]}>Cancel</Text>
+                </TouchableOpacity>
+              </>}
+
+              {/* ── Step 2: Category picker ── */}
+              {modalStep === 2 && <>
+                {/* Header */}
+                <View style={CS.stepHeader}>
+                  <View>
+                    <Text style={[CS.stepTitle, { color: t.modalInputText }]}>Categories</Text>
+                    <Text style={[CS.stepSub, { color: t.modalCancel }]}>{selectedCategoryIds.length} of {ALL_CATEGORIES.length} selected</Text>
+                  </View>
+                </View>
+
+                {/* Select All / None */}
+                <View style={CS.selAllRow}>
+                  <TouchableOpacity onPress={() => setSelectedCategoryIds(ALL_CATEGORIES.map(c => c.id))}>
+                    <Text style={CS.selAllTxt}>All</Text>
+                  </TouchableOpacity>
+                  <Text style={[CS.selAllTxt, { color: t.modalCancel, marginHorizontal: 6 }]}>·</Text>
+                  <TouchableOpacity onPress={() => setSelectedCategoryIds([])}>
+                    <Text style={[CS.selAllTxt, { color: t.modalCancel }]}>None</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Category designs */}
+                <ScrollView style={{ width: '100%' }} showsVerticalScrollIndicator={false}>
+
+                  {/* List Rows */}
+                  <View>
+                    {ALL_CATEGORIES.map((cat, i) => {
+                      const selected = selectedCategoryIds.includes(cat.id);
+                      const color = CATEGORY_COLORS[cat.name] || '#888';
+                      return (
+                        <TouchableOpacity
+                          key={cat.id}
+                          onPress={() => toggleCategory(cat.id)}
+                          activeOpacity={0.7}
+                          style={[CS.listRow, i < ALL_CATEGORIES.length - 1 && { borderBottomWidth: 1, borderBottomColor: t.modalInputBorder }]}
+                        >
+                          <View style={[CS.listIconCircle, { backgroundColor: color + '28' }]}>
+                            <Ionicons name={CategoryIcons[cat.name]} size={19} color={color} />
+                          </View>
+                          <Text style={[CS.listName, { color: t.modalInputText }]}>{cat.name}</Text>
+                          <View style={[CS.checkbox, { borderColor: selected ? '#5C5CFF' : t.modalInputBorder, backgroundColor: selected ? '#5C5CFF' : 'transparent' }]}>
+                            {selected && <Ionicons name="checkmark" size={13} color="#fff" />}
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+
+                  <View style={{ height: 16 }} />
+                </ScrollView>
+
+                {/* Action buttons */}
+                <View style={CS.stepBtns}>
+                  <TouchableOpacity style={[CS.backBtn, { borderColor: t.modalInputBorder }]} onPress={() => setModalStep(1)}>
+                    <Text style={[CS.backTxt, { color: t.modalCancel }]}>← Back</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[CS.createBtn, { opacity: selectedCategoryIds.length === 0 ? 0.4 : 1 }]}
+                    onPress={handleCreateNewLog}
+                  >
+                    <Text style={CS.createTxt}>Create Log</Text>
+                  </TouchableOpacity>
+                </View>
+              </>}
+
             </View>
             </TouchableOpacity>
           </KeyboardAvoidingView>
@@ -348,6 +460,24 @@ const styles = StyleSheet.create({
   deleteBtn:    { flex: 1, backgroundColor: '#FF3B30', justifyContent: 'center', alignItems: 'center', borderTopRightRadius: 12, borderBottomRightRadius: 12 },
   deleteTxt:    { color: '#fff', fontWeight: 'bold', fontSize: 12, marginTop: 4 },
   emptyBtn:     { backgroundColor: '#5C5CFF', paddingVertical: 12, paddingHorizontal: 28, borderRadius: 10 },
+});
+
+// ── Category Selector (step 2) ────────────────────────────────────────────────
+const CS = StyleSheet.create({
+  stepHeader:     { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%', marginBottom: 6 },
+  stepTitle:      { fontSize: 17, fontWeight: '700' },
+  stepSub:        { fontSize: 12, marginTop: 2 },
+  selAllRow:      { flexDirection: 'row', alignItems: 'center', marginBottom: 12, alignSelf: 'flex-start' },
+  selAllTxt:      { color: '#5C5CFF', fontSize: 13, fontWeight: '600' },
+  listRow:        { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+  listIconCircle: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  listName:       { flex: 1, fontSize: 15 },
+  checkbox:       { width: 24, height: 24, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  stepBtns:       { flexDirection: 'row', gap: 10, width: '100%', marginTop: 14 },
+  backBtn:        { flex: 0.7, height: 46, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  backTxt:        { fontWeight: '600', fontSize: 14 },
+  createBtn:      { flex: 1, height: 46, borderRadius: 12, backgroundColor: '#5C5CFF', alignItems: 'center', justifyContent: 'center' },
+  createTxt:      { color: '#fff', fontWeight: '700', fontSize: 15 },
 });
 
 // ── Modal toggle pill ─────────────────────────────────────────────────────────
