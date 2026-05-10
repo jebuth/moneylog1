@@ -137,8 +137,8 @@ const styles = StyleSheet.create({
   header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1 },
   headerTitle: { fontSize: 13, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase' },
   row:         { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 20 },
-  name:        { flex: 1, fontSize: 15, fontWeight: '400' },
-  amount:      { fontSize: 14, fontWeight: '500' },
+  name:        { flex: 1, fontSize: 17, fontWeight: '400' },
+  amount:      { fontSize: 17, fontWeight: '500' },
 });
 
 export default CategorySelectorModal;

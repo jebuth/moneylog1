@@ -393,6 +393,37 @@ const saveUserToFirestore = async (userId, userData) => {
     }
   };
 
+  // Delete a category and its transactions from the current log
+  const deleteCategory = async (categoryId) => {
+    try {
+      if (!user || !currentLog) return;
+      const cat = currentLog.categories.find(c => c.id === categoryId);
+      if (!cat) return;
+      const updatedLog = { ...currentLog };
+      updatedLog.categories = updatedLog.categories.filter(c => c.id !== categoryId);
+      updatedLog.transactions = updatedLog.transactions.filter(tx => tx.category !== cat.name);
+      updatedLog.totalAmount = parseFloat((updatedLog.totalAmount - cat.amount).toFixed(2));
+      if (updatedLog.totalAmount > 0) {
+        updatedLog.categories = updatedLog.categories.map(c => ({
+          ...c, percentage: Math.round((c.amount / updatedLog.totalAmount) * 100),
+        }));
+      } else {
+        updatedLog.categories = updatedLog.categories.map(c => ({ ...c, percentage: 0 }));
+      }
+      const logRef = doc(db, 'logs', updatedLog.id);
+      await updateDoc(logRef, {
+        categories: updatedLog.categories,
+        transactions: updatedLog.transactions,
+        totalAmount: updatedLog.totalAmount,
+        updatedAt: new Date().toISOString(),
+      });
+      setLogs(logs.map(l => l.id === updatedLog.id ? updatedLog : l));
+      setCurrentLog(updatedLog);
+    } catch (error) {
+      console.error('Error deleting category:', error);
+    }
+  };
+
   // Add new categories to the current log
   const addCategoriesToLog = async (newCategories) => {
     try {
@@ -1019,6 +1050,7 @@ const deleteLog = async (logId) => {
       isAuthenticated: !!user,
       deleteTransaction,
       addCategoriesToLog,
+      deleteCategory,
 
       // firestore crud
       logs, 

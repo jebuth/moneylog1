@@ -233,7 +233,7 @@ export default function LogsListScreen() {
     return (
       <Animated.View style={[styles.deleteWrap, { transform: [{ translateX: trans }] }]}>
         <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDeleteLog(item.id)}>
-          <Ionicons name="trash-outline" size={22} color="#FFF" />
+          <Ionicons name="trash-outline" size={22} color="#FF3B30" />
           <Text style={styles.deleteTxt}>Delete</Text>
         </TouchableOpacity>
       </Animated.View>
@@ -328,12 +328,12 @@ export default function LogsListScreen() {
             ListEmptyComponent={
               <View style={{ alignItems: 'center', marginTop: 60, padding: 32 }}>
                 <Ionicons name="document-text-outline" size={48} color={t.emptyIcon} style={{ marginBottom: 16 }} />
-                <Text style={{ color: t.emptyText, fontSize: 16, textAlign: 'center', marginBottom: 24 }}>
+                <Text style={{ color: t.emptyText, fontSize: 17, textAlign: 'center', marginBottom: 24 }}>
                   {searchQuery.length > 0 ? 'No logs match your search' : "You haven't added any logs yet..."}
                 </Text>
                 {searchQuery.length === 0 && (
                   <TouchableOpacity style={styles.emptyBtn} onPress={() => setShowNewLogModal(true)}>
-                    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 15 }}>Add Your First Log</Text>
+                    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 17 }}>Add Your First Log</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -448,17 +448,17 @@ const styles = StyleSheet.create({
   headerTitle:  { fontSize: 28, fontWeight: 'bold' },
   addLogBtn:    { width: 44, height: 44, borderRadius: 22, backgroundColor: '#5C5CFF', alignItems: 'center', justifyContent: 'center' },
   searchBar:    { flexDirection: 'row', alignItems: 'center', borderRadius: 12, marginHorizontal: 16, marginBottom: 12, paddingHorizontal: 14, height: 46, borderWidth: 1 },
-  searchInput:  { flex: 1, fontSize: 15 },
+  searchInput:  { flex: 1, fontSize: 17 },
   list:         { paddingHorizontal: 16, paddingBottom: 120 },
   card:         { flexDirection: 'row', alignItems: 'center', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderLeftWidth: 4 },
   left:         { flex: 1, marginRight: 12 },
-  title:        { fontSize: 16, fontWeight: '600', marginBottom: 4 },
-  meta:         { fontSize: 12 },
+  title:        { fontSize: 17, fontWeight: '600', marginBottom: 4 },
+  meta:         { fontSize: 13 },
   right:        { alignItems: 'flex-end', gap: 6 },
-  amount:       { fontSize: 15, fontWeight: '700' },
+  amount:       { fontSize: 17, fontWeight: '700' },
   deleteWrap:   { width: 90, marginBottom: 8 },
-  deleteBtn:    { flex: 1, backgroundColor: '#FF3B30', justifyContent: 'center', alignItems: 'center', borderTopRightRadius: 12, borderBottomRightRadius: 12 },
-  deleteTxt:    { color: '#fff', fontWeight: 'bold', fontSize: 12, marginTop: 4 },
+  deleteBtn:    { flex: 1, backgroundColor: 'transparent', borderWidth: 1, borderColor: '#FF3B30', justifyContent: 'center', alignItems: 'center', borderRadius: 12 },
+  deleteTxt:    { color: '#FF3B30', fontWeight: 'bold', fontSize: 13, marginTop: 4 },
   emptyBtn:     { backgroundColor: '#5C5CFF', paddingVertical: 12, paddingHorizontal: 28, borderRadius: 10 },
 });
 
@@ -466,18 +466,18 @@ const styles = StyleSheet.create({
 const CS = StyleSheet.create({
   stepHeader:     { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%', marginBottom: 6 },
   stepTitle:      { fontSize: 17, fontWeight: '700' },
-  stepSub:        { fontSize: 12, marginTop: 2 },
+  stepSub:        { fontSize: 13, marginTop: 2 },
   selAllRow:      { flexDirection: 'row', alignItems: 'center', marginBottom: 12, alignSelf: 'flex-start' },
-  selAllTxt:      { color: '#5C5CFF', fontSize: 13, fontWeight: '600' },
+  selAllTxt:      { color: '#5C5CFF', fontSize: 15, fontWeight: '600' },
   listRow:        { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
   listIconCircle: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  listName:       { flex: 1, fontSize: 15 },
+  listName:       { flex: 1, fontSize: 17 },
   checkbox:       { width: 24, height: 24, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   stepBtns:       { flexDirection: 'row', gap: 10, width: '100%', marginTop: 14 },
   backBtn:        { flex: 0.7, height: 46, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  backTxt:        { fontWeight: '600', fontSize: 14 },
+  backTxt:        { fontWeight: '600', fontSize: 15 },
   createBtn:      { flex: 1, height: 46, borderRadius: 12, backgroundColor: '#5C5CFF', alignItems: 'center', justifyContent: 'center' },
-  createTxt:      { color: '#fff', fontWeight: '700', fontSize: 15 },
+  createTxt:      { color: '#fff', fontWeight: '700', fontSize: 17 },
 });
 
 // ── Modal toggle pill ─────────────────────────────────────────────────────────
@@ -509,10 +509,10 @@ const MB = StyleSheet.create({
   card:      { width: '100%', backgroundColor: '#141414', borderRadius: 24, padding: 24, borderWidth: 1, borderColor: '#222', alignItems: 'center' },
   iconWrap:  { width: 60, height: 60, borderRadius: 30, backgroundColor: '#1e1e1e', alignItems: 'center', justifyContent: 'center', marginBottom: 16, marginTop: 8 },
   title:     { fontSize: 20, fontWeight: 'bold', color: '#fff', marginBottom: 20 },
-  input:     { width: '100%', backgroundColor: '#1e1e1e', borderRadius: 12, padding: 14, fontSize: 15, color: '#fff', marginBottom: 20, borderWidth: 1, borderColor: '#2a2a2a', textAlign: 'center' },
+  input:     { width: '100%', backgroundColor: '#1e1e1e', borderRadius: 12, padding: 14, fontSize: 17, color: '#fff', marginBottom: 20, borderWidth: 1, borderColor: '#2a2a2a', textAlign: 'center' },
   addBtn:    { width: '100%', height: 50, borderRadius: 14, backgroundColor: '#5C5CFF', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  addTxt:    { color: '#fff', fontWeight: '700', fontSize: 16 },
-  cancelTxt: { color: '#555', fontSize: 14, paddingVertical: 4 },
+  addTxt:    { color: '#fff', fontWeight: '700', fontSize: 17 },
+  cancelTxt: { color: '#555', fontSize: 15, paddingVertical: 4 },
 });
 
 // ── Modal C — Immersive input ─────────────────────────────────────────────────

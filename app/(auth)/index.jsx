@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   buttonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
   errorText: {

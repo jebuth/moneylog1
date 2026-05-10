@@ -9,8 +9,7 @@ import {
   Modal,
   Alert,
   ActivityIndicator,
-  Animated,
-  Dimensions
+  Animated
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -19,6 +18,7 @@ import TransactionListModal from '../../components/TransactionListModal';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { CategoryIcons } from '../../constants/CategoryIcons';
+import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 
 const CATEGORY_COLORS = {
   'Restaurants':    '#FF6B6B',
@@ -55,7 +55,6 @@ const ALL_CATEGORIES = [
   { id: 8,  name: 'Utilities' },
 ];
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Color tokens per design
 const THEMES = {
@@ -68,7 +67,7 @@ const THEMES = {
     quickIcon:        '#aaa',
     cardBg:           '#141414',
     cardBorder:       '#222',
-    label:            '#555',
+    label:            '#fff',
     fieldBg:          '#1e1e1e',
     fieldBorder:      '#1e1e1e',
     dollar:           '#666',
@@ -110,7 +109,7 @@ const THEMES = {
 };
 
 export default function ExpenseTracker() {
-  const { user, logs, currentLog, updateLog, deleteTransaction, addCategoriesToLog, isLoading } = useAuth();
+  const { user, logs, currentLog, updateLog, deleteTransaction, deleteCategory, addCategoriesToLog, isLoading } = useAuth();
   const { theme, isDarkMode } = useTheme();
   const router = useRouter();
 
@@ -132,11 +131,11 @@ export default function ExpenseTracker() {
   const [description, setDescription]                   = useState('');
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [txModalCategory, setTxModalCategory]           = useState(null);
-  const [addCatVisible, setAddCatVisible]               = useState(false);
-  const [addCatDesign, setAddCatDesign]                 = useState(1);
-  const [addCatSelected, setAddCatSelected]             = useState([]);
+  const [addCatVisible, setAddCatVisible]   = useState(false);
+  const [addCatSelected, setAddCatSelected] = useState([]);
   const rowAnims                                        = useRef({});
   const prevSortedIds                                   = useRef(null);
+  const swipeCatRefs                                    = useRef({});
   const ROW_HEIGHT                                      = 45;
   const shakeAmount                                     = useRef(new Animated.Value(0)).current;
   const shakeCategory                                   = useRef(new Animated.Value(0)).current;
@@ -224,6 +223,7 @@ export default function ExpenseTracker() {
   }
 
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <View style={[s.container, { backgroundColor: t.bg }]}>
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
@@ -335,13 +335,34 @@ export default function ExpenseTracker() {
             return sorted.map((cat, i) => {
             const color = CATEGORY_COLORS[cat.name] || '#888';
             return (
-              <Animated.View key={cat.id} style={[s.catRow, i < sorted.length - 1 && { borderBottomWidth: 1, borderBottomColor: t.catDivider }, { transform: [{ translateY: rowAnims.current[cat.id] }] }]}>
-                <TouchableOpacity style={s.catRowInner} activeOpacity={0.6} onPress={() => setTxModalCategory(cat)}>
-                  <Ionicons name={CategoryIcons[cat.name]} size={20} color={color} style={{ marginRight: 14 }} />
-                  <Text style={[s.catName, { color: t.catName }]}>{cat.name}</Text>
-                  <Text style={[s.catAmt, { color: t.catAmt }]}>${formatAmt(cat.amount)}</Text>
-                </TouchableOpacity>
-              </Animated.View>
+              <Swipeable
+                key={cat.id}
+                ref={ref => swipeCatRefs.current[cat.id] = ref}
+                overshootRight={false}
+                renderRightActions={() => (
+                  <TouchableOpacity
+                    style={s.catDeleteAction}
+                    onPress={() => Alert.alert(
+                      'Delete Category',
+                      `Delete "${cat.name}" and all its transactions?`,
+                      [
+                        { text: 'Cancel', style: 'cancel', onPress: () => swipeCatRefs.current[cat.id]?.close() },
+                        { text: 'Delete', style: 'destructive', onPress: () => deleteCategory(cat.id) },
+                      ]
+                    )}
+                  >
+                    <Ionicons name="trash-outline" size={18} color="#FF3B30" />
+                  </TouchableOpacity>
+                )}
+              >
+                <Animated.View style={[s.catRow, i < sorted.length - 1 && { borderBottomWidth: 1, borderBottomColor: t.catDivider }, { backgroundColor: t.cardBg, transform: [{ translateY: rowAnims.current[cat.id] }] }]}>
+                  <TouchableOpacity style={s.catRowInner} activeOpacity={0.6} onPress={() => setTxModalCategory(cat)}>
+                    <Ionicons name={CategoryIcons[cat.name]} size={20} color={color} style={{ marginRight: 14 }} />
+                    <Text style={[s.catName, { color: t.catName }]}>{cat.name}</Text>
+                    <Text style={[s.catAmt, { color: t.catAmt }]}>${formatAmt(cat.amount)}</Text>
+                  </TouchableOpacity>
+                </Animated.View>
+              </Swipeable>
             );
             });
           })()}
@@ -369,53 +390,18 @@ export default function ExpenseTracker() {
       {(() => {
         const existingNames = new Set((currentLog?.categories || []).map(c => c.name));
         const available = ALL_CATEGORIES.filter(c => !existingNames.has(c.name));
-        const designLabels = ['LIST', 'GRID', 'CHIPS'];
-        const designIcons  = ['list-outline', 'grid-outline', 'ellipse-outline'];
-
-        const header = (
-          <View style={ac.header}>
-            <View>
-              <Text style={[ac.title, { color: t.inputText }]}>Add Category</Text>
-              <Text style={[ac.sub, { color: t.placeholder }]}>
-                {addCatSelected.length > 0 ? `${addCatSelected.length} selected` : available.length === 0 ? 'All added' : 'Tap to select'}
-              </Text>
-            </View>
-            <TouchableOpacity style={ac.toggle} onPress={() => setAddCatDesign(d => d === 3 ? 1 : d + 1)}>
-              <Ionicons name={designIcons[addCatDesign - 1]} size={13} color="#fff" style={{ marginRight: 4 }} />
-              <Text style={ac.toggleTxt}>{designLabels[addCatDesign - 1]}</Text>
-            </TouchableOpacity>
-          </View>
-        );
-
-        const addBtn = (
-          <TouchableOpacity
-            style={[ac.addBtn, { opacity: addCatSelected.length === 0 ? 0.4 : 1 }]}
-            onPress={handleAddCategories}
-          >
-            <Text style={ac.addTxt}>
-              {addCatSelected.length > 0 ? `Add ${addCatSelected.length} Categor${addCatSelected.length === 1 ? 'y' : 'ies'}` : 'Add Categories'}
-            </Text>
-          </TouchableOpacity>
-        );
-
         return (
           <Modal visible={addCatVisible} transparent animationType="fade" onRequestClose={closeAddCatModal}>
-            <TouchableOpacity
-              style={[ac.overlay, { justifyContent: addCatDesign === 1 ? 'flex-end' : 'center' }]}
-              activeOpacity={1}
-              onPress={closeAddCatModal}
-            >
-              <View
-                style={[
-                  ac.card,
-                  { backgroundColor: t.cardBg, borderColor: t.cardBorder },
-                  addCatDesign === 1 && ac.cardSheet,
-                ]}
-                onStartShouldSetResponder={() => true}
-              >
-                {addCatDesign === 1 && <View style={[ac.handle, { backgroundColor: t.fieldBorder }]} />}
+            <TouchableOpacity style={[ac.overlay, { justifyContent: 'flex-end' }]} activeOpacity={1} onPress={closeAddCatModal}>
+              <View style={[ac.card, ac.cardSheet, { backgroundColor: t.cardBg, borderColor: t.cardBorder }]} onStartShouldSetResponder={() => true}>
+                <View style={[ac.handle, { backgroundColor: t.fieldBorder }]} />
 
-                {header}
+                <View style={ac.header}>
+                  <Text style={[ac.title, { color: t.inputText }]}>Add Category</Text>
+                  <Text style={[ac.sub, { color: t.placeholder }]}>
+                    {addCatSelected.length > 0 ? `${addCatSelected.length} selected` : available.length === 0 ? 'All added' : 'Tap to select'}
+                  </Text>
+                </View>
 
                 {available.length === 0 ? (
                   <View style={ac.empty}>
@@ -424,9 +410,7 @@ export default function ExpenseTracker() {
                   </View>
                 ) : (
                   <ScrollView style={{ width: '100%' }} showsVerticalScrollIndicator={false}>
-
-                    {/* Design 1 — List */}
-                    {addCatDesign === 1 && available.map((cat, i) => {
+                    {available.map((cat, i) => {
                       const sel   = addCatSelected.includes(cat.id);
                       const color = CATEGORY_COLORS[cat.name] || '#888';
                       return (
@@ -446,67 +430,25 @@ export default function ExpenseTracker() {
                         </TouchableOpacity>
                       );
                     })}
-
-                    {/* Design 2 — Grid */}
-                    {addCatDesign === 2 && (
-                      <View style={ac.grid}>
-                        {available.map(cat => {
-                          const sel   = addCatSelected.includes(cat.id);
-                          const color = CATEGORY_COLORS[cat.name] || '#888';
-                          return (
-                            <TouchableOpacity
-                              key={cat.id}
-                              onPress={() => toggleAddCatSelect(cat.id)}
-                              activeOpacity={0.7}
-                              style={[ac.tile, { backgroundColor: t.fieldBg, borderColor: sel ? color : 'transparent', opacity: sel ? 1 : 0.45 }]}
-                            >
-                              {sel && (
-                                <View style={[ac.tileCheck, { backgroundColor: color }]}>
-                                  <Ionicons name="checkmark" size={9} color="#fff" />
-                                </View>
-                              )}
-                              <View style={[ac.tileCircle, { backgroundColor: color + '28' }]}>
-                                <Ionicons name={CategoryIcons[cat.name]} size={22} color={color} />
-                              </View>
-                              <Text style={[ac.tileName, { color: t.catName }]} numberOfLines={2}>{cat.name}</Text>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </View>
-                    )}
-
-                    {/* Design 3 — Chips */}
-                    {addCatDesign === 3 && (
-                      <View style={ac.chips}>
-                        {available.map(cat => {
-                          const sel   = addCatSelected.includes(cat.id);
-                          const color = CATEGORY_COLORS[cat.name] || '#888';
-                          return (
-                            <TouchableOpacity
-                              key={cat.id}
-                              onPress={() => toggleAddCatSelect(cat.id)}
-                              activeOpacity={0.7}
-                              style={[ac.chip, { backgroundColor: sel ? '#5C5CFF' : 'transparent', borderColor: sel ? '#5C5CFF' : t.fieldBorder }]}
-                            >
-                              <Ionicons name={CategoryIcons[cat.name]} size={13} color={sel ? '#fff' : color} />
-                              <Text style={[ac.chipTxt, { color: sel ? '#fff' : t.catName }]}>{cat.name}</Text>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </View>
-                    )}
-
                     <View style={{ height: 12 }} />
                   </ScrollView>
                 )}
 
-                {addBtn}
+                <TouchableOpacity
+                  style={[ac.addBtn, { opacity: addCatSelected.length === 0 ? 0.4 : 1 }]}
+                  onPress={handleAddCategories}
+                >
+                  <Text style={ac.addTxt}>
+                    {addCatSelected.length > 0 ? `Add ${addCatSelected.length} Categor${addCatSelected.length === 1 ? 'y' : 'ies'}` : 'Add Categories'}
+                  </Text>
+                </TouchableOpacity>
               </View>
             </TouchableOpacity>
           </Modal>
         );
       })()}
     </View>
+    </GestureHandlerRootView>
   );
 }
 
@@ -514,33 +456,33 @@ const s = StyleSheet.create({
   container:        { flex: 1 },
   scroll:           { paddingBottom: 40 },
   header:           { marginHorizontal: 16, marginTop: 20, marginBottom: 4, paddingBottom: 20, borderBottomWidth: 1 },
-  logTitle:         { fontSize: 16, fontWeight: '500', marginBottom: 4 },
+  logTitle:         { fontSize: 15, fontWeight: '500', marginBottom: 4 },
   totalAmount:      { fontSize: 42, fontWeight: 'bold', marginBottom: 20 },
   quickRow:         { flexDirection: 'row', gap: 12 },
   quickBtn:         { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   card:             { marginHorizontal: 16, marginTop: 16, borderRadius: 16, padding: 16, borderWidth: 1 },
-  label:            { fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 6 },
+  label:            { fontSize: 13, fontWeight: '600', letterSpacing: 0.5, marginBottom: 6 },
   amountRow:        { flexDirection: 'row', alignItems: 'center', borderRadius: 10, paddingHorizontal: 12, height: 46, borderWidth: 1 },
-  dollar:           { fontSize: 16, marginRight: 4 },
-  input:            { flex: 1, fontSize: 16 },
+  dollar:           { fontSize: 17, marginRight: 4 },
+  input:            { flex: 1, fontSize: 17 },
   catBtn:           { borderRadius: 10, height: 46, justifyContent: 'center', paddingHorizontal: 12, borderWidth: 1 },
-  catBtnText:       { fontSize: 14 },
-  descInput:        { borderRadius: 10, padding: 12, fontSize: 15, borderWidth: 1 },
+  catBtnText:       { fontSize: 16 },
+  descInput:        { borderRadius: 10, padding: 12, fontSize: 16, borderWidth: 1 },
   clearBtn:         { flex: 0.75, height: 46, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  clearBtnText:     { fontWeight: '600' },
+  clearBtnText:     { fontWeight: '600', fontSize: 15 },
   logBtn:           { flex: 1, height: 46, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  logBtnText:       { color: '#fff', fontWeight: '700', fontSize: 15 },
+  logBtnText:       { color: '#fff', fontWeight: '700', fontSize: 17 },
   catRow:           { flexDirection: 'row', alignItems: 'center' },
   catRowInner:      { flex: 1, flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
-  catName:          { flex: 1, fontSize: 15 },
-  catAmt:           { fontSize: 15, fontWeight: '600' },
-  noLogTitle:       { fontSize: 24, fontWeight: 'bold', marginBottom: 12 },
-  noLogDesc:        { fontSize: 16, lineHeight: 22, textAlign: 'center', maxWidth: 300, marginBottom: 30 },
+  catDeleteAction:  { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#FF3B30', justifyContent: 'center', alignItems: 'center', width: 80, marginLeft: 12, borderRadius: 8 },
+  catName:          { flex: 1, fontSize: 17 },
+  catAmt:           { fontSize: 17, fontWeight: '600' },
+  noLogTitle:       { fontSize: 28, fontWeight: 'bold', marginBottom: 12 },
+  noLogDesc:        { fontSize: 17, lineHeight: 24, textAlign: 'center', maxWidth: 300, marginBottom: 30 },
   createLogBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#5C5CFF', paddingVertical: 16, paddingHorizontal: 32, borderRadius: 12, width: '80%', maxWidth: 300, height: 56, marginTop: 20 },
-  createLogBtnText: { color: '#FFF', fontWeight: '600', fontSize: 16 },
+  createLogBtnText: { color: '#FFF', fontWeight: '600', fontSize: 17 },
 });
 
-const TILE_W = (SCREEN_WIDTH - 32 - 32 - 16) / 3;
 const ac = StyleSheet.create({
   overlay:    { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)' },
   card:       { margin: 16, borderRadius: 24, padding: 20, borderWidth: 1, maxHeight: '80%' },
@@ -549,23 +491,11 @@ const ac = StyleSheet.create({
   header:     { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 },
   title:      { fontSize: 17, fontWeight: '700' },
   sub:        { fontSize: 12, marginTop: 2 },
-  toggle:     { flexDirection: 'row', alignItems: 'center', backgroundColor: '#5C5CFF', borderRadius: 16, paddingHorizontal: 10, paddingVertical: 5 },
-  toggleTxt:  { color: '#fff', fontSize: 11, fontWeight: '700', letterSpacing: 0.8 },
   // List
   listRow:    { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
   iconCircle: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   listName:   { flex: 1, fontSize: 15 },
   checkbox:   { width: 24, height: 24, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  // Grid
-  grid:       { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tile:       { width: TILE_W, borderRadius: 14, borderWidth: 2, alignItems: 'center', justifyContent: 'center', paddingVertical: 12, paddingHorizontal: 6 },
-  tileCheck:  { position: 'absolute', top: 6, right: 6, width: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  tileCircle: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  tileName:   { fontSize: 10, fontWeight: '600', textAlign: 'center', lineHeight: 13 },
-  // Chips
-  chips:      { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip:       { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, gap: 5 },
-  chipTxt:    { fontSize: 13, fontWeight: '500' },
   // Add button
   addBtn:     { marginTop: 16, height: 48, borderRadius: 14, backgroundColor: '#5C5CFF', alignItems: 'center', justifyContent: 'center', width: '100%' },
   addTxt:     { color: '#fff', fontWeight: '700', fontSize: 15 },
