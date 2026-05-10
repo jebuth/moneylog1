@@ -57,6 +57,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [userCategories, setUserCategories] = useState([]);
 
   // Google Auth setup
   const [request, response, promptAsync] = Google.useAuthRequest({
@@ -113,8 +114,9 @@ export function AuthProvider({ children }) {
           // Save user to Firestore (add this line)
           await saveUserToFirestore(firebaseUser.uid, appUser);
         
-          // Fetch user logs from Firestore
-          await fetchUserLogs(firebaseUser.uid);
+          // Fetch categories then logs
+          const fetchedCats = await fetchUserCategories(firebaseUser.uid);
+          await fetchUserLogs(firebaseUser.uid, fetchedCats);
 
         } catch (error) {
           console.error('Error handling user authentication:', error);
@@ -168,54 +170,40 @@ const saveUserToFirestore = async (userId, userData) => {
 };
 
   // Function to fetch user logs from Firestore
-  const fetchUserLogs = async (userId) => {
+  const fetchUserLogs = async (userId, existingCategories = []) => {
     try {
-      // Set loading state
       setIsLoading(true);
-      
-      // Query logs collection for documents where userId matches
       const logsRef = collection(db, 'logs');
-      const q = query(
-        logsRef, 
-        where('userId', '==', userId),
-        orderBy('date', 'desc')
-      );
-      
+      const q = query(logsRef, where('userId', '==', userId), orderBy('date', 'desc'));
       const querySnapshot = await getDocs(q);
-      
-      // Map the Firestore documents to your logs format
       const userLogs = [];
-      
-      querySnapshot.forEach((doc) => {
-        const logData = doc.data();
+      querySnapshot.forEach((d) => {
+        const logData = d.data();
         userLogs.push({
-          id: doc.id,
+          id: d.id,
           logTitle: logData.logTitle,
           totalAmount: logData.totalAmount,
           date: logData.date,
           categories: logData.categories || [],
-          transactions: logData.transactions || []
+          transactions: logData.transactions || [],
         });
       });
-  
-      // If no logs exist yet, create initial sample data
+
       if (userLogs.length === 0) {
-        console.log('creating initial log');
-        const initialLog = await createInitialLogs(userId);
-        userLogs.push(initialLog);
-      }
-      
-      console.log(`Fetched ${userLogs.length} logs for user`);
-      
-      // Update logs state
-      setLogs(userLogs);
-      
-      // Set current log to the most recent one if available
-      if (userLogs.length > 0) {
-        console.log('Setting currentLog to:', userLogs[0].logTitle);
+        // New user: seed categories if needed, then create initial log
+        let cats = existingCategories;
+        if (cats.length === 0) cats = await seedUserCategories(userId);
+        const initialLog = await createInitialLogs(userId, cats);
+        setLogs([initialLog]);
+        setCurrentLog(initialLog);
+      } else {
+        setLogs(userLogs);
         setCurrentLog(userLogs[0]);
+        // Migrate existing users who don't have the categories subcollection yet
+        if (existingCategories.length === 0) {
+          await migrateToNewCategorySystem(userId, userLogs);
+        }
       }
-      
     } catch (error) {
       console.error('Error fetching user logs:', error);
       throw error;
@@ -361,7 +349,8 @@ const saveUserToFirestore = async (userId, userData) => {
       updatedLog.totalAmount = parseFloat((updatedLog.totalAmount - tx.amount).toFixed(2));
 
       updatedLog.categories = updatedLog.categories.map(cat => {
-        if (cat.name !== tx.category) return cat;
+        const matches = tx.categoryId ? cat.categoryId === tx.categoryId : cat.name === tx.category;
+        if (!matches) return cat;
         return {
           ...cat,
           amount: Math.max(0, parseFloat((cat.amount - tx.amount).toFixed(2))),
@@ -401,7 +390,9 @@ const saveUserToFirestore = async (userId, userData) => {
       if (!cat) return;
       const updatedLog = { ...currentLog };
       updatedLog.categories = updatedLog.categories.filter(c => c.id !== categoryId);
-      updatedLog.transactions = updatedLog.transactions.filter(tx => tx.category !== cat.name);
+      updatedLog.transactions = updatedLog.transactions.filter(tx =>
+        tx.categoryId ? tx.categoryId !== cat.categoryId : tx.category !== cat.name
+      );
       updatedLog.totalAmount = parseFloat((updatedLog.totalAmount - cat.amount).toFixed(2));
       if (updatedLog.totalAmount > 0) {
         updatedLog.categories = updatedLog.categories.map(c => ({
@@ -428,8 +419,8 @@ const saveUserToFirestore = async (userId, userData) => {
   const addCategoriesToLog = async (newCategories) => {
     try {
       if (!user || !currentLog) return;
-      const existingIds = new Set(currentLog.categories.map(c => c.id));
-      const toAdd = newCategories.filter(c => !existingIds.has(c.id));
+      const existingIds = new Set(currentLog.categories.map(c => c.categoryId || String(c.id)));
+      const toAdd = newCategories.filter(c => !existingIds.has(c.categoryId || String(c.id)));
       if (toAdd.length === 0) return;
       const updatedLog = { ...currentLog, categories: [...currentLog.categories, ...toAdd] };
       const logRef = doc(db, 'logs', updatedLog.id);
@@ -438,6 +429,153 @@ const saveUserToFirestore = async (userId, userData) => {
       setCurrentLog(updatedLog);
     } catch (error) {
       console.error('Error adding categories:', error);
+    }
+  };
+
+  // Fetch user categories from their subcollection
+  const fetchUserCategories = async (userId) => {
+    try {
+      const catRef = collection(db, 'users', userId, 'categories');
+      const snapshot = await getDocs(catRef);
+      const cats = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      setUserCategories(cats);
+      return cats;
+    } catch (error) {
+      console.error('Error fetching user categories:', error);
+      return [];
+    }
+  };
+
+  // Seed 5 default categories for new users
+  const seedUserCategories = async (userId) => {
+    const SEED = [
+      { name: 'Eating Out',     icon: 'restaurant-outline',      color: '#FF6B6B' },
+      { name: 'Entertainment',  icon: 'game-controller-outline', color: '#6BCB77' },
+      { name: 'Groceries',      icon: 'cart-outline',            color: '#4D96FF' },
+      { name: 'Home',           icon: 'home-outline',            color: '#45B7D1' },
+      { name: 'Transportation', icon: 'car-outline',             color: '#96CEB4' },
+    ];
+    try {
+      const catRef = collection(db, 'users', userId, 'categories');
+      const created = [];
+      for (const cat of SEED) {
+        const docRef = await addDoc(catRef, { ...cat, isDeleted: false, createdAt: new Date().toISOString() });
+        created.push({ id: docRef.id, ...cat, isDeleted: false });
+      }
+      setUserCategories(created);
+      return created;
+    } catch (error) {
+      console.error('Error seeding categories:', error);
+      return [];
+    }
+  };
+
+  // Migrate existing users: create categories subcollection, add categoryId/icon/color to existing data (non-destructive)
+  const migrateToNewCategorySystem = async (userId, userLogs) => {
+    try {
+      const catRef = collection(db, 'users', userId, 'categories');
+      const existing = await getDocs(catRef);
+      if (!existing.empty) return; // already migrated
+
+      const LEGACY_META = {
+        'Restaurants':    { icon: 'restaurant-outline',      color: '#FF6B6B' },
+        'Fast Food':      { icon: 'fast-food-outline',       color: '#FF8E53' },
+        'Gifts':          { icon: 'gift-outline',            color: '#FF6BD6' },
+        'Health/Medical': { icon: 'medkit-outline',          color: '#4ECDC4' },
+        'Home':           { icon: 'home-outline',            color: '#45B7D1' },
+        'Transportation': { icon: 'car-outline',             color: '#96CEB4' },
+        'Personal':       { icon: 'person-outline',          color: '#A78BFA' },
+        'Pets':           { icon: 'paw-outline',             color: '#FFA07A' },
+        'Utilities':      { icon: 'flash-outline',           color: '#FFD93D' },
+        'Entertainment':  { icon: 'game-controller-outline', color: '#6BCB77' },
+        'Groceries':      { icon: 'cart-outline',            color: '#4D96FF' },
+      };
+
+      // Collect all unique category names across every log
+      const nameSet = new Set();
+      userLogs.forEach(log => {
+        (log.categories || []).forEach(cat => { if (cat.name) nameSet.add(cat.name); });
+      });
+
+      // Create a category document per unique name
+      const nameToId = {};
+      const createdCats = [];
+      for (const name of nameSet) {
+        const meta = LEGACY_META[name] || { icon: 'grid-outline', color: '#888888' };
+        const docRef = await addDoc(catRef, {
+          name, icon: meta.icon, color: meta.color,
+          isDeleted: false,
+          createdAt: new Date().toISOString(),
+          migratedAt: new Date().toISOString(),
+        });
+        nameToId[name] = docRef.id;
+        createdCats.push({ id: docRef.id, name, ...meta, isDeleted: false });
+      }
+
+      // Non-destructive update: add categoryId + icon + color alongside existing fields
+      const updatedLogs = userLogs.map(log => ({
+        ...log,
+        categories: (log.categories || []).map(cat => {
+          const meta = LEGACY_META[cat.name] || { icon: 'grid-outline', color: '#888888' };
+          return {
+            ...cat,
+            categoryId: nameToId[cat.name] || null,
+            icon:  cat.icon  || meta.icon,
+            color: cat.color || meta.color,
+          };
+        }),
+        transactions: (log.transactions || []).map(tx => ({
+          ...tx,
+          categoryId: nameToId[tx.category] || null,
+        })),
+      }));
+
+      for (const log of updatedLogs) {
+        await updateDoc(doc(db, 'logs', log.id), {
+          categories: log.categories,
+          transactions: log.transactions,
+          updatedAt: new Date().toISOString(),
+        });
+      }
+
+      setUserCategories(createdCats);
+      setLogs(updatedLogs);
+      setCurrentLog(updatedLogs[0]);
+      console.log(`Migration complete: ${createdCats.length} categories created`);
+    } catch (error) {
+      console.error('Error migrating category system:', error);
+    }
+  };
+
+  // Create a new custom category for the user
+  const createUserCategory = async (name) => {
+    try {
+      if (!user) return null;
+      const PALETTE = ['#FF6B6B','#FF8E53','#FF6BD6','#4ECDC4','#45B7D1','#96CEB4','#A78BFA','#FFA07A','#FFD93D','#6BCB77','#4D96FF'];
+      const color = PALETTE[Math.floor(Math.random() * PALETTE.length)];
+      const catRef = collection(db, 'users', user.id, 'categories');
+      const docRef = await addDoc(catRef, {
+        name, icon: 'grid-outline', color, isDeleted: false, createdAt: new Date().toISOString(),
+      });
+      const newCat = { id: docRef.id, name, icon: 'grid-outline', color, isDeleted: false };
+      setUserCategories(prev => [...prev, newCat]);
+      return newCat;
+    } catch (error) {
+      console.error('Error creating category:', error);
+      return null;
+    }
+  };
+
+  // Soft-delete a user category (keeps historical log/transaction data intact)
+  const softDeleteUserCategory = async (categoryId) => {
+    try {
+      if (!user) return;
+      await updateDoc(doc(db, 'users', user.id, 'categories', categoryId), {
+        isDeleted: true, deletedAt: new Date().toISOString(),
+      });
+      setUserCategories(prev => prev.map(c => c.id === categoryId ? { ...c, isDeleted: true } : c));
+    } catch (error) {
+      console.error('Error soft-deleting category:', error);
     }
   };
 
@@ -731,125 +869,32 @@ const saveUserToFirestore = async (userId, userData) => {
 
 
 
-    const createInitialLogs = async (userId) => {
+    const createInitialLogs = async (userId, seededCategories = []) => {
       try {
-
-        // get the current month and year
-        // Get current date
         const date = new Date();
-
-        // Method 1: Using toLocaleString
-        const monthAndDate = date.toLocaleString('en-US', { 
-          month: 'long',
-          year: 'numeric'
-        });
-        
-
-        // Create a sample log
+        const monthAndDate = date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+        const categories = seededCategories.map(cat => ({
+          categoryId:       cat.id,
+          name:             cat.name,
+          icon:             cat.icon,
+          color:            cat.color,
+          amount:           0,
+          percentage:       0,
+          transactionCount: 0,
+        }));
         const sampleLog = {
-          userId: userId,
-          logTitle: monthAndDate,
+          userId,
+          logTitle:    monthAndDate,
           totalAmount: 0,
-          date: new Date().toISOString().split('T')[0],
-          categories: [
-            {
-              id: 1,
-              name: "Restaurants",
-              amount: 0,
-              percentage: 0,
-              transactionCount: 0,
-
-            },
-            {
-              id: 2,
-              name: "Gifts",
-              amount: 0,
-              percentage: 0,
-              transactionCount: 0,
-    
-            },
-            {
-              id: 3,
-              name: "Health/Medical",
-              amount: 0,
-              percentage: 0,
-              transactionCount: 0,
-
-            },
-            {
-              id: 4,
-              name: "Home",
-              amount: 0,
-              percentage: 0,
-              transactionCount: 0,
-       
-            },
-            {
-              id: 5,
-              name: "Transportation",
-              amount: 0,
-              percentage: 0,
-              transactionCount: 0,
-          
-            },
-            {
-              id: 6,
-              name: "Personal",
-              amount: 0,
-              percentage: 0,
-              transactionCount: 0,
-           
-            },
-            {
-              id: 7,
-              name: "Pets",
-              amount: 0,
-              percentage: 0,
-              transactionCount: 0,
-
-            },
-            {
-              id: 8,
-              name: "Utilities",
-              amount: 0,
-              percentage: 0,
-              transactionCount: 0,
-      
-            },
-            {
-              id: 9,
-              name: "Entertainment",
-              amount: 0,
-              percentage: 0,
-              transactionCount: 0,
-         
-            },
-            {
-              id: 10,
-              name: "Groceries",
-              amount: 0,
-              percentage: 0,
-              transactionCount: 0,
-             
-            }
-          ],
+          date:        new Date().toISOString().split('T')[0],
+          categories,
           transactions: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          createdAt:   new Date().toISOString(),
+          updatedAt:   new Date().toISOString(),
         };
-        
-        // Add to Firestore
         const docRef = await addDoc(collection(db, 'logs'), sampleLog);
-        
-        // Create complete log object with ID
-        const newLog = {
-          id: docRef.id,
-          ...sampleLog
-        };
-        
         console.log('Created initial log for new user with ID:', docRef.id);
-        
-        return newLog; // Return the new log object directly
+        return { id: docRef.id, ...sampleLog };
       } catch (error) {
         console.error('Error creating initial logs:', error);
         throw error;
@@ -888,7 +933,7 @@ const addLog = async (logData) => {
 };
 
 // Update a log in Firestore
-const updateLog = async (amount, description, categoryName, date) => {
+const updateLog = async (amount, description, categoryName, date, categoryId = null) => {
   try {
     if (!user || !currentLog) {
       console.error("No user or current log selected");
@@ -909,6 +954,7 @@ const updateLog = async (amount, description, categoryName, date) => {
       amount,
       description,
       category: categoryName,
+      ...(categoryId && { categoryId }),
       date: date.toISOString().split('T')[0]
     };
     
@@ -932,7 +978,8 @@ const updateLog = async (amount, description, categoryName, date) => {
     // Update categories
     if (updatedLog.categories && updatedLog.categories.length > 0) {
       updatedLog.categories = updatedLog.categories.map(category => {
-        if (category.name === categoryName) {
+        const matches = categoryId ? category.categoryId === categoryId : category.name === categoryName;
+        if (matches) {
           const categoryAmount = typeof category.amount === 'number' ? category.amount : 0;
           return {
             ...category,
@@ -1052,9 +1099,14 @@ const deleteLog = async (logId) => {
       addCategoriesToLog,
       deleteCategory,
 
+      // categories
+      userCategories,
+      createUserCategory,
+      softDeleteUserCategory,
+
       // firestore crud
-      logs, 
-      setLogs, 
+      logs,
+      setLogs,
       currentLog,
       setCurrentLog,
       addLog,

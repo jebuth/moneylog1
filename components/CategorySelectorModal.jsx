@@ -105,7 +105,7 @@ const CategorySelectorModal = ({ visible, onClose, onSelect, categories, selecte
           </View>
           <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
             {[...categories].sort((a, b) => b.amount - a.amount).map((category, index) => {
-              const color = CATEGORY_COLORS[category.name] || '#888';
+              const color = category.color || CATEGORY_COLORS[category.name] || '#888';
               const isSelected = selectedCategory?.name === category.name;
               return (
                 <TouchableOpacity
@@ -114,7 +114,7 @@ const CategorySelectorModal = ({ visible, onClose, onSelect, categories, selecte
                   onPress={() => handleSelect(category)}
                   activeOpacity={0.6}
                 >
-                  <Ionicons name={CategoryIcons[category.name]} size={18} color={color} style={{ marginRight: 14 }} />
+                  <Ionicons name={category.icon || CategoryIcons[category.name] || 'grid-outline'} size={18} color={color} style={{ marginRight: 14 }} />
                   <Text style={[styles.name, { color: isSelected ? t.selectedText : t.name }]}>{category.name}</Text>
                   <Text style={[styles.amount, { color: isSelected ? t.selectedText : t.amount, opacity: isSelected ? 1 : 0.8 }]}>
                     ${category.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

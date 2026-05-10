@@ -41,20 +41,6 @@ const QUICK_BTNS = [
   { icon: 'add-circle-outline', label: 'Add Category', action: 'addCategory' },
 ];
 
-const ALL_CATEGORIES = [
-  { id: 9,  name: 'Entertainment' },
-  { id: 11, name: 'Fast Food' },
-  { id: 2,  name: 'Gifts' },
-  { id: 10, name: 'Groceries' },
-  { id: 3,  name: 'Health/Medical' },
-  { id: 4,  name: 'Home' },
-  { id: 6,  name: 'Personal' },
-  { id: 7,  name: 'Pets' },
-  { id: 1,  name: 'Restaurants' },
-  { id: 5,  name: 'Transportation' },
-  { id: 8,  name: 'Utilities' },
-];
-
 
 // Color tokens per design
 const THEMES = {
@@ -109,7 +95,7 @@ const THEMES = {
 };
 
 export default function ExpenseTracker() {
-  const { user, logs, currentLog, updateLog, deleteTransaction, deleteCategory, addCategoriesToLog, isLoading } = useAuth();
+  const { user, logs, currentLog, updateLog, deleteTransaction, deleteCategory, addCategoriesToLog, userCategories, isLoading } = useAuth();
   const { theme, isDarkMode } = useTheme();
   const router = useRouter();
 
@@ -172,7 +158,7 @@ export default function ExpenseTracker() {
       Alert.alert('Missing Information', 'Please enter an amount, description, and select a category.', [{ text: 'OK' }]);
       return;
     }
-    updateLog(inputAmount, description, selectedCategory.name, new Date());
+    updateLog(inputAmount, description, selectedCategory.name, new Date(), selectedCategory.categoryId);
     setInputAmount('');
     setDescription('');
     setSelectedCategory({});
@@ -185,9 +171,9 @@ export default function ExpenseTracker() {
   const toggleAddCatSelect = (id) => setAddCatSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const handleAddCategories = async () => {
     if (addCatSelected.length === 0) return;
-    const toAdd = ALL_CATEGORIES
-      .filter(c => addCatSelected.includes(c.id))
-      .map(c => ({ id: c.id, name: c.name, amount: 0, percentage: 0, transactionCount: 0 }));
+    const toAdd = userCategories
+      .filter(c => addCatSelected.includes(c.id) && !c.isDeleted)
+      .map(c => ({ categoryId: c.id, name: c.name, icon: c.icon, color: c.color, amount: 0, percentage: 0, transactionCount: 0 }));
     await addCategoriesToLog(toAdd);
     closeAddCatModal();
   };
@@ -315,11 +301,12 @@ export default function ExpenseTracker() {
           {(() => {
             if (!Array.isArray(categories)) return null;
             const sorted = [...categories].sort((a, b) => b.amount - a.amount);
-            const newIds = sorted.map(c => c.id);
+            const newIds = sorted.map(c => c.categoryId || String(c.id));
 
             // Initialise any new anim values
             sorted.forEach(cat => {
-              if (!rowAnims.current[cat.id]) rowAnims.current[cat.id] = new Animated.Value(0);
+              const k = cat.categoryId || String(cat.id);
+              if (!rowAnims.current[k]) rowAnims.current[k] = new Animated.Value(0);
             });
 
             // Animate rows that changed position
@@ -327,9 +314,10 @@ export default function ExpenseTracker() {
               const prev = prevSortedIds.current;
               const anims = sorted
                 .map((cat, newIdx) => {
-                  const oldIdx = prev.indexOf(cat.id);
+                  const k = cat.categoryId || String(cat.id);
+                  const oldIdx = prev.indexOf(k);
                   if (oldIdx === -1 || oldIdx === newIdx) return null;
-                  const anim = rowAnims.current[cat.id];
+                  const anim = rowAnims.current[k];
                   anim.setValue((oldIdx - newIdx) * ROW_HEIGHT);
                   return Animated.spring(anim, { toValue: 0, tension: 120, friction: 9, useNativeDriver: true });
                 })
@@ -339,11 +327,12 @@ export default function ExpenseTracker() {
             prevSortedIds.current = newIds;
 
             return sorted.map((cat, i) => {
-            const color = CATEGORY_COLORS[cat.name] || '#888';
+            const k = cat.categoryId || String(cat.id);
+            const color = cat.color || CATEGORY_COLORS[cat.name] || '#888';
             return (
               <Swipeable
-                key={cat.id}
-                ref={ref => swipeCatRefs.current[cat.id] = ref}
+                key={k}
+                ref={ref => swipeCatRefs.current[k] = ref}
                 overshootRight={false}
                 renderRightActions={() => (
                   <TouchableOpacity
@@ -352,8 +341,8 @@ export default function ExpenseTracker() {
                       'Delete Category',
                       `Delete "${cat.name}" and all its transactions?`,
                       [
-                        { text: 'Cancel', style: 'cancel', onPress: () => swipeCatRefs.current[cat.id]?.close() },
-                        { text: 'Delete', style: 'destructive', onPress: () => deleteCategory(cat.id) },
+                        { text: 'Cancel', style: 'cancel', onPress: () => swipeCatRefs.current[k]?.close() },
+                        { text: 'Delete', style: 'destructive', onPress: () => deleteCategory(cat.categoryId || cat.id) },
                       ]
                     )}
                   >
@@ -361,9 +350,9 @@ export default function ExpenseTracker() {
                   </TouchableOpacity>
                 )}
               >
-                <Animated.View style={[s.catRow, i < sorted.length - 1 && { borderBottomWidth: 1, borderBottomColor: t.catDivider }, { backgroundColor: t.cardBg, transform: [{ translateY: rowAnims.current[cat.id] }] }]}>
+                <Animated.View style={[s.catRow, i < sorted.length - 1 && { borderBottomWidth: 1, borderBottomColor: t.catDivider }, { backgroundColor: t.cardBg, transform: [{ translateY: rowAnims.current[k] }] }]}>
                   <TouchableOpacity style={s.catRowInner} activeOpacity={0.6} onPress={() => setTxModalCategory(cat)}>
-                    <Ionicons name={CategoryIcons[cat.name]} size={20} color={color} style={{ marginRight: 14 }} />
+                    <Ionicons name={cat.icon || CategoryIcons[cat.name] || 'grid-outline'} size={20} color={color} style={{ marginRight: 14 }} />
                     <Text style={[s.catName, { color: t.catName }]}>{cat.name}</Text>
                     <Text style={[s.catAmt, { color: t.catAmt }]}>${formatAmt(cat.amount)}</Text>
                   </TouchableOpacity>
@@ -394,8 +383,9 @@ export default function ExpenseTracker() {
 
       {/* ── Add Category Modal ── */}
       {(() => {
-        const existingNames = new Set((currentLog?.categories || []).map(c => c.name));
-        const available = ALL_CATEGORIES.filter(c => !existingNames.has(c.name));
+        const existingCatIds = new Set((currentLog?.categories || []).map(c => c.categoryId));
+        const available = userCategories.filter(c => !c.isDeleted && !existingCatIds.has(c.id))
+          .sort((a, b) => a.name.localeCompare(b.name));
         return (
           <Modal visible={addCatVisible} transparent animationType="fade" onRequestClose={closeAddCatModal}>
             <TouchableOpacity style={[ac.overlay, { justifyContent: 'flex-end' }]} activeOpacity={1} onPress={closeAddCatModal}>
@@ -418,7 +408,7 @@ export default function ExpenseTracker() {
                   <ScrollView style={{ width: '100%' }} showsVerticalScrollIndicator={false}>
                     {available.map((cat, i) => {
                       const sel   = addCatSelected.includes(cat.id);
-                      const color = CATEGORY_COLORS[cat.name] || '#888';
+                      const color = cat.color || '#888';
                       return (
                         <TouchableOpacity
                           key={cat.id}
@@ -427,7 +417,7 @@ export default function ExpenseTracker() {
                           style={[ac.listRow, i < available.length - 1 && { borderBottomWidth: 1, borderBottomColor: t.catDivider }]}
                         >
                           <View style={[ac.iconCircle, { backgroundColor: color + '28' }]}>
-                            <Ionicons name={CategoryIcons[cat.name]} size={19} color={color} />
+                            <Ionicons name={cat.icon || 'grid-outline'} size={19} color={color} />
                           </View>
                           <Text style={[ac.listName, { color: t.catName }]}>{cat.name}</Text>
                           <View style={[ac.checkbox, { borderColor: sel ? '#5C5CFF' : t.fieldBorder, backgroundColor: sel ? '#5C5CFF' : 'transparent' }]}>

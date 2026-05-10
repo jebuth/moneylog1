@@ -29,33 +29,6 @@ import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler'
 
 const { width } = Dimensions.get('window');
 
-const ALL_CATEGORIES = [
-  { id: 9,  name: 'Entertainment' },
-  { id: 11, name: 'Fast Food' },
-  { id: 2,  name: 'Gifts' },
-  { id: 10, name: 'Groceries' },
-  { id: 3,  name: 'Health/Medical' },
-  { id: 4,  name: 'Home' },
-  { id: 6,  name: 'Personal' },
-  { id: 7,  name: 'Pets' },
-  { id: 1,  name: 'Restaurants' },
-  { id: 5,  name: 'Transportation' },
-  { id: 8,  name: 'Utilities' },
-];
-
-const CATEGORY_COLORS = {
-  'Restaurants':    '#FF6B6B',
-  'Fast Food':      '#FF8E53',
-  'Gifts':          '#FF6BD6',
-  'Health/Medical': '#4ECDC4',
-  'Home':           '#45B7D1',
-  'Transportation': '#96CEB4',
-  'Personal':       '#A78BFA',
-  'Pets':           '#FFA07A',
-  'Utilities':      '#FFD93D',
-  'Entertainment':  '#6BCB77',
-  'Groceries':      '#4D96FF',
-};
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -116,7 +89,7 @@ const LIGHT = {
 };
 
 export default function LogsListScreen() {
-  const { isLoading, user, logs, setLogs, currentLog, setCurrentLog, addLog, deleteLog } = useAuth();
+  const { isLoading, user, logs, setLogs, currentLog, setCurrentLog, addLog, deleteLog, userCategories } = useAuth();
   const { isDarkMode } = useTheme();
   const navigation = useNavigation();
 
@@ -131,7 +104,7 @@ export default function LogsListScreen() {
   const [newLogName, setNewLogName]             = useState('');
   const [itemBeingDeleted, setItemBeingDeleted]     = useState(null);
   const [modalStep, setModalStep]                     = useState(1);
-  const [selectedCategoryIds, setSelectedCategoryIds] = useState(ALL_CATEGORIES.map(c => c.id));
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
 
   const configureLayoutAnimation = () => {
     LayoutAnimation.configureNext({
@@ -176,9 +149,9 @@ export default function LogsListScreen() {
 
   const handleCreateNewLog = async () => {
     if (selectedCategoryIds.length === 0) { alert('Select at least one category.'); return; }
-    const selectedCats = ALL_CATEGORIES
-      .filter(c => selectedCategoryIds.includes(c.id))
-      .map(c => ({ id: c.id, name: c.name, amount: 0, percentage: 0, transactionCount: 0 }));
+    const selectedCats = userCategories
+      .filter(c => selectedCategoryIds.includes(c.id) && !c.isDeleted)
+      .map(c => ({ categoryId: c.id, name: c.name, icon: c.icon, color: c.color, amount: 0, percentage: 0, transactionCount: 0 }));
     const logData = {
       userId: user.id,
       logTitle: newLogName,
@@ -196,7 +169,7 @@ export default function LogsListScreen() {
     setShowNewLogModal(false);
     setNewLogName('');
     setModalStep(1);
-    setSelectedCategoryIds(ALL_CATEGORIES.map(c => c.id));
+    setSelectedCategoryIds([]);
   };
 
   const handleDeleteLog = async (logId) => {
@@ -225,7 +198,7 @@ export default function LogsListScreen() {
     setShowNewLogModal(false);
     setNewLogName('');
     setModalStep(1);
-    setSelectedCategoryIds(ALL_CATEGORIES.map(c => c.id));
+    setSelectedCategoryIds([]);
   };
 
   const renderRightActions = (progress, dragX, item) => {
@@ -297,7 +270,7 @@ export default function LogsListScreen() {
           <StatusBar style={isDarkMode ? 'light' : 'dark'} />
           <View style={styles.header}>
             <Text style={[styles.headerTitle, { color: t.headerTitle }]}>Logs</Text>
-            <TouchableOpacity style={styles.addLogBtn} onPress={() => { closeOpenSwipeable(); setShowNewLogModal(true); }}>
+            <TouchableOpacity style={styles.addLogBtn} onPress={() => { closeOpenSwipeable(); setSelectedCategoryIds(userCategories.filter(c => !c.isDeleted).map(c => c.id)); setShowNewLogModal(true); }}>
               <Ionicons name="add" size={26} color="#FFF" />
             </TouchableOpacity>
           </View>
@@ -370,53 +343,55 @@ export default function LogsListScreen() {
               {/* ── Step 2: Category picker ── */}
               {modalStep === 2 && <>
                 {/* Header */}
-                <View style={CS.stepHeader}>
-                  <View>
-                    <Text style={[CS.stepTitle, { color: t.modalInputText }]}>Categories</Text>
-                    <Text style={[CS.stepSub, { color: t.modalCancel }]}>{selectedCategoryIds.length} of {ALL_CATEGORIES.length} selected</Text>
-                  </View>
-                </View>
-
-                {/* Select All / None */}
-                <View style={CS.selAllRow}>
-                  <TouchableOpacity onPress={() => setSelectedCategoryIds(ALL_CATEGORIES.map(c => c.id))}>
-                    <Text style={CS.selAllTxt}>All</Text>
-                  </TouchableOpacity>
-                  <Text style={[CS.selAllTxt, { color: t.modalCancel, marginHorizontal: 6 }]}>·</Text>
-                  <TouchableOpacity onPress={() => setSelectedCategoryIds([])}>
-                    <Text style={[CS.selAllTxt, { color: t.modalCancel }]}>None</Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Category designs */}
-                <ScrollView style={{ width: '100%' }} showsVerticalScrollIndicator={false}>
-
-                  {/* List Rows */}
-                  <View>
-                    {ALL_CATEGORIES.map((cat, i) => {
-                      const selected = selectedCategoryIds.includes(cat.id);
-                      const color = CATEGORY_COLORS[cat.name] || '#888';
-                      return (
-                        <TouchableOpacity
-                          key={cat.id}
-                          onPress={() => toggleCategory(cat.id)}
-                          activeOpacity={0.7}
-                          style={[CS.listRow, i < ALL_CATEGORIES.length - 1 && { borderBottomWidth: 1, borderBottomColor: t.modalInputBorder }]}
-                        >
-                          <View style={[CS.listIconCircle, { backgroundColor: color + '28' }]}>
-                            <Ionicons name={CategoryIcons[cat.name]} size={19} color={color} />
-                          </View>
-                          <Text style={[CS.listName, { color: t.modalInputText }]}>{cat.name}</Text>
-                          <View style={[CS.checkbox, { borderColor: selected ? '#5C5CFF' : t.modalInputBorder, backgroundColor: selected ? '#5C5CFF' : 'transparent' }]}>
-                            {selected && <Ionicons name="checkmark" size={13} color="#fff" />}
-                          </View>
-                        </TouchableOpacity>
-                      );
-                    })}
+                {(() => {
+                  const available = userCategories.filter(c => !c.isDeleted).sort((a, b) => a.name.localeCompare(b.name));
+                  return (<>
+                  <View style={CS.stepHeader}>
+                    <View>
+                      <Text style={[CS.stepTitle, { color: t.modalInputText }]}>Categories</Text>
+                      <Text style={[CS.stepSub, { color: t.modalCancel }]}>{selectedCategoryIds.length} of {available.length} selected</Text>
+                    </View>
                   </View>
 
-                  <View style={{ height: 16 }} />
-                </ScrollView>
+                  {/* Select All / None */}
+                  <View style={CS.selAllRow}>
+                    <TouchableOpacity onPress={() => setSelectedCategoryIds(available.map(c => c.id))}>
+                      <Text style={CS.selAllTxt}>All</Text>
+                    </TouchableOpacity>
+                    <Text style={[CS.selAllTxt, { color: t.modalCancel, marginHorizontal: 6 }]}>·</Text>
+                    <TouchableOpacity onPress={() => setSelectedCategoryIds([])}>
+                      <Text style={[CS.selAllTxt, { color: t.modalCancel }]}>None</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Category list */}
+                  <ScrollView style={{ width: '100%' }} showsVerticalScrollIndicator={false}>
+                    <View>
+                      {available.map((cat, i) => {
+                        const selected = selectedCategoryIds.includes(cat.id);
+                        const color = cat.color || '#888';
+                        return (
+                          <TouchableOpacity
+                            key={cat.id}
+                            onPress={() => toggleCategory(cat.id)}
+                            activeOpacity={0.7}
+                            style={[CS.listRow, i < available.length - 1 && { borderBottomWidth: 1, borderBottomColor: t.modalInputBorder }]}
+                          >
+                            <View style={[CS.listIconCircle, { backgroundColor: color + '28' }]}>
+                              <Ionicons name={cat.icon || 'grid-outline'} size={19} color={color} />
+                            </View>
+                            <Text style={[CS.listName, { color: t.modalInputText }]}>{cat.name}</Text>
+                            <View style={[CS.checkbox, { borderColor: selected ? '#5C5CFF' : t.modalInputBorder, backgroundColor: selected ? '#5C5CFF' : 'transparent' }]}>
+                              {selected && <Ionicons name="checkmark" size={13} color="#fff" />}
+                            </View>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+
+                    <View style={{ height: 16 }} />
+                  </ScrollView>
+                  </>); })()}
 
                 {/* Action buttons */}
                 <View style={CS.stepBtns}>

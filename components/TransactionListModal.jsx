@@ -87,9 +87,9 @@ const TransactionListModal = ({ visible, onClose, category, transactions, onDele
   if (!modalVisible && !visible) return null;
   if (!category) return null;
 
-  const color = CATEGORY_COLORS[category.name] || '#888';
+  const color = category.color || CATEGORY_COLORS[category.name] || '#888';
   const catTransactions = (transactions || [])
-    .filter(tx => tx.category === category.name)
+    .filter(tx => category.categoryId ? tx.categoryId === category.categoryId : tx.category === category.name)
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 
   const formatDate = (dateStr) => {
@@ -115,7 +115,7 @@ const TransactionListModal = ({ visible, onClose, category, transactions, onDele
 
           {/* Header */}
           <View style={[styles.header, { borderBottomColor: t.headerBorder }]}>
-            <Ionicons name={CategoryIcons[category.name]} size={20} color={color} style={{ marginRight: 10 }} />
+            <Ionicons name={category.icon || CategoryIcons[category.name] || 'grid-outline'} size={20} color={color} style={{ marginRight: 10 }} />
             <View style={{ flex: 1 }}>
               <Text style={[styles.headerTitle, { color: t.headerTitle }]}>{category.name}</Text>
               <Text style={[styles.headerSub, { color: t.subTitle }]}>
