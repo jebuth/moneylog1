@@ -229,7 +229,13 @@ export default function ExpenseTracker() {
 
         {/* Header */}
         <View style={[s.header, { borderBottomColor: t.headerBorder }]}>
-          <Text style={[s.logTitle, { color: t.logTitle }]}>{logTitle}</Text>
+
+          {/* Log title: left accent bar */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+            <View style={s.hdAccentBar} />
+            <Text style={[s.hdTitleD3, { color: t.totalAmount }]}>{logTitle}</Text>
+          </View>
+
           <Text style={[s.totalAmount, { color: t.totalAmount }]}>${formatAmt(totalAmount)}</Text>
           <View style={s.quickRow}>
             {QUICK_BTNS.map((btn, i) => (
@@ -456,7 +462,9 @@ const s = StyleSheet.create({
   container:        { flex: 1 },
   scroll:           { paddingBottom: 40 },
   header:           { marginHorizontal: 16, marginTop: 20, marginBottom: 4, paddingBottom: 20, borderBottomWidth: 1 },
-  logTitle:         { fontSize: 15, fontWeight: '500', marginBottom: 4 },
+  // Header
+  hdAccentBar:      { width: 4, height: 34, borderRadius: 2, backgroundColor: '#5C5CFF', marginRight: 12 },
+  hdTitleD3:        { fontSize: 24, fontWeight: '700' },
   totalAmount:      { fontSize: 42, fontWeight: 'bold', marginBottom: 20 },
   quickRow:         { flexDirection: 'row', gap: 12 },
   quickBtn:         { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
