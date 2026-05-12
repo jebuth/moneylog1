@@ -10,6 +10,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Animated,
 } from 'react-native';
 import { Swipeable, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,6 +28,7 @@ export default function Screen4() {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
   const swipeRefs = useRef({});
+  const rowAnims  = useRef({});
 
   const t = isDarkMode ? {
     bg:           '#0a0a0a',
@@ -94,13 +96,38 @@ export default function Screen4() {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
+  const getRowAnim = (id) => {
+    if (!rowAnims.current[id]) {
+      rowAnims.current[id] = { opacity: new Animated.Value(1), translateX: new Animated.Value(0) };
+    } else {
+      rowAnims.current[id].opacity.setValue(1);
+      rowAnims.current[id].translateX.setValue(0);
+    }
+    return rowAnims.current[id];
+  };
+
+  const animateOut = (ids, callback) => {
+    const anims = ids.map(id => {
+      const { opacity, translateX } = getRowAnim(id);
+      return Animated.parallel([
+        Animated.timing(opacity,    { toValue: 0, duration: 250, useNativeDriver: true }),
+        Animated.timing(translateX, { toValue: -350, duration: 250, useNativeDriver: true }),
+      ]);
+    });
+    Animated.parallel(anims).start(callback);
+  };
+
   const handleDelete = (cat) => {
     Alert.alert(
       'Remove Category',
       `Remove "${cat.name}" from your category bank? This won't delete existing transactions.`,
       [
         { text: 'Cancel', style: 'cancel', onPress: () => swipeRefs.current[cat.id]?.close() },
-        { text: 'Remove', style: 'destructive', onPress: () => softDeleteCategory(cat.id, cat.source) },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => animateOut([cat.id], () => softDeleteCategory(cat.id, cat.source)),
+        },
       ],
     );
   };
@@ -116,13 +143,13 @@ export default function Screen4() {
         {
           text: 'Remove',
           style: 'destructive',
-          onPress: async () => {
+          onPress: () => animateOut(selectedIds, async () => {
             for (const id of selectedIds) {
               const cat = activeCategories.find(c => c.id === id);
               if (cat) await softDeleteCategory(cat.id, cat.source);
             }
             exitSelectMode();
-          },
+          }),
         },
       ],
     );
@@ -180,11 +207,11 @@ export default function Screen4() {
                   <Ionicons name="trash-outline" size={20} color="#FF3B30" />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.addBtn, { backgroundColor: t.addBtn }]}
+                  style={[styles.addBtn, { backgroundColor: 'transparent' }]}
                   onPress={() => setShowCreateModal(true)}
                   activeOpacity={0.8}
                 >
-                  <Ionicons name="add" size={22} color="#fff" />
+                  <Ionicons name="add" size={22} color="#5C5CFF" />
                 </TouchableOpacity>
               </View>
             </>
@@ -213,56 +240,60 @@ export default function Screen4() {
               ? { borderBottomWidth: 1, borderBottomColor: t.rowBorder }
               : {};
 
+            const { opacity, translateX } = getRowAnim(cat.id);
+
             if (selectMode) {
               return (
-                <TouchableOpacity
-                  key={cat.id}
-                  style={[styles.row, { backgroundColor: t.row }, borderBottom]}
-                  onPress={() => toggleSelect(cat.id)}
-                  activeOpacity={0.6}
-                >
-                  <View style={[styles.iconCircle, { backgroundColor: cat.color + '22' }]}>
-                    <Ionicons name={cat.icon || 'grid-outline'} size={18} color={cat.color} />
-                  </View>
-                  <Text style={[styles.catName, { color: t.name }]}>{cat.name}</Text>
-                  {cat.source === 'app' && (
-                    <View style={[styles.badge, { backgroundColor: t.badge }]}>
-                      <Text style={[styles.badgeText, { color: t.badgeText }]}>Default</Text>
+                <Animated.View key={cat.id} style={{ opacity, transform: [{ translateX }] }}>
+                  <TouchableOpacity
+                    style={[styles.row, { backgroundColor: t.row }, borderBottom]}
+                    onPress={() => toggleSelect(cat.id)}
+                    activeOpacity={0.6}
+                  >
+                    <View style={[styles.iconCircle, { backgroundColor: cat.color + '22' }]}>
+                      <Ionicons name={cat.icon || 'grid-outline'} size={18} color={cat.color} />
                     </View>
-                  )}
-                  <View style={[
-                    styles.checkbox,
-                    { borderColor: isSelected ? '#5C5CFF' : t.checkBorder, backgroundColor: isSelected ? '#5C5CFF' : 'transparent', marginLeft: 12 }
-                  ]}>
-                    {isSelected && <Ionicons name="checkmark" size={14} color="#fff" />}
-                  </View>
-                </TouchableOpacity>
+                    <Text style={[styles.catName, { color: t.name }]}>{cat.name}</Text>
+                    {cat.source === 'app' && (
+                      <View style={[styles.badge, { backgroundColor: t.badge }]}>
+                        <Text style={[styles.badgeText, { color: t.badgeText }]}>Default</Text>
+                      </View>
+                    )}
+                    <View style={[
+                      styles.checkbox,
+                      { borderColor: isSelected ? '#5C5CFF' : t.checkBorder, backgroundColor: isSelected ? '#5C5CFF' : 'transparent', marginLeft: 12 }
+                    ]}>
+                      {isSelected && <Ionicons name="checkmark" size={14} color="#fff" />}
+                    </View>
+                  </TouchableOpacity>
+                </Animated.View>
               );
             }
 
             return (
-              <Swipeable
-                key={cat.id}
-                ref={ref => swipeRefs.current[cat.id] = ref}
-                renderRightActions={() => (
-                  <TouchableOpacity style={styles.deleteAction} onPress={() => handleDelete(cat)}>
-                    <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-                  </TouchableOpacity>
-                )}
-                overshootRight={false}
-              >
-                <View style={[styles.row, { backgroundColor: t.row }, borderBottom]}>
-                  <View style={[styles.iconCircle, { backgroundColor: cat.color + '22' }]}>
-                    <Ionicons name={cat.icon || 'grid-outline'} size={18} color={cat.color} />
-                  </View>
-                  <Text style={[styles.catName, { color: t.name }]}>{cat.name}</Text>
-                  {cat.source === 'app' && (
-                    <View style={[styles.badge, { backgroundColor: t.badge }]}>
-                      <Text style={[styles.badgeText, { color: t.badgeText }]}>Default</Text>
-                    </View>
+              <Animated.View key={cat.id} style={{ opacity, transform: [{ translateX }] }}>
+                <Swipeable
+                  ref={ref => swipeRefs.current[cat.id] = ref}
+                  renderRightActions={() => (
+                    <TouchableOpacity style={styles.deleteAction} onPress={() => handleDelete(cat)}>
+                      <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+                    </TouchableOpacity>
                   )}
-                </View>
-              </Swipeable>
+                  overshootRight={false}
+                >
+                  <View style={[styles.row, { backgroundColor: t.row }, borderBottom]}>
+                    <View style={[styles.iconCircle, { backgroundColor: cat.color + '22' }]}>
+                      <Ionicons name={cat.icon || 'grid-outline'} size={18} color={cat.color} />
+                    </View>
+                    <Text style={[styles.catName, { color: t.name }]}>{cat.name}</Text>
+                    {cat.source === 'app' && (
+                      <View style={[styles.badge, { backgroundColor: t.badge }]}>
+                        <Text style={[styles.badgeText, { color: t.badgeText }]}>Default</Text>
+                      </View>
+                    )}
+                  </View>
+                </Swipeable>
+              </Animated.View>
             );
           })}
 
@@ -331,7 +362,7 @@ const styles = StyleSheet.create({
   headerBtns:     { flexDirection: 'row', alignItems: 'center', gap: 10 },
   headerAction:   { fontSize: 16, fontWeight: '500' },
   iconBtn:        { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  addBtn:         { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  addBtn:         { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#5C5CFF' },
   searchRow:      { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginTop: 14, marginBottom: 4, borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, height: 42 },
   searchInput:    { flex: 1, fontSize: 15 },
   row:            { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 20 },

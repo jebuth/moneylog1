@@ -274,7 +274,7 @@ export default function LogsListScreen() {
               <Text style={[styles.headerSub, { color: t.searchHolder }]}>{logs.length} log{logs.length !== 1 ? 's' : ''}</Text>
             </View>
             <TouchableOpacity style={styles.addLogBtn} onPress={() => { closeOpenSwipeable(); setSelectedCategoryIds(userCategories.filter(c => !c.isDeleted).map(c => c.id)); setShowNewLogModal(true); }}>
-              <Ionicons name="add" size={26} color="#FFF" />
+              <Ionicons name="add" size={26} color="#5C5CFF" />
             </TouchableOpacity>
           </View>
 
@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 },
   headerTitle:  { fontSize: 28, fontWeight: 'bold' },
   headerSub:    { fontSize: 13, marginTop: 1 },
-  addLogBtn:    { width: 44, height: 44, borderRadius: 22, backgroundColor: '#5C5CFF', alignItems: 'center', justifyContent: 'center' },
+  addLogBtn:    { width: 44, height: 44, borderRadius: 22, backgroundColor: 'transparent', borderWidth: 1, borderColor: '#5C5CFF', alignItems: 'center', justifyContent: 'center' },
   searchBar:    { flexDirection: 'row', alignItems: 'center', borderRadius: 12, marginHorizontal: 16, marginBottom: 12, paddingHorizontal: 14, height: 46, borderWidth: 1 },
   searchInput:  { flex: 1, fontSize: 17 },
   list:         { paddingHorizontal: 16, paddingBottom: 120 },

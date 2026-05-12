@@ -678,14 +678,14 @@ const saveUserToFirestore = async (userId, userData) => {
       if (!user) return;
       if (source === 'app') {
         const newHidden = [...hiddenAppCategoryIds, categoryId];
-        await updateDoc(doc(db, 'users', user.id), { hiddenAppCategoryIds: newHidden });
         setHiddenAppCategoryIds(newHidden);
         setUserCategories(prev => prev.filter(c => c.id !== categoryId));
+        await updateDoc(doc(db, 'users', user.id), { hiddenAppCategoryIds: newHidden });
       } else {
+        setUserCategories(prev => prev.map(c => c.id === categoryId ? { ...c, isDeleted: true } : c));
         await updateDoc(doc(db, 'users', user.id, 'categories', categoryId), {
           isDeleted: true, deletedAt: new Date().toISOString(),
         });
-        setUserCategories(prev => prev.map(c => c.id === categoryId ? { ...c, isDeleted: true } : c));
       }
     } catch (error) {
       console.error('Error soft-deleting category:', error);
