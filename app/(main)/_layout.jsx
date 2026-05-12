@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Screen1 from './screen1';
 import Screen2 from './screen2';
 import Screen3 from './screen3';
+import Screen4 from './screen4';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Platform, StyleSheet, StatusBar } from 'react-native';
 //import {StatusBar} from 'expo-status-bar';
@@ -73,6 +74,16 @@ export default function MainLayout() {
           tabBarLabel: 'Logs',
           tabBarIcon: ({ color }) => (
             <Ionicons name="document-text-outline" color={color} size={22} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="screen4"
+        component={Screen4}
+        options={{
+          tabBarLabel: 'Categories',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="pricetags-outline" color={color} size={22} />
           ),
         }}
       />

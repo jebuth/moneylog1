@@ -44,6 +44,20 @@ const auth = initializeAuth(app, {
 // Initialize Firestore
 const db = getFirestore(app);
 
+// Default app-wide categories (stored once in appCategories collection, shared by all users)
+const APP_CATEGORIES = [
+  { name: 'Entertainment',  icon: 'game-controller-outline', color: '#6BCB77', order: 1 },
+  { name: 'Gifts',          icon: 'gift-outline',            color: '#FF6BD6', order: 2 },
+  { name: 'Groceries',      icon: 'cart-outline',            color: '#4D96FF', order: 3 },
+  { name: 'Health/Medical', icon: 'medkit-outline',          color: '#4ECDC4', order: 4 },
+  { name: 'Home',           icon: 'home-outline',            color: '#45B7D1', order: 5 },
+  { name: 'Personal',       icon: 'person-outline',          color: '#A78BFA', order: 6 },
+  { name: 'Pets',           icon: 'paw-outline',             color: '#FFA07A', order: 7 },
+  { name: 'Restaurants',    icon: 'restaurant-outline',      color: '#FF6B6B', order: 8 },
+  { name: 'Transportation', icon: 'car-outline',             color: '#96CEB4', order: 9 },
+  { name: 'Utilities',      icon: 'flash-outline',           color: '#FFD93D', order: 10 },
+];
+
 // Create the authentication context
 const AuthContext = createContext();
 
@@ -57,7 +71,9 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [userCategories, setUserCategories] = useState([]);
+  const [appCategories, setAppCategories] = useState([]);
+  const [userCategories, setUserCategories] = useState([]); // merged: app + custom
+  const [hiddenAppCategoryIds, setHiddenAppCategoryIds] = useState([]);
 
   // Google Auth setup
   const [request, response, promptAsync] = Google.useAuthRequest({
@@ -114,9 +130,13 @@ export function AuthProvider({ children }) {
           // Save user to Firestore (add this line)
           await saveUserToFirestore(firebaseUser.uid, appUser);
         
-          // Fetch categories then logs
-          const fetchedCats = await fetchUserCategories(firebaseUser.uid);
-          await fetchUserLogs(firebaseUser.uid, fetchedCats);
+          // Fetch app categories, then user custom categories, then logs
+          const hiddenIds = await fetchHiddenAppCategoryIds(firebaseUser.uid);
+          setHiddenAppCategoryIds(hiddenIds);
+          const fetchedAppCats  = await fetchAppCategories(hiddenIds);
+          const fetchedUserCats = await fetchUserCategories(firebaseUser.uid);
+          setUserCategories([...fetchedAppCats, ...fetchedUserCats]);
+          await fetchUserLogs(firebaseUser.uid, fetchedUserCats, fetchedAppCats);
 
         } catch (error) {
           console.error('Error handling user authentication:', error);
@@ -170,7 +190,7 @@ const saveUserToFirestore = async (userId, userData) => {
 };
 
   // Function to fetch user logs from Firestore
-  const fetchUserLogs = async (userId, existingCategories = []) => {
+  const fetchUserLogs = async (userId, existingUserCats = [], appCats = []) => {
     try {
       setIsLoading(true);
       const logsRef = collection(db, 'logs');
@@ -190,18 +210,30 @@ const saveUserToFirestore = async (userId, userData) => {
       });
 
       if (userLogs.length === 0) {
-        // New user: seed categories if needed, then create initial log
-        let cats = existingCategories;
-        if (cats.length === 0) cats = await seedUserCategories(userId);
-        const initialLog = await createInitialLogs(userId, cats);
+        // New user: create initial log using app categories
+        const initialLog = await createInitialLogs(userId, appCats);
         setLogs([initialLog]);
         setCurrentLog(initialLog);
       } else {
         setLogs(userLogs);
         setCurrentLog(userLogs[0]);
-        // Migrate existing users who don't have the categories subcollection yet
-        if (existingCategories.length === 0) {
-          await migrateToNewCategorySystem(userId, userLogs);
+
+        if (existingUserCats.length > 0) {
+          // Existing user who went through first migration:
+          // check if any user cats need to be replaced with app cat IDs
+          const appCatNames = new Set(appCats.map(c => c.name));
+          const needsCleanup = existingUserCats.some(c => appCatNames.has(c.name));
+          if (needsCleanup) {
+            await cleanupUserCategories(userId, existingUserCats, appCats, userLogs);
+            return; // cleanup sets logs/currentLog/userCategories internally
+          }
+        } else {
+          // Existing user with old format (no categoryIds yet): migrate using app cat IDs
+          const needsMigration = userLogs.some(l => (l.categories || []).some(c => !c.categoryId));
+          if (needsMigration) {
+            await migrateToNewCategorySystem(userId, userLogs, appCats);
+            return; // migration sets logs/currentLog/userCategories internally
+          }
         }
       }
     } catch (error) {
@@ -385,11 +417,15 @@ const saveUserToFirestore = async (userId, userData) => {
   // Delete a category and its transactions from the current log
   const deleteCategory = async (categoryId) => {
     try {
+      console.log('[deleteCategory] called with categoryId:', categoryId);
+      console.log('[deleteCategory] user:', !!user, 'currentLog:', !!currentLog);
       if (!user || !currentLog) return;
-      const cat = currentLog.categories.find(c => c.id === categoryId);
+      console.log('[deleteCategory] currentLog.categories:', JSON.stringify(currentLog.categories.map(c => ({ categoryId: c.categoryId, id: c.id, name: c.name }))));
+      const cat = currentLog.categories.find(c => c.categoryId === categoryId || c.id === categoryId);
+      console.log('[deleteCategory] found cat:', cat?.name);
       if (!cat) return;
       const updatedLog = { ...currentLog };
-      updatedLog.categories = updatedLog.categories.filter(c => c.id !== categoryId);
+      updatedLog.categories = updatedLog.categories.filter(c => c.categoryId !== categoryId && c.id !== categoryId);
       updatedLog.transactions = updatedLog.transactions.filter(tx =>
         tx.categoryId ? tx.categoryId !== cat.categoryId : tx.category !== cat.name
       );
@@ -432,98 +468,168 @@ const saveUserToFirestore = async (userId, userData) => {
     }
   };
 
-  // Fetch user categories from their subcollection
+  // Fetch user's custom categories only (state is set by caller after merging with app cats)
   const fetchUserCategories = async (userId) => {
     try {
       const catRef = collection(db, 'users', userId, 'categories');
       const snapshot = await getDocs(catRef);
-      const cats = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      setUserCategories(cats);
-      return cats;
+      return snapshot.docs.map(d => ({ id: d.id, ...d.data(), source: 'user' }));
     } catch (error) {
       console.error('Error fetching user categories:', error);
       return [];
     }
   };
 
-  // Seed 5 default categories for new users
-  const seedUserCategories = async (userId) => {
-    const SEED = [
-      { name: 'Eating Out',     icon: 'restaurant-outline',      color: '#FF6B6B' },
-      { name: 'Entertainment',  icon: 'game-controller-outline', color: '#6BCB77' },
-      { name: 'Groceries',      icon: 'cart-outline',            color: '#4D96FF' },
-      { name: 'Home',           icon: 'home-outline',            color: '#45B7D1' },
-      { name: 'Transportation', icon: 'car-outline',             color: '#96CEB4' },
-    ];
+  // Fetch hidden app category IDs from the user document
+  const fetchHiddenAppCategoryIds = async (userId) => {
     try {
-      const catRef = collection(db, 'users', userId, 'categories');
-      const created = [];
-      for (const cat of SEED) {
-        const docRef = await addDoc(catRef, { ...cat, isDeleted: false, createdAt: new Date().toISOString() });
-        created.push({ id: docRef.id, ...cat, isDeleted: false });
+      const userDoc = await getDoc(doc(db, 'users', userId));
+      if (userDoc.exists()) {
+        return userDoc.data().hiddenAppCategoryIds || [];
       }
-      setUserCategories(created);
-      return created;
+      return [];
     } catch (error) {
-      console.error('Error seeding categories:', error);
+      console.error('Error fetching hidden app category IDs:', error);
       return [];
     }
   };
 
-  // Migrate existing users: create categories subcollection, add categoryId/icon/color to existing data (non-destructive)
-  const migrateToNewCategorySystem = async (userId, userLogs) => {
+  // Fetch app-wide categories (seeds the collection if it doesn't exist yet)
+  const fetchAppCategories = async (hiddenIds = []) => {
     try {
-      const catRef = collection(db, 'users', userId, 'categories');
-      const existing = await getDocs(catRef);
-      if (!existing.empty) return; // already migrated
+      const ref = collection(db, 'appCategories');
+      const snapshot = await getDocs(ref);
+      let allCats;
+      if (snapshot.empty) {
+        allCats = await seedAppCategories();
+      } else {
+        allCats = snapshot.docs
+          .map(d => ({ id: d.id, ...d.data(), source: 'app' }))
+          .sort((a, b) => (a.order || 0) - (b.order || 0));
+      }
+      setAppCategories(allCats);
+      return allCats.filter(c => !hiddenIds.includes(c.id));
+    } catch (error) {
+      console.error('Error fetching app categories:', error);
+      return [];
+    }
+  };
 
-      const LEGACY_META = {
-        'Restaurants':    { icon: 'restaurant-outline',      color: '#FF6B6B' },
-        'Fast Food':      { icon: 'fast-food-outline',       color: '#FF8E53' },
-        'Gifts':          { icon: 'gift-outline',            color: '#FF6BD6' },
-        'Health/Medical': { icon: 'medkit-outline',          color: '#4ECDC4' },
-        'Home':           { icon: 'home-outline',            color: '#45B7D1' },
-        'Transportation': { icon: 'car-outline',             color: '#96CEB4' },
-        'Personal':       { icon: 'person-outline',          color: '#A78BFA' },
-        'Pets':           { icon: 'paw-outline',             color: '#FFA07A' },
-        'Utilities':      { icon: 'flash-outline',           color: '#FFD93D' },
-        'Entertainment':  { icon: 'game-controller-outline', color: '#6BCB77' },
-        'Groceries':      { icon: 'cart-outline',            color: '#4D96FF' },
-      };
+  // Seed appCategories collection (runs once ever, when collection is empty)
+  const seedAppCategories = async () => {
+    try {
+      const ref = collection(db, 'appCategories');
+      const created = [];
+      for (const cat of APP_CATEGORIES) {
+        const docRef = await addDoc(ref, cat);
+        created.push({ id: docRef.id, ...cat, source: 'app' });
+      }
+      console.log('App categories seeded');
+      return created;
+    } catch (error) {
+      console.error('Error seeding app categories:', error);
+      return [];
+    }
+  };
 
-      // Collect all unique category names across every log
+  // Clean up existing users: remap user category IDs → app category IDs in all logs/transactions,
+  // then delete the matched user category documents
+  const cleanupUserCategories = async (userId, userCats, appCats, userLogs) => {
+    try {
+      const appCatByName = {};
+      appCats.forEach(c => { appCatByName[c.name] = c; });
+
+      // Build remap: old user cat ID → app cat ID
+      const idMap = {};
+      const toDelete = [];
+      userCats.forEach(c => {
+        const appCat = appCatByName[c.name];
+        if (appCat) { idMap[c.id] = appCat.id; toDelete.push(c.id); }
+      });
+
+      if (Object.keys(idMap).length === 0) return;
+
+      // Remap categoryId in all logs and transactions
+      const updatedLogs = userLogs.map(log => ({
+        ...log,
+        categories: (log.categories || []).map(cat => ({
+          ...cat,
+          categoryId: idMap[cat.categoryId] || cat.categoryId,
+        })),
+        transactions: (log.transactions || []).map(tx => ({
+          ...tx,
+          categoryId: idMap[tx.categoryId] || tx.categoryId,
+        })),
+      }));
+
+      for (const log of updatedLogs) {
+        await updateDoc(doc(db, 'logs', log.id), {
+          categories: log.categories,
+          transactions: log.transactions,
+          updatedAt: new Date().toISOString(),
+        });
+      }
+
+      // Delete the now-redundant user category docs
+      for (const catId of toDelete) {
+        await deleteDoc(doc(db, 'users', userId, 'categories', catId));
+      }
+
+      const remainingCustomCats = userCats.filter(c => !idMap[c.id]);
+      setUserCategories([...appCats, ...remainingCustomCats]);
+      setLogs(updatedLogs);
+      setCurrentLog(updatedLogs[0]);
+      console.log(`Cleanup: ${toDelete.length} user categories replaced with app category IDs`);
+    } catch (error) {
+      console.error('Error cleaning up user categories:', error);
+    }
+  };
+
+  // Migrate users with old name-based log data: map category names to app category IDs.
+  // For any category names not in appCategories, create a custom user category document.
+  const migrateToNewCategorySystem = async (userId, userLogs, appCats) => {
+    try {
+      const appCatByName = {};
+      appCats.forEach(c => { appCatByName[c.name] = c; });
+
+      // Collect unique category names across all logs
       const nameSet = new Set();
       userLogs.forEach(log => {
         (log.categories || []).forEach(cat => { if (cat.name) nameSet.add(cat.name); });
       });
 
-      // Create a category document per unique name
+      // Map each name to an ID — app category if it exists, else create a custom user category
       const nameToId = {};
-      const createdCats = [];
+      const nameToMeta = {};
+      const customCatsCreated = [];
+      const userCatRef = collection(db, 'users', userId, 'categories');
+
       for (const name of nameSet) {
-        const meta = LEGACY_META[name] || { icon: 'grid-outline', color: '#888888' };
-        const docRef = await addDoc(catRef, {
-          name, icon: meta.icon, color: meta.color,
-          isDeleted: false,
-          createdAt: new Date().toISOString(),
-          migratedAt: new Date().toISOString(),
-        });
-        nameToId[name] = docRef.id;
-        createdCats.push({ id: docRef.id, name, ...meta, isDeleted: false });
+        if (appCatByName[name]) {
+          nameToId[name] = appCatByName[name].id;
+          nameToMeta[name] = { icon: appCatByName[name].icon, color: appCatByName[name].color };
+        } else {
+          const docRef = await addDoc(userCatRef, {
+            name, icon: 'grid-outline', color: '#888888',
+            isDeleted: false, source: 'user',
+            createdAt: new Date().toISOString(),
+            migratedAt: new Date().toISOString(),
+          });
+          nameToId[name] = docRef.id;
+          nameToMeta[name] = { icon: 'grid-outline', color: '#888888' };
+          customCatsCreated.push({ id: docRef.id, name, icon: 'grid-outline', color: '#888888', isDeleted: false, source: 'user' });
+        }
       }
 
-      // Non-destructive update: add categoryId + icon + color alongside existing fields
+      // Non-destructive update: add categoryId + icon + color to log categories and transactions
       const updatedLogs = userLogs.map(log => ({
         ...log,
-        categories: (log.categories || []).map(cat => {
-          const meta = LEGACY_META[cat.name] || { icon: 'grid-outline', color: '#888888' };
-          return {
-            ...cat,
-            categoryId: nameToId[cat.name] || null,
-            icon:  cat.icon  || meta.icon,
-            color: cat.color || meta.color,
-          };
-        }),
+        categories: (log.categories || []).map(cat => ({
+          ...cat,
+          categoryId: nameToId[cat.name] || null,
+          icon:  cat.icon  || nameToMeta[cat.name]?.icon  || 'grid-outline',
+          color: cat.color || nameToMeta[cat.name]?.color || '#888888',
+        })),
         transactions: (log.transactions || []).map(tx => ({
           ...tx,
           categoryId: nameToId[tx.category] || null,
@@ -538,10 +644,10 @@ const saveUserToFirestore = async (userId, userData) => {
         });
       }
 
-      setUserCategories(createdCats);
+      setUserCategories([...appCats, ...customCatsCreated]);
       setLogs(updatedLogs);
       setCurrentLog(updatedLogs[0]);
-      console.log(`Migration complete: ${createdCats.length} categories created`);
+      console.log('Migration complete using app category IDs');
     } catch (error) {
       console.error('Error migrating category system:', error);
     }
@@ -557,7 +663,7 @@ const saveUserToFirestore = async (userId, userData) => {
       const docRef = await addDoc(catRef, {
         name, icon: 'grid-outline', color, isDeleted: false, createdAt: new Date().toISOString(),
       });
-      const newCat = { id: docRef.id, name, icon: 'grid-outline', color, isDeleted: false };
+      const newCat = { id: docRef.id, name, icon: 'grid-outline', color, isDeleted: false, source: 'user' };
       setUserCategories(prev => [...prev, newCat]);
       return newCat;
     } catch (error) {
@@ -566,14 +672,21 @@ const saveUserToFirestore = async (userId, userData) => {
     }
   };
 
-  // Soft-delete a user category (keeps historical log/transaction data intact)
-  const softDeleteUserCategory = async (categoryId) => {
+  // Soft-delete a category (app or custom). Keeps historical log/transaction data intact.
+  const softDeleteCategory = async (categoryId, source) => {
     try {
       if (!user) return;
-      await updateDoc(doc(db, 'users', user.id, 'categories', categoryId), {
-        isDeleted: true, deletedAt: new Date().toISOString(),
-      });
-      setUserCategories(prev => prev.map(c => c.id === categoryId ? { ...c, isDeleted: true } : c));
+      if (source === 'app') {
+        const newHidden = [...hiddenAppCategoryIds, categoryId];
+        await updateDoc(doc(db, 'users', user.id), { hiddenAppCategoryIds: newHidden });
+        setHiddenAppCategoryIds(newHidden);
+        setUserCategories(prev => prev.filter(c => c.id !== categoryId));
+      } else {
+        await updateDoc(doc(db, 'users', user.id, 'categories', categoryId), {
+          isDeleted: true, deletedAt: new Date().toISOString(),
+        });
+        setUserCategories(prev => prev.map(c => c.id === categoryId ? { ...c, isDeleted: true } : c));
+      }
     } catch (error) {
       console.error('Error soft-deleting category:', error);
     }
@@ -1100,9 +1213,11 @@ const deleteLog = async (logId) => {
       deleteCategory,
 
       // categories
+      appCategories,
       userCategories,
+      hiddenAppCategoryIds,
       createUserCategory,
-      softDeleteUserCategory,
+      softDeleteCategory,
 
       // firestore crud
       logs,

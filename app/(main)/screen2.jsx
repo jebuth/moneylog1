@@ -269,7 +269,10 @@ export default function LogsListScreen() {
         <SafeAreaView style={styles.safe}>
           <StatusBar style={isDarkMode ? 'light' : 'dark'} />
           <View style={styles.header}>
-            <Text style={[styles.headerTitle, { color: t.headerTitle }]}>Logs</Text>
+            <View>
+              <Text style={[styles.headerTitle, { color: t.headerTitle }]}>Logs</Text>
+              <Text style={[styles.headerSub, { color: t.searchHolder }]}>{logs.length} log{logs.length !== 1 ? 's' : ''}</Text>
+            </View>
             <TouchableOpacity style={styles.addLogBtn} onPress={() => { closeOpenSwipeable(); setSelectedCategoryIds(userCategories.filter(c => !c.isDeleted).map(c => c.id)); setShowNewLogModal(true); }}>
               <Ionicons name="add" size={26} color="#FFF" />
             </TouchableOpacity>
@@ -353,16 +356,22 @@ export default function LogsListScreen() {
                     </View>
                   </View>
 
-                  {/* Select All / None */}
-                  <View style={CS.selAllRow}>
-                    <TouchableOpacity onPress={() => setSelectedCategoryIds(available.map(c => c.id))}>
-                      <Text style={CS.selAllTxt}>All</Text>
-                    </TouchableOpacity>
-                    <Text style={[CS.selAllTxt, { color: t.modalCancel, marginHorizontal: 6 }]}>·</Text>
-                    <TouchableOpacity onPress={() => setSelectedCategoryIds([])}>
-                      <Text style={[CS.selAllTxt, { color: t.modalCancel }]}>None</Text>
-                    </TouchableOpacity>
-                  </View>
+                  {/* Select All checkbox */}
+                  {(() => {
+                    const allSelected = available.length > 0 && available.every(c => selectedCategoryIds.includes(c.id));
+                    return (
+                      <TouchableOpacity
+                        style={CS.selAllRow}
+                        onPress={() => setSelectedCategoryIds(allSelected ? [] : available.map(c => c.id))}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[CS.listName, { color: t.modalInputText }]}>Select all</Text>
+                        <View style={[CS.checkbox, { borderColor: allSelected ? '#5C5CFF' : t.modalInputBorder, backgroundColor: allSelected ? '#5C5CFF' : 'transparent' }]}>
+                          {allSelected && <Ionicons name="checkmark" size={13} color="#fff" />}
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })()}
 
                   {/* Category list */}
                   <ScrollView style={{ width: '100%' }} showsVerticalScrollIndicator={false}>
@@ -421,6 +430,7 @@ const styles = StyleSheet.create({
   safe:         { flex: 1, paddingTop: Platform.OS === 'ios' ? 0 : Constants.statusBarHeight },
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 },
   headerTitle:  { fontSize: 28, fontWeight: 'bold' },
+  headerSub:    { fontSize: 13, marginTop: 1 },
   addLogBtn:    { width: 44, height: 44, borderRadius: 22, backgroundColor: '#5C5CFF', alignItems: 'center', justifyContent: 'center' },
   searchBar:    { flexDirection: 'row', alignItems: 'center', borderRadius: 12, marginHorizontal: 16, marginBottom: 12, paddingHorizontal: 14, height: 46, borderWidth: 1 },
   searchInput:  { flex: 1, fontSize: 17 },
@@ -442,8 +452,7 @@ const CS = StyleSheet.create({
   stepHeader:     { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%', marginBottom: 6 },
   stepTitle:      { fontSize: 17, fontWeight: '700' },
   stepSub:        { fontSize: 13, marginTop: 2 },
-  selAllRow:      { flexDirection: 'row', alignItems: 'center', marginBottom: 12, alignSelf: 'flex-start' },
-  selAllTxt:      { color: '#5C5CFF', fontSize: 15, fontWeight: '600' },
+  selAllRow:      { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, width: '100%' },
   listRow:        { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
   listIconCircle: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   listName:       { flex: 1, fontSize: 17 },

@@ -119,6 +119,7 @@ export default function ExpenseTracker() {
   const [txModalCategory, setTxModalCategory]           = useState(null);
   const [addCatVisible, setAddCatVisible]   = useState(false);
   const [addCatSelected, setAddCatSelected] = useState([]);
+  const [addCatSearch, setAddCatSearch]     = useState('');
   const rowAnims                                        = useRef({});
   const prevSortedIds                                   = useRef(null);
   const swipeCatRefs                                    = useRef({});
@@ -166,8 +167,8 @@ export default function ExpenseTracker() {
 
   const handleClearForm = () => { setInputAmount(''); setDescription(''); setSelectedCategory({}); };
 
-  const openAddCatModal = () => { setAddCatSelected([]); setAddCatVisible(true); };
-  const closeAddCatModal = () => { setAddCatVisible(false); setAddCatSelected([]); };
+  const openAddCatModal = () => { setAddCatSelected([]); setAddCatSearch(''); setAddCatVisible(true); };
+  const closeAddCatModal = () => { setAddCatVisible(false); setAddCatSelected([]); setAddCatSearch(''); };
   const toggleAddCatSelect = (id) => setAddCatSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const handleAddCategories = async () => {
     if (addCatSelected.length === 0) return;
@@ -297,7 +298,7 @@ export default function ExpenseTracker() {
         </View>
 
         {/* Category list */}
-        <View style={[s.card, { backgroundColor: t.cardBg, borderColor: t.cardBorder }]}>
+        <View style={[s.card, { backgroundColor: t.cardBg, borderColor: t.cardBorder, padding: 0, overflow: 'hidden' }]}>
           {(() => {
             if (!Array.isArray(categories)) return null;
             const sorted = [...categories].sort((a, b) => b.amount - a.amount);
@@ -337,16 +338,22 @@ export default function ExpenseTracker() {
                 renderRightActions={() => (
                   <TouchableOpacity
                     style={s.catDeleteAction}
-                    onPress={() => Alert.alert(
-                      'Delete Category',
-                      `Delete "${cat.name}" and all its transactions?`,
-                      [
-                        { text: 'Cancel', style: 'cancel', onPress: () => swipeCatRefs.current[k]?.close() },
-                        { text: 'Delete', style: 'destructive', onPress: () => deleteCategory(cat.categoryId || cat.id) },
-                      ]
-                    )}
+                    onPress={() => {
+                      console.log('[screen1] trash pressed, cat:', cat.name, 'categoryId:', cat.categoryId, 'id:', cat.id);
+                      Alert.alert(
+                        'Delete Category',
+                        `Delete "${cat.name}" and all its transactions?`,
+                        [
+                          { text: 'Cancel', style: 'cancel', onPress: () => swipeCatRefs.current[k]?.close() },
+                          { text: 'Delete', style: 'destructive', onPress: () => {
+                            console.log('[screen1] Delete confirmed, calling deleteCategory with:', cat.categoryId || cat.id);
+                            deleteCategory(cat.categoryId || cat.id);
+                          }},
+                        ]
+                      );
+                    }}
                   >
-                    <Ionicons name="trash-outline" size={18} color="#FF3B30" />
+                    <Ionicons name="trash-outline" size={20} color="#FF3B30" />
                   </TouchableOpacity>
                 )}
               >
@@ -386,6 +393,9 @@ export default function ExpenseTracker() {
         const existingCatIds = new Set((currentLog?.categories || []).map(c => c.categoryId));
         const available = userCategories.filter(c => !c.isDeleted && !existingCatIds.has(c.id))
           .sort((a, b) => a.name.localeCompare(b.name));
+        const filteredAvailable = addCatSearch.length >= 2
+          ? available.filter(c => c.name.toLowerCase().includes(addCatSearch.toLowerCase()))
+          : available;
         return (
           <Modal visible={addCatVisible} transparent animationType="fade" onRequestClose={closeAddCatModal}>
             <TouchableOpacity style={[ac.overlay, { justifyContent: 'flex-end' }]} activeOpacity={1} onPress={closeAddCatModal}>
@@ -405,8 +415,21 @@ export default function ExpenseTracker() {
                     <Text style={[ac.emptyTxt, { color: t.placeholder }]}>All categories already added</Text>
                   </View>
                 ) : (
+                  <>
+                  <View style={[ac.searchRow, { backgroundColor: t.fieldBg, borderColor: t.fieldBorder }]}>
+                    <Ionicons name="search-outline" size={16} color={t.placeholder} style={{ marginRight: 8 }} />
+                    <TextInput
+                      style={[ac.searchInput, { color: t.inputText }]}
+                      placeholder="Search categories..."
+                      placeholderTextColor={t.placeholder}
+                      value={addCatSearch}
+                      onChangeText={setAddCatSearch}
+                      returnKeyType="search"
+                      clearButtonMode="while-editing"
+                    />
+                  </View>
                   <ScrollView style={{ width: '100%' }} showsVerticalScrollIndicator={false}>
-                    {available.map((cat, i) => {
+                    {filteredAvailable.map((cat, i) => {
                       const sel   = addCatSelected.includes(cat.id);
                       const color = cat.color || '#888';
                       return (
@@ -414,7 +437,7 @@ export default function ExpenseTracker() {
                           key={cat.id}
                           onPress={() => toggleAddCatSelect(cat.id)}
                           activeOpacity={0.7}
-                          style={[ac.listRow, i < available.length - 1 && { borderBottomWidth: 1, borderBottomColor: t.catDivider }]}
+                          style={[ac.listRow, i < filteredAvailable.length - 1 && { borderBottomWidth: 1, borderBottomColor: t.catDivider }]}
                         >
                           <View style={[ac.iconCircle, { backgroundColor: color + '28' }]}>
                             <Ionicons name={cat.icon || 'grid-outline'} size={19} color={color} />
@@ -428,6 +451,7 @@ export default function ExpenseTracker() {
                     })}
                     <View style={{ height: 12 }} />
                   </ScrollView>
+                  </>
                 )}
 
                 <TouchableOpacity
@@ -470,9 +494,9 @@ const s = StyleSheet.create({
   clearBtnText:     { fontWeight: '600', fontSize: 15 },
   logBtn:           { flex: 1, height: 46, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   logBtnText:       { color: '#fff', fontWeight: '700', fontSize: 17 },
-  catRow:           { flexDirection: 'row', alignItems: 'center' },
+  catRow:           { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 },
   catRowInner:      { flex: 1, flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
-  catDeleteAction:  { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#FF3B30', justifyContent: 'center', alignItems: 'center', width: 80, marginLeft: 12, borderRadius: 8 },
+  catDeleteAction:  { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#FF3B30', borderRadius: 10, justifyContent: 'center', alignItems: 'center', width: 64, marginRight: 8 },
   catName:          { flex: 1, fontSize: 17 },
   catAmt:           { fontSize: 17, fontWeight: '600' },
   noLogTitle:       { fontSize: 28, fontWeight: 'bold', marginBottom: 12 },
@@ -489,6 +513,9 @@ const ac = StyleSheet.create({
   header:     { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 },
   title:      { fontSize: 17, fontWeight: '700' },
   sub:        { fontSize: 12, marginTop: 2 },
+  // Search
+  searchRow:  { flexDirection: 'row', alignItems: 'center', borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, height: 40, marginBottom: 8 },
+  searchInput: { flex: 1, fontSize: 15 },
   // List
   listRow:    { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
   iconCircle: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginRight: 12 },

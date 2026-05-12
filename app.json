@@ -4,6 +4,7 @@
     "slug": "moneylog",
     "scheme": "moneylog",
     "version": "1.0.0",
+    "jsEngine": "hermes",
     "ios": {
       "bundleIdentifier": "com.anonymous.moneylog",
       "icon": "./assets/icon.png",
