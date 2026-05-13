@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Define theme colors
@@ -73,7 +73,7 @@ export const ThemeProvider = ({ children }) => {
   
   // Current theme object based on mode
   const theme = isDarkMode ? darkTheme : lightTheme;
-  
+
   // Load theme preference from storage on mount
   useEffect(() => {
     const loadTheme = async () => {
@@ -88,31 +88,31 @@ export const ThemeProvider = ({ children }) => {
         setIsThemeLoaded(true);
       }
     };
-    
+
     loadTheme();
   }, []);
-  
-  // Toggle theme and save preference
-  const toggleTheme = async () => {
-    const newMode = !isDarkMode;
-    setIsDarkMode(newMode);
-    
-    try {
-      await AsyncStorage.setItem('theme', newMode ? 'dark' : 'light');
-    } catch (error) {
-      console.error('Error saving theme preference:', error);
-    }
-  };
-  
+
+  // Toggle theme and save preference — defer one frame so the native
+  // Switch animation completes before React schedules the re-render cascade
+  const toggleTheme = useCallback(() => {
+    requestAnimationFrame(() => {
+      setIsDarkMode(prev => {
+        const newMode = !prev;
+        AsyncStorage.setItem('theme', newMode ? 'dark' : 'light').catch(err =>
+          console.error('Error saving theme preference:', err)
+        );
+        return newMode;
+      });
+    });
+  }, []);
+
+  const contextValue = useMemo(
+    () => ({ isDarkMode, theme, toggleTheme, isThemeLoaded }),
+    [isDarkMode, isThemeLoaded, toggleTheme]
+  );
+
   return (
-    <ThemeContext.Provider
-      value={{
-        isDarkMode,
-        theme,
-        toggleTheme,
-        isThemeLoaded
-      }}
-    >
+    <ThemeContext.Provider value={contextValue}>
       {children}
     </ThemeContext.Provider>
   );

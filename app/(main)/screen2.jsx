@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -24,7 +24,8 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { CategoryIcons } from '../../constants/CategoryIcons';
 import Constants from 'expo-constants';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 
 const { width } = Dimensions.get('window');
@@ -92,8 +93,22 @@ export default function LogsListScreen() {
   const { isLoading, user, logs, setLogs, currentLog, setCurrentLog, addLog, deleteLog, userCategories } = useAuth();
   const { isDarkMode } = useTheme();
   const navigation = useNavigation();
+  const route = useRoute();
 
   const t = isDarkMode ? DARK : LIGHT;
+
+  const shimmerAnim = useRef(new Animated.Value(-1)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmerAnim, { toValue: 2, duration: 1200, useNativeDriver: true }),
+        Animated.delay(1800),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
 
   const [openSwipeableId, setOpenSwipeableId]   = useState(null);
   const swipeableRefs                           = useRef({});
@@ -105,6 +120,14 @@ export default function LogsListScreen() {
   const [itemBeingDeleted, setItemBeingDeleted]     = useState(null);
   const [modalStep, setModalStep]                     = useState(1);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
+
+  useEffect(() => {
+    if (route.params?.openNewLog) {
+      setSelectedCategoryIds(userCategories.filter(c => !c.isDeleted).map(c => c.id));
+      setShowNewLogModal(true);
+      navigation.setParams({ openNewLog: undefined });
+    }
+  }, [route.params?.openNewLog]);
 
   const configureLayoutAnimation = () => {
     LayoutAnimation.configureNext({
@@ -165,6 +188,10 @@ export default function LogsListScreen() {
     let addedLog = await addLog(logData);
     configureLayoutAnimation();
     setLogs([addedLog, ...logs]);
+    if (logs.length === 0) {
+      setCurrentLog(addedLog);
+      navigation.navigate('screen1');
+    }
     setSearchQuery('');
     setShowNewLogModal(false);
     setNewLogName('');
@@ -308,8 +335,28 @@ export default function LogsListScreen() {
                   {searchQuery.length > 0 ? 'No logs match your search' : "You haven't added any logs yet..."}
                 </Text>
                 {searchQuery.length === 0 && (
-                  <TouchableOpacity style={styles.emptyBtn} onPress={() => setShowNewLogModal(true)}>
+                  <TouchableOpacity style={styles.emptyBtn} onPress={() => setShowNewLogModal(true)} activeOpacity={0.85}>
                     <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 17 }}>Add Your First Log</Text>
+                    <Animated.View
+                      pointerEvents="none"
+                      style={[StyleSheet.absoluteFill, {
+                        borderRadius: 10,
+                        overflow: 'hidden',
+                        transform: [{
+                          translateX: shimmerAnim.interpolate({
+                            inputRange: [-1, 2],
+                            outputRange: [-120, 280],
+                          }),
+                        }],
+                      }]}
+                    >
+                      <LinearGradient
+                        colors={['transparent', 'rgba(255,255,255,0.25)', 'transparent']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={{ width: 120, height: '100%' }}
+                      />
+                    </Animated.View>
                   </TouchableOpacity>
                 )}
               </View>
@@ -444,7 +491,7 @@ const styles = StyleSheet.create({
   deleteWrap:   { width: 90, marginBottom: 8 },
   deleteBtn:    { flex: 1, backgroundColor: 'transparent', borderWidth: 1, borderColor: '#FF3B30', justifyContent: 'center', alignItems: 'center', borderRadius: 12 },
   deleteTxt:    { color: '#FF3B30', fontWeight: 'bold', fontSize: 13, marginTop: 4 },
-  emptyBtn:     { backgroundColor: '#5C5CFF', paddingVertical: 12, paddingHorizontal: 28, borderRadius: 10 },
+  emptyBtn:     { backgroundColor: '#5C5CFF', paddingVertical: 12, paddingHorizontal: 28, borderRadius: 10, overflow: 'hidden' },
 });
 
 // ── Category Selector (step 2) ────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
@@ -8,8 +8,12 @@ import Screen1 from './screen1';
 import Screen2 from './screen2';
 import Screen3 from './screen3';
 import Screen4 from './screen4';
+import OnboardingModal from '../../components/OnboardingModal';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Platform, StyleSheet, StatusBar } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const ONBOARDING_KEY = '@moneylog_onboarding_done';
 //import {StatusBar} from 'expo-status-bar';
 
 
@@ -18,7 +22,21 @@ const Tab = createMaterialTopTabNavigator();
 export default function MainLayout() {
   const { isAuthenticated } = useAuth();
   const { theme } = useTheme();
-  
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    AsyncStorage.getItem(ONBOARDING_KEY).then(val => {
+      setShowOnboarding(true); // DEV: always show for testing
+      // if (!val) setShowOnboarding(true);
+    });
+  }, [isAuthenticated]);
+
+  const handleOnboardingDone = async () => {
+    await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+    setShowOnboarding(false);
+  };
+
   // Prevent access to main screens if not authenticated
   if (!isAuthenticated) {
     return null;
@@ -26,6 +44,7 @@ export default function MainLayout() {
   
   return (
     <>
+    <OnboardingModal visible={showOnboarding} onDone={handleOnboardingDone} />
     {/* <StatusBar style="light" /> */}
     {/* THIS safeAreaView determines the status bar color */}
     <SafeAreaView style={[styles.container, {backgroundColor: theme.background}]}>

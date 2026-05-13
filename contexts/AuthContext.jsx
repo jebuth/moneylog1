@@ -44,6 +44,19 @@ const auth = initializeAuth(app, {
 // Initialize Firestore
 const db = getFirestore(app);
 
+// Recursively removes undefined values from objects/arrays before writing to Firestore
+const stripUndefined = (value) => {
+  if (Array.isArray(value)) return value.map(stripUndefined);
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([, v]) => v !== undefined)
+        .map(([k, v]) => [k, stripUndefined(v)])
+    );
+  }
+  return value;
+};
+
 // Default app-wide categories (stored once in appCategories collection, shared by all users)
 const APP_CATEGORIES = [
   { name: 'Entertainment',  icon: 'game-controller-outline', color: '#6BCB77', order: 1 },
@@ -210,10 +223,8 @@ const saveUserToFirestore = async (userId, userData) => {
       });
 
       if (userLogs.length === 0) {
-        // New user: create initial log using app categories
-        const initialLog = await createInitialLogs(userId, appCats);
-        setLogs([initialLog]);
-        setCurrentLog(initialLog);
+        setLogs([]);
+        setCurrentLog(null);
       } else {
         setLogs(userLogs);
         setCurrentLog(userLogs[0]);
@@ -554,18 +565,23 @@ const saveUserToFirestore = async (userId, userData) => {
         ...log,
         categories: (log.categories || []).map(cat => ({
           ...cat,
-          categoryId: idMap[cat.categoryId] || cat.categoryId,
+          categoryId: idMap[cat.categoryId] || cat.categoryId || null,
         })),
         transactions: (log.transactions || []).map(tx => ({
           ...tx,
-          categoryId: idMap[tx.categoryId] || tx.categoryId,
+          categoryId: idMap[tx.categoryId] || tx.categoryId || null,
         })),
       }));
 
       for (const log of updatedLogs) {
+        const cats = stripUndefined(log.categories);
+        const txs  = stripUndefined(log.transactions);
+        console.log('[cleanup] writing log:', log.id);
+        console.log('[cleanup] categories:', JSON.stringify(cats));
+        console.log('[cleanup] transactions:', JSON.stringify(txs));
         await updateDoc(doc(db, 'logs', log.id), {
-          categories: log.categories,
-          transactions: log.transactions,
+          categories: cats,
+          transactions: txs,
           updatedAt: new Date().toISOString(),
         });
       }
@@ -638,8 +654,8 @@ const saveUserToFirestore = async (userId, userData) => {
 
       for (const log of updatedLogs) {
         await updateDoc(doc(db, 'logs', log.id), {
-          categories: log.categories,
-          transactions: log.transactions,
+          categories: stripUndefined(log.categories),
+          transactions: stripUndefined(log.transactions),
           updatedAt: new Date().toISOString(),
         });
       }
@@ -982,37 +998,6 @@ const saveUserToFirestore = async (userId, userData) => {
 
 
 
-    const createInitialLogs = async (userId, seededCategories = []) => {
-      try {
-        const date = new Date();
-        const monthAndDate = date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
-        const categories = seededCategories.map(cat => ({
-          categoryId:       cat.id,
-          name:             cat.name,
-          icon:             cat.icon,
-          color:            cat.color,
-          amount:           0,
-          percentage:       0,
-          transactionCount: 0,
-        }));
-        const sampleLog = {
-          userId,
-          logTitle:    monthAndDate,
-          totalAmount: 0,
-          date:        new Date().toISOString().split('T')[0],
-          categories,
-          transactions: [],
-          createdAt:   new Date().toISOString(),
-          updatedAt:   new Date().toISOString(),
-        };
-        const docRef = await addDoc(collection(db, 'logs'), sampleLog);
-        console.log('Created initial log for new user with ID:', docRef.id);
-        return { id: docRef.id, ...sampleLog };
-      } catch (error) {
-        console.error('Error creating initial logs:', error);
-        throw error;
-      }
-    };
 
     // Add a log to Firestore
 const addLog = async (logData) => {

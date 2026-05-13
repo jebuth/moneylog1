@@ -16,6 +16,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import CategorySelectorModal from '../../components/CategorySelectorModal';
 import TransactionListModal from '../../components/TransactionListModal';
 import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { CategoryIcons } from '../../constants/CategoryIcons';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
@@ -98,6 +99,7 @@ export default function ExpenseTracker() {
   const { user, logs, currentLog, updateLog, deleteTransaction, deleteCategory, addCategoriesToLog, userCategories, isLoading } = useAuth();
   const { theme, isDarkMode } = useTheme();
   const router = useRouter();
+  const navigation = useNavigation();
 
   const [logTitle, setlogTitle]                   = useState(currentLog ? currentLog.logTitle   : 'New Trip');
   const [totalAmount, setTotalAmount]             = useState(currentLog ? currentLog.totalAmount : 0);
@@ -200,7 +202,7 @@ export default function ExpenseTracker() {
           <Ionicons name="document-text-outline" size={80} color={t.label} style={{ marginBottom: 20 }} />
           <Text style={[s.noLogTitle, { color: t.totalAmount }]}>No Log Selected</Text>
           <Text style={[s.noLogDesc,  { color: t.logTitle }]}>You need to create a log before you can add expenses to it.</Text>
-          <TouchableOpacity style={s.createLogBtn} onPress={() => router.replace('/(main)/screen2')}>
+          <TouchableOpacity style={s.createLogBtn} onPress={() => navigation.navigate('screen2', { openNewLog: true })}>
             <Ionicons name="add-circle-outline" size={20} color="#FFF" style={{ marginRight: 8 }} />
             <Text style={s.createLogBtnText}>CREATE A LOG</Text>
           </TouchableOpacity>
