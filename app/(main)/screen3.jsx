@@ -24,7 +24,7 @@ export default function SettingsScreen() {
   const appVersion = Constants.expoConfig?.version || '1.0.0';
 
   const handleSubscribe = () => {
-    Alert.alert('Subscribe to Pro', 'Would you like to upgrade to the Pro version for $4.99/month?', [
+    Alert.alert('Subscribe to Pro', 'Upgrade to Pro for $500,000/month?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Subscribe', onPress: () => { Alert.alert('Success', 'Thank you for subscribing to Pro!'); setIsPro(true); } },
     ]);
