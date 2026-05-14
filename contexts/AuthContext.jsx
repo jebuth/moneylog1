@@ -229,23 +229,6 @@ const saveUserToFirestore = async (userId, userData) => {
         setLogs(userLogs);
         setCurrentLog(userLogs[0]);
 
-        if (existingUserCats.length > 0) {
-          // Existing user who went through first migration:
-          // check if any user cats need to be replaced with app cat IDs
-          const appCatNames = new Set(appCats.map(c => c.name));
-          const needsCleanup = existingUserCats.some(c => appCatNames.has(c.name));
-          if (needsCleanup) {
-            await cleanupUserCategories(userId, existingUserCats, appCats, userLogs);
-            return; // cleanup sets logs/currentLog/userCategories internally
-          }
-        } else {
-          // Existing user with old format (no categoryIds yet): migrate using app cat IDs
-          const needsMigration = userLogs.some(l => (l.categories || []).some(c => !c.categoryId));
-          if (needsMigration) {
-            await migrateToNewCategorySystem(userId, userLogs, appCats);
-            return; // migration sets logs/currentLog/userCategories internally
-          }
-        }
       }
     } catch (error) {
       console.error('Error fetching user logs:', error);
@@ -392,8 +375,7 @@ const saveUserToFirestore = async (userId, userData) => {
       updatedLog.totalAmount = parseFloat((updatedLog.totalAmount - tx.amount).toFixed(2));
 
       updatedLog.categories = updatedLog.categories.map(cat => {
-        const matches = tx.categoryId ? cat.categoryId === tx.categoryId : cat.name === tx.category;
-        if (!matches) return cat;
+        if (cat.categoryId !== tx.categoryId) return cat;
         return {
           ...cat,
           amount: Math.max(0, parseFloat((cat.amount - tx.amount).toFixed(2))),
@@ -428,18 +410,12 @@ const saveUserToFirestore = async (userId, userData) => {
   // Delete a category and its transactions from the current log
   const deleteCategory = async (categoryId) => {
     try {
-      console.log('[deleteCategory] called with categoryId:', categoryId);
-      console.log('[deleteCategory] user:', !!user, 'currentLog:', !!currentLog);
       if (!user || !currentLog) return;
-      console.log('[deleteCategory] currentLog.categories:', JSON.stringify(currentLog.categories.map(c => ({ categoryId: c.categoryId, id: c.id, name: c.name }))));
-      const cat = currentLog.categories.find(c => c.categoryId === categoryId || c.id === categoryId);
-      console.log('[deleteCategory] found cat:', cat?.name);
+      const cat = currentLog.categories.find(c => c.categoryId === categoryId);
       if (!cat) return;
       const updatedLog = { ...currentLog };
-      updatedLog.categories = updatedLog.categories.filter(c => c.categoryId !== categoryId && c.id !== categoryId);
-      updatedLog.transactions = updatedLog.transactions.filter(tx =>
-        tx.categoryId ? tx.categoryId !== cat.categoryId : tx.category !== cat.name
-      );
+      updatedLog.categories = updatedLog.categories.filter(c => c.categoryId !== categoryId);
+      updatedLog.transactions = updatedLog.transactions.filter(tx => tx.categoryId !== categoryId);
       updatedLog.totalAmount = parseFloat((updatedLog.totalAmount - cat.amount).toFixed(2));
       if (updatedLog.totalAmount > 0) {
         updatedLog.categories = updatedLog.categories.map(c => ({
@@ -466,8 +442,8 @@ const saveUserToFirestore = async (userId, userData) => {
   const addCategoriesToLog = async (newCategories) => {
     try {
       if (!user || !currentLog) return;
-      const existingIds = new Set(currentLog.categories.map(c => c.categoryId || String(c.id)));
-      const toAdd = newCategories.filter(c => !existingIds.has(c.categoryId || String(c.id)));
+      const existingIds = new Set(currentLog.categories.map(c => c.categoryId));
+      const toAdd = newCategories.filter(c => !existingIds.has(c.categoryId));
       if (toAdd.length === 0) return;
       const updatedLog = { ...currentLog, categories: [...currentLog.categories, ...toAdd] };
       const logRef = doc(db, 'logs', updatedLog.id);
@@ -543,131 +519,6 @@ const saveUserToFirestore = async (userId, userData) => {
     }
   };
 
-  // Clean up existing users: remap user category IDs → app category IDs in all logs/transactions,
-  // then delete the matched user category documents
-  const cleanupUserCategories = async (userId, userCats, appCats, userLogs) => {
-    try {
-      const appCatByName = {};
-      appCats.forEach(c => { appCatByName[c.name] = c; });
-
-      // Build remap: old user cat ID → app cat ID
-      const idMap = {};
-      const toDelete = [];
-      userCats.forEach(c => {
-        const appCat = appCatByName[c.name];
-        if (appCat) { idMap[c.id] = appCat.id; toDelete.push(c.id); }
-      });
-
-      if (Object.keys(idMap).length === 0) return;
-
-      // Remap categoryId in all logs and transactions
-      const updatedLogs = userLogs.map(log => ({
-        ...log,
-        categories: (log.categories || []).map(cat => ({
-          ...cat,
-          categoryId: idMap[cat.categoryId] || cat.categoryId || null,
-        })),
-        transactions: (log.transactions || []).map(tx => ({
-          ...tx,
-          categoryId: idMap[tx.categoryId] || tx.categoryId || null,
-        })),
-      }));
-
-      for (const log of updatedLogs) {
-        const cats = stripUndefined(log.categories);
-        const txs  = stripUndefined(log.transactions);
-        console.log('[cleanup] writing log:', log.id);
-        console.log('[cleanup] categories:', JSON.stringify(cats));
-        console.log('[cleanup] transactions:', JSON.stringify(txs));
-        await updateDoc(doc(db, 'logs', log.id), {
-          categories: cats,
-          transactions: txs,
-          updatedAt: new Date().toISOString(),
-        });
-      }
-
-      // Delete the now-redundant user category docs
-      for (const catId of toDelete) {
-        await deleteDoc(doc(db, 'users', userId, 'categories', catId));
-      }
-
-      const remainingCustomCats = userCats.filter(c => !idMap[c.id]);
-      setUserCategories([...appCats, ...remainingCustomCats]);
-      setLogs(updatedLogs);
-      setCurrentLog(updatedLogs[0]);
-      console.log(`Cleanup: ${toDelete.length} user categories replaced with app category IDs`);
-    } catch (error) {
-      console.error('Error cleaning up user categories:', error);
-    }
-  };
-
-  // Migrate users with old name-based log data: map category names to app category IDs.
-  // For any category names not in appCategories, create a custom user category document.
-  const migrateToNewCategorySystem = async (userId, userLogs, appCats) => {
-    try {
-      const appCatByName = {};
-      appCats.forEach(c => { appCatByName[c.name] = c; });
-
-      // Collect unique category names across all logs
-      const nameSet = new Set();
-      userLogs.forEach(log => {
-        (log.categories || []).forEach(cat => { if (cat.name) nameSet.add(cat.name); });
-      });
-
-      // Map each name to an ID — app category if it exists, else create a custom user category
-      const nameToId = {};
-      const nameToMeta = {};
-      const customCatsCreated = [];
-      const userCatRef = collection(db, 'users', userId, 'categories');
-
-      for (const name of nameSet) {
-        if (appCatByName[name]) {
-          nameToId[name] = appCatByName[name].id;
-          nameToMeta[name] = { icon: appCatByName[name].icon, color: appCatByName[name].color };
-        } else {
-          const docRef = await addDoc(userCatRef, {
-            name, icon: 'grid-outline', color: '#888888',
-            isDeleted: false, source: 'user',
-            createdAt: new Date().toISOString(),
-            migratedAt: new Date().toISOString(),
-          });
-          nameToId[name] = docRef.id;
-          nameToMeta[name] = { icon: 'grid-outline', color: '#888888' };
-          customCatsCreated.push({ id: docRef.id, name, icon: 'grid-outline', color: '#888888', isDeleted: false, source: 'user' });
-        }
-      }
-
-      // Non-destructive update: add categoryId + icon + color to log categories and transactions
-      const updatedLogs = userLogs.map(log => ({
-        ...log,
-        categories: (log.categories || []).map(cat => ({
-          ...cat,
-          categoryId: nameToId[cat.name] || null,
-          icon:  cat.icon  || nameToMeta[cat.name]?.icon  || 'grid-outline',
-          color: cat.color || nameToMeta[cat.name]?.color || '#888888',
-        })),
-        transactions: (log.transactions || []).map(tx => ({
-          ...tx,
-          categoryId: nameToId[tx.category] || null,
-        })),
-      }));
-
-      for (const log of updatedLogs) {
-        await updateDoc(doc(db, 'logs', log.id), {
-          categories: stripUndefined(log.categories),
-          transactions: stripUndefined(log.transactions),
-          updatedAt: new Date().toISOString(),
-        });
-      }
-
-      setUserCategories([...appCats, ...customCatsCreated]);
-      setLogs(updatedLogs);
-      setCurrentLog(updatedLogs[0]);
-      console.log('Migration complete using app category IDs');
-    } catch (error) {
-      console.error('Error migrating category system:', error);
-    }
-  };
 
   // Create a new custom category for the user
   const createUserCategory = async (name) => {
@@ -1017,7 +868,6 @@ const addLog = async (logData) => {
       createdAt: new Date().toISOString()
     };
     
-    console.log('Added new log with ID:', newLog.id);
     
     // Update state with the new log that includes the ID
     //setCurrentLog(newLog);
@@ -1043,8 +893,6 @@ const updateLog = async (amount, description, categoryName, date, categoryId = n
     
     amount = toFixedNumber(cleanAmount, 2);
 
-    console.log('AuthContext.jsx updatelog')
-    console.log(amount)
     
     // Create transaction object
     let newTransaction = {
@@ -1052,12 +900,11 @@ const updateLog = async (amount, description, categoryName, date, categoryId = n
       amount,
       description,
       category: categoryName,
-      ...(categoryId && { categoryId }),
+      categoryId,
       date: date.toISOString().split('T')[0]
     };
     
-    console.log('currentLog:')
-    console.log(JSON.stringify(currentLog))
+
 
     // Create updated log object
     const updatedLog = { ...currentLog };
@@ -1070,14 +917,12 @@ const updateLog = async (amount, description, categoryName, date, categoryId = n
     updatedLog.totalAmount = parseFloat((currentAmount + amount).toFixed(2));
     
 
-    console.log('currentAmount: ' + currentAmount);
-    console.log('updatedLog.totalAmount: ' + updatedLog.totalAmount);
+
 
     // Update categories
     if (updatedLog.categories && updatedLog.categories.length > 0) {
       updatedLog.categories = updatedLog.categories.map(category => {
-        const matches = categoryId ? category.categoryId === categoryId : category.name === categoryName;
-        if (matches) {
+        if (category.categoryId === categoryId) {
           const categoryAmount = typeof category.amount === 'number' ? category.amount : 0;
           return {
             ...category,
@@ -1099,8 +944,6 @@ const updateLog = async (amount, description, categoryName, date, categoryId = n
     }
 
     // console.log('before calling firestore')
-    // console.log('updatedLog.Id: ' + updatedLog.id);
-    // console.log('currentLog.id: ' + currentLog.id);
 
     // Update in Firestore
     const logRef = doc(db, 'logs', updatedLog.id);

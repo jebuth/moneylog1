@@ -159,34 +159,28 @@ export default function LoginScreen() {
               )}
             </TouchableOpacity>
             
-            {/* Sign in with Apple button */}
+            {/* Sign in with Apple button — disabled/coming soon */}
             <TouchableOpacity
-              style={[styles.signInButton, { 
-                backgroundColor: isDarkMode ? '#000' : '#fff',
-                borderColor: theme.divider,
-                marginTop: 16
+              style={[styles.signInButton, {
+                backgroundColor: isDarkMode ? '#1a1a1a' : '#f0f0f0',
+                borderColor: isDarkMode ? '#2a2a2a' : '#d0d0d0',
+                marginTop: 16,
+                opacity: 0.45,
               }]}
-              onPress={handleAppleSignIn}
-              disabled={isLoading}
+              disabled
             >
-              {isLoading && isLoading === 'apple' ? (
-                <ActivityIndicator color={isDarkMode ? '#fff' : '#000'} size="small" />
-              ) : (
-                <>
-                  <Ionicons 
-                    name="logo-apple" 
-                    size={24} 
-                    color={isDarkMode ? '#fff' : '#000'} 
-                    style={styles.buttonIcon} 
-                  />
-                  <Text style={[styles.buttonText, { 
-                    color: isDarkMode ? '#fff' : '#000',
-                    fontWeight: '600'
-                  }]}>
-                    Sign in with Apple
-                  </Text>
-                </>
-              )}
+              <Ionicons
+                name="logo-apple"
+                size={24}
+                color={isDarkMode ? '#666' : '#999'}
+                style={styles.buttonIcon}
+              />
+              <Text style={[styles.buttonText, {
+                color: isDarkMode ? '#666' : '#999',
+                fontWeight: '600',
+              }]}>
+                Sign in with Apple
+              </Text>
             </TouchableOpacity>
             
             {/* Error message */}

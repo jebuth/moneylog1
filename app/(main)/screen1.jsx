@@ -341,15 +341,13 @@ export default function ExpenseTracker() {
                   <TouchableOpacity
                     style={s.catDeleteAction}
                     onPress={() => {
-                      console.log('[screen1] trash pressed, cat:', cat.name, 'categoryId:', cat.categoryId, 'id:', cat.id);
                       Alert.alert(
                         'Delete Category',
                         `Delete "${cat.name}" and all its transactions?`,
                         [
                           { text: 'Cancel', style: 'cancel', onPress: () => swipeCatRefs.current[k]?.close() },
                           { text: 'Delete', style: 'destructive', onPress: () => {
-                            console.log('[screen1] Delete confirmed, calling deleteCategory with:', cat.categoryId || cat.id);
-                            deleteCategory(cat.categoryId || cat.id);
+                            deleteCategory(cat.categoryId);
                           }},
                         ]
                       );

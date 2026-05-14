@@ -89,7 +89,7 @@ const TransactionListModal = ({ visible, onClose, category, transactions, onDele
 
   const color = category.color || CATEGORY_COLORS[category.name] || '#888';
   const catTransactions = (transactions || [])
-    .filter(tx => category.categoryId ? tx.categoryId === category.categoryId : tx.category === category.name)
+    .filter(tx => tx.categoryId === category.categoryId)
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 
   const formatDate = (dateStr) => {
