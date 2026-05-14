@@ -37,9 +37,9 @@ const CATEGORY_COLORS = {
 };
 
 const QUICK_BTNS = [
-  { icon: 'analytics-outline',  label: 'Analytics' },
-  { icon: 'list-outline',       label: 'View Chart' },
-  { icon: 'pie-chart-outline',  label: 'View Stats' },
+  { icon: 'analytics-outline',  label: 'feature 1' },
+  { icon: 'list-outline',       label: 'feature 2' },
+  { icon: 'pie-chart-outline',  label: 'feature 3' },
   { icon: 'add-circle-outline', label: 'Add Category', action: 'addCategory' },
 ];
 
