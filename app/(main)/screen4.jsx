@@ -31,26 +31,28 @@ export default function Screen4() {
   const rowAnims  = useRef({});
 
   const t = isDarkMode ? {
-    bg:           '#0a0a0a',
-    header:       '#0a0a0a',
-    headerBorder: '#1a1a1a',
-    title:        '#ffffff',
+    bg:           '#000000',
+    header:       '#000000',
+    headerBorder: '#0f1012',
+    title:        '#e2e2e2',
     subtitle:     '#555',
-    row:          '#0f0f0f',
-    rowBorder:    '#141414',
-    name:         '#e0e0e0',
-    badge:        '#1e1e2e',
+    row:          '#0e1012',
+    rowBorder:    'rgba(255,255,255,0.07)',
+    name:         '#c8c8c8',
+    badge:        '#141618',
     badgeText:    '#5C5CFF',
     icon:         '#444',
     addBtn:       '#5C5CFF',
-    modal:        '#111',
-    modalBorder:  '#222',
-    inputBg:      '#1a1a1a',
-    inputText:    '#fff',
-    inputBorder:  '#333',
-    placeholder:  '#444',
-    cancelText:   '#888',
-    checkBorder:  '#333',
+    modal:        '#0e1012',
+    modalBorder:  'rgba(255,255,255,0.07)',
+    searchBg:     '#111314',
+    searchBorder: '#1e2124',
+    inputBg:      '#141618',
+    inputText:    '#e2e2e2',
+    inputBorder:  '#1e2124',
+    placeholder:  '#555',
+    cancelText:   '#555',
+    checkBorder:  '#1e2124',
   } : {
     bg:           '#F4F7FB',
     header:       '#F4F7FB',
@@ -66,6 +68,8 @@ export default function Screen4() {
     addBtn:       '#5C5CFF',
     modal:        '#FFFFFF',
     modalBorder:  '#EEF2F7',
+    searchBg:     '#FFFFFF',
+    searchBorder: '#D8E2EE',
     inputBg:      '#F4F7FB',
     inputText:    '#0A1628',
     inputBorder:  '#D8E2EE',
@@ -219,7 +223,7 @@ export default function Screen4() {
         </View>
 
         {/* Search bar */}
-        <View style={[styles.searchRow, { backgroundColor: t.inputBg, borderColor: t.inputBorder }]}>
+        <View style={[styles.searchRow, { backgroundColor: t.searchBg, borderColor: t.searchBorder }]}>
           <Ionicons name="search-outline" size={17} color={t.placeholder} style={{ marginRight: 8 }} />
           <TextInput
             style={[styles.searchInput, { color: t.inputText }]}
@@ -233,6 +237,8 @@ export default function Screen4() {
         </View>
 
         {/* Category list */}
+        <View style={[styles.listCardShadow, { borderColor: t.rowBorder }]}>
+        <View style={[styles.listCard, { backgroundColor: t.row }]}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
           {displayedCategories.map((cat, i) => {
             const isSelected = selectedIds.includes(cat.id);
@@ -306,6 +312,8 @@ export default function Screen4() {
             </View>
           )}
         </ScrollView>
+        </View>
+        </View>
 
         {/* Create category modal */}
         <Modal
@@ -356,6 +364,8 @@ export default function Screen4() {
 
 const styles = StyleSheet.create({
   container:      { flex: 1 },
+  listCardShadow: { marginHorizontal: 16, marginTop: 10, marginBottom: 8, flex: 1, borderRadius: 12, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
+  listCard:       { flex: 1, borderRadius: 12, overflow: 'hidden' },
   header:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16, borderBottomWidth: 1 },
   title:          { fontSize: 22, fontWeight: '700' },
   subtitle:       { fontSize: 13, marginTop: 2 },
@@ -363,7 +373,7 @@ const styles = StyleSheet.create({
   headerAction:   { fontSize: 16, fontWeight: '500' },
   iconBtn:        { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   addBtn:         { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#5C5CFF' },
-  searchRow:      { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginTop: 14, marginBottom: 4, borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, height: 42 },
+  searchRow:      { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginTop: 14, marginBottom: 4, borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, height: 46 },
   searchInput:    { flex: 1, fontSize: 15 },
   row:            { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 20 },
   iconCircle:     { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginRight: 14 },

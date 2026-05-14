@@ -43,19 +43,23 @@ export default function SettingsScreen() {
   const avatarLetter = user?.email ? user.email[0].toUpperCase() : 'U';
 
   const t = isDarkMode ? {
-    bg:           '#0f0f0f',
-    name:         '#fff',
+    bg:           '#000000',
+    name:         '#e2e2e2',
     email:        '#555',
     sectionLabel: '#333',
-    rowBorder:    '#141414',
-    rowLabel:     '#888',
-    rowIcon:      '#666',
+    cardBg:       '#0e1012',
+    cardBorder:   'rgba(255,255,255,0.07)',
+    rowBorder:    '#141618',
+    rowLabel:     '#c8c8c8',
+    rowIcon:      '#555',
     chevron:      '#333',
     switchTrackOff: '#2a2a2a',
     switchBgIos:    '#2a2a2a',
     version:      '#2a2a2a',
     statusBar:    'light-content',
   } : {
+    cardBg:       '#FFFFFF',
+    cardBorder:   '#D8E2EE',
     bg:           '#EEF2F7',
     name:         '#0A1628',
     email:        '#4A6FA5',
@@ -92,26 +96,30 @@ export default function SettingsScreen() {
         {/* Preferences */}
         <View style={styles.section}>
           <Text style={[styles.sectionLabel, { color: t.sectionLabel }]}>PREFERENCES</Text>
-          <View style={[styles.row, styles.rowTop, { borderTopColor: t.rowBorder }]}>
-            <Ionicons name="moon-outline" size={20} color={t.rowIcon} style={{ marginRight: 14 }} />
-            <Text style={[styles.rowLabel, { flex: 1, color: t.rowLabel }]}>Dark Mode</Text>
-            <Switch value={isDarkMode} onValueChange={toggleTheme} trackColor={{ false: t.switchTrackOff, true: '#5C5CFF' }} thumbColor="#fff" ios_backgroundColor={t.switchBgIos} />
+          <View style={[styles.sectionCard, { backgroundColor: t.cardBg, borderColor: t.cardBorder }]}>
+            <View style={styles.row}>
+              <Ionicons name="moon-outline" size={20} color={t.rowIcon} style={{ marginRight: 14 }} />
+              <Text style={[styles.rowLabel, { flex: 1, color: t.rowLabel }]}>Dark Mode</Text>
+              <Switch value={isDarkMode} onValueChange={toggleTheme} trackColor={{ false: t.switchTrackOff, true: '#5C5CFF' }} thumbColor="#fff" ios_backgroundColor={t.switchBgIos} />
+            </View>
           </View>
         </View>
 
         {/* Legal */}
         <View style={styles.section}>
           <Text style={[styles.sectionLabel, { color: t.sectionLabel }]}>LEGAL</Text>
-          <TouchableOpacity style={[styles.row, styles.rowTop, styles.rowDivider, { borderTopColor: t.rowBorder, borderBottomColor: t.rowBorder }]} onPress={openPrivacyPolicy}>
-            <Ionicons name="lock-closed-outline" size={20} color={t.rowIcon} style={{ marginRight: 14 }} />
-            <Text style={[styles.rowLabel, { flex: 1, color: t.rowLabel }]}>Privacy Policy</Text>
-            <Ionicons name="chevron-forward" size={16} color={t.chevron} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.row} onPress={openTermsOfService}>
-            <Ionicons name="document-text-outline" size={20} color={t.rowIcon} style={{ marginRight: 14 }} />
-            <Text style={[styles.rowLabel, { flex: 1, color: t.rowLabel }]}>Terms of Service</Text>
-            <Ionicons name="chevron-forward" size={16} color={t.chevron} />
-          </TouchableOpacity>
+          <View style={[styles.sectionCard, { backgroundColor: t.cardBg, borderColor: t.cardBorder }]}>
+            <TouchableOpacity style={[styles.row, styles.rowDivider, { borderBottomColor: t.rowBorder }]} onPress={openPrivacyPolicy}>
+              <Ionicons name="lock-closed-outline" size={20} color={t.rowIcon} style={{ marginRight: 14 }} />
+              <Text style={[styles.rowLabel, { flex: 1, color: t.rowLabel }]}>Privacy Policy</Text>
+              <Ionicons name="chevron-forward" size={16} color={t.chevron} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.row} onPress={openTermsOfService}>
+              <Ionicons name="document-text-outline" size={20} color={t.rowIcon} style={{ marginRight: 14 }} />
+              <Text style={[styles.rowLabel, { flex: 1, color: t.rowLabel }]}>Terms of Service</Text>
+              <Ionicons name="chevron-forward" size={16} color={t.chevron} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.bottom}>
@@ -139,7 +147,8 @@ const styles = StyleSheet.create({
   proBadgeTxt:  { color: '#FFD700', fontSize: 13, fontWeight: '700' },
   proBtn:       { backgroundColor: '#5C5CFF', borderRadius: 20, paddingHorizontal: 20, paddingVertical: 8 },
   proBtnTxt:    { color: '#fff', fontWeight: '600', fontSize: 15 },
-  section:      { marginHorizontal: 20, marginBottom: 8 },
+  section:      { marginHorizontal: 20, marginBottom: 16 },
+  sectionCard:  { borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
   sectionLabel: { fontSize: 13, fontWeight: '700', letterSpacing: 1.2, marginBottom: 10 },
   row:          { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
   rowTop:       { borderTopWidth: 1 },

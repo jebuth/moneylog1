@@ -36,34 +36,36 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 const DARK = {
-  bg:           '#0f0f0f',
-  headerTitle:  '#fff',
-  searchBg:     '#141414',
-  searchBorder: '#222',
-  searchText:   '#fff',
+  bg:           '#000000',
+  headerBorder: '#0f1012',
+  headerTitle:  '#e2e2e2',
+  searchBg:     '#111314',
+  searchBorder: '#1e2124',
+  searchText:   '#e2e2e2',
   searchHolder: '#555',
-  cardBg:       '#141414',
-  cardBorder:   '#222',
-  cardLeft:     '#222',
-  title:        '#fff',
+  cardBg:       '#0e1012',
+  cardBorder:   'rgba(255,255,255,0.07)',
+  cardLeft:     '#1e2124',
+  title:        '#e2e2e2',
   meta:         '#555',
-  amount:       '#fff',
+  amount:       '#e2e2e2',
   chevron:      '#444',
   emptyIcon:    '#333',
-  emptyText:    '#666',
+  emptyText:    '#555',
   loaderText:   '#aaa',
-  modalCardBg:  '#141414',
-  modalBorder:  '#222',
-  modalIconBg:  '#1e1e1e',
-  modalInputBg: '#1e1e1e',
-  modalInputBorder: '#2a2a2a',
-  modalInputText:   '#fff',
+  modalCardBg:  '#0e1012',
+  modalBorder:  'rgba(255,255,255,0.07)',
+  modalIconBg:  '#141618',
+  modalInputBg: '#141618',
+  modalInputBorder: '#1e2124',
+  modalInputText:   '#e2e2e2',
   modalHolder:  '#555',
   modalCancel:  '#555',
 };
 
 const LIGHT = {
   bg:           '#EEF2F7',
+  headerBorder: '#D8E2EE',
   headerTitle:  '#0A1628',
   searchBg:     '#FFFFFF',
   searchBorder: '#D8E2EE',
@@ -291,11 +293,11 @@ export default function LogsListScreen() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: t.bg }}>
       <View style={[styles.container, { backgroundColor: t.bg }]}>
-        <SafeAreaView style={styles.safe}>
+        <SafeAreaView style={[styles.safe, { backgroundColor: t.bg }]}>
           <StatusBar style={isDarkMode ? 'light' : 'dark'} />
-          <View style={styles.header}>
+          <View style={[styles.header, { borderBottomColor: t.headerBorder }]}>
             <View>
               <Text style={[styles.headerTitle, { color: t.headerTitle }]}>Logs</Text>
               <Text style={[styles.headerSub, { color: t.searchHolder }]}>{logs.length} log{logs.length !== 1 ? 's' : ''}</Text>
@@ -306,9 +308,10 @@ export default function LogsListScreen() {
           </View>
 
           <View style={[styles.searchBar, { backgroundColor: t.searchBg, borderColor: t.searchBorder }]}>
+            <Ionicons name="search-outline" size={17} color={t.searchHolder} style={{ marginRight: 8 }} />
             <TextInput
               style={[styles.searchInput, { color: t.searchText }]}
-              placeholder="Search"
+              placeholder="Search logs..."
               placeholderTextColor={t.searchHolder}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -475,14 +478,14 @@ export default function LogsListScreen() {
 const styles = StyleSheet.create({
   container:    { flex: 1 },
   safe:         { flex: 1, paddingTop: Platform.OS === 'ios' ? 0 : Constants.statusBarHeight },
-  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 },
-  headerTitle:  { fontSize: 28, fontWeight: 'bold' },
+  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16, borderBottomWidth: 1 },
+  headerTitle:  { fontSize: 22, fontWeight: '700' },
   headerSub:    { fontSize: 13, marginTop: 1 },
   addLogBtn:    { width: 44, height: 44, borderRadius: 22, backgroundColor: 'transparent', borderWidth: 1, borderColor: '#5C5CFF', alignItems: 'center', justifyContent: 'center' },
-  searchBar:    { flexDirection: 'row', alignItems: 'center', borderRadius: 12, marginHorizontal: 16, marginBottom: 12, paddingHorizontal: 14, height: 46, borderWidth: 1 },
+  searchBar:    { flexDirection: 'row', alignItems: 'center', borderRadius: 12, marginHorizontal: 16, marginTop: 14, marginBottom: 12, paddingHorizontal: 14, height: 46, borderWidth: 1 },
   searchInput:  { flex: 1, fontSize: 17 },
   list:         { paddingHorizontal: 16, paddingBottom: 120 },
-  card:         { flexDirection: 'row', alignItems: 'center', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderLeftWidth: 4 },
+  card:         { flexDirection: 'row', alignItems: 'center', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderLeftWidth: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 4, elevation: 2 },
   left:         { flex: 1, marginRight: 12 },
   title:        { fontSize: 17, fontWeight: '600', marginBottom: 4 },
   meta:         { fontSize: 13 },

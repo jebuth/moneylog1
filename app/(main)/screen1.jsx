@@ -20,6 +20,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { CategoryIcons } from '../../constants/CategoryIcons';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const CATEGORY_COLORS = {
   'Restaurants':    '#FF6B6B',
@@ -46,28 +47,28 @@ const QUICK_BTNS = [
 // Color tokens per design
 const THEMES = {
   dark: {
-    bg:               '#0f0f0f',
-    headerBorder:     '#222',
-    logTitle:         '#888',
-    totalAmount:      '#fff',
-    quickBtnBg:       '#1a1a1a',
-    quickIcon:        '#aaa',
-    cardBg:           '#141414',
-    cardBorder:       '#222',
-    label:            '#fff',
-    fieldBg:          '#1e1e1e',
-    fieldBorder:      '#1e1e1e',
-    dollar:           '#666',
-    inputText:        '#fff',
-    placeholder:      '#555',
-    catSelected:      '#fff',
-    catPlaceholder:   '#555',
-    clearBorder:      '#ff4444',
-    clearText:        '#ff4444',
+    bg:               '#000000',
+    headerBorder:     '#0f1012',
+    logTitle:         '#555',
+    totalAmount:      '#e2e2e2',
+    quickBtnBg:       '#111314',
+    quickIcon:        '#555',
+    cardBg:           '#0e1012',
+    cardBorder:       'rgba(255,255,255,0.07)',
+    label:            '#555',
+    fieldBg:          '#141618',
+    fieldBorder:      '#1e2124',
+    dollar:           '#555',
+    inputText:        '#e2e2e2',
+    placeholder:      '#3a3d40',
+    catSelected:      '#e2e2e2',
+    catPlaceholder:   '#3a3d40',
+    clearBorder:      '#7a2a2a',
+    clearText:        '#555',
     logBtnBg:         '#5C5CFF',
-    catDivider:       '#1e1e1e',
-    catName:          '#ccc',
-    catAmt:           '#fff',
+    catDivider:       '#111314',
+    catName:          '#c8c8c8',
+    catAmt:           '#e2e2e2',
   },
   light3: {
     bg:               '#EEF2F7',
@@ -129,6 +130,20 @@ export default function ExpenseTracker() {
   const shakeAmount                                     = useRef(new Animated.Value(0)).current;
   const shakeCategory                                   = useRef(new Animated.Value(0)).current;
   const shakeDesc                                       = useRef(new Animated.Value(0)).current;
+  const clearAnimVal                                    = useRef(new Animated.Value(0)).current;
+  const logAnimVal                                      = useRef(new Animated.Value(0)).current;
+
+  const amountFilled = !!inputAmount && inputAmount !== '0.00';
+  const clearEnabled = !!inputAmount || !!selectedCategory.name || !!description;
+  const logEnabled   = amountFilled && !!description && !!selectedCategory.name;
+
+  useEffect(() => {
+    Animated.timing(clearAnimVal, { toValue: clearEnabled ? 1 : 0, duration: 600, useNativeDriver: false }).start();
+  }, [clearEnabled]);
+
+  useEffect(() => {
+    Animated.timing(logAnimVal, { toValue: logEnabled ? 1 : 0, duration: 600, useNativeDriver: false }).start();
+  }, [logEnabled]);
 
   const triggerShake = (anim) => {
     anim.setValue(0);
@@ -228,7 +243,7 @@ export default function ExpenseTracker() {
           <Text style={[s.totalAmount, { color: t.totalAmount }]}>${formatAmt(totalAmount)}</Text>
           <View style={s.quickRow}>
             {QUICK_BTNS.map((btn, i) => (
-              <TouchableOpacity key={i} style={[s.quickBtn, { backgroundColor: t.quickBtnBg }]} onPress={() => btn.action === 'addCategory' ? openAddCatModal() : Alert.alert(btn.label, 'Coming soon.', [{ text: 'OK' }])}>
+              <TouchableOpacity key={i} style={[s.quickBtn, { backgroundColor: t.quickBtnBg, borderColor: t.cardBorder }]} onPress={() => btn.action === 'addCategory' ? openAddCatModal() : Alert.alert(btn.label, 'Coming soon.', [{ text: 'OK' }])}>
                 <Ionicons name={btn.icon} size={24} color={t.quickIcon} />
               </TouchableOpacity>
             ))}
@@ -276,31 +291,38 @@ export default function ExpenseTracker() {
           </Animated.View>
 
           {(() => {
-            const amountFilled = !!inputAmount && inputAmount !== '0.00';
-            const enabled = amountFilled && !!description && !!selectedCategory.name;
+            const clearBorderColor = clearAnimVal.interpolate({ inputRange: [0, 1], outputRange: [t.fieldBorder, t.clearBorder] });
+            const clearTextColor   = clearAnimVal.interpolate({ inputRange: [0, 1], outputRange: [t.clearText,   t.clearBorder] });
+            const clearOpacity     = clearAnimVal.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
+            const logBorderColor   = logAnimVal.interpolate({ inputRange: [0, 1], outputRange: [t.fieldBorder, t.logBtnBg] });
+            const logTextColor     = logAnimVal.interpolate({ inputRange: [0, 1], outputRange: [t.placeholder,  t.logBtnBg] });
             return (
               <View style={{ flexDirection: 'row', marginTop: 16, gap: 8 }}>
-                <TouchableOpacity style={[s.clearBtn, { borderColor: t.clearBorder }]} onPress={handleClearForm}>
-                  <Text style={[s.clearBtnText, { color: t.clearText }]}>CLEAR</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[s.logBtn, { backgroundColor: enabled ? t.logBtnBg : t.fieldBg, borderWidth: enabled ? 0 : 1, borderColor: t.fieldBorder }]}
-                  onPress={enabled ? handleLogExpense : () => {
-                    if (!amountFilled) triggerShake(shakeAmount);
-                    if (!selectedCategory.name) triggerShake(shakeCategory);
-                    if (!description) triggerShake(shakeDesc);
-                  }}
-                  activeOpacity={enabled ? 0.7 : 1}
-                >
-                  <Text style={[s.logBtnText, { color: enabled ? '#fff' : t.placeholder }]}>LOG</Text>
-                </TouchableOpacity>
+                <Animated.View style={[s.clearBtn, { borderColor: clearBorderColor, opacity: clearOpacity }]}>
+                  <TouchableOpacity style={s.btnInner} onPress={handleClearForm} disabled={!clearEnabled}>
+                    <Animated.Text style={[s.clearBtnText, { color: clearTextColor }]}>CLEAR</Animated.Text>
+                  </TouchableOpacity>
+                </Animated.View>
+                <Animated.View style={[s.logBtn, { backgroundColor: t.fieldBg, borderColor: logBorderColor }]}>
+                  <TouchableOpacity
+                    style={s.btnInner}
+                    onPress={logEnabled ? handleLogExpense : () => {
+                      if (!amountFilled) triggerShake(shakeAmount);
+                      if (!selectedCategory.name) triggerShake(shakeCategory);
+                      if (!description) triggerShake(shakeDesc);
+                    }}
+                    activeOpacity={logEnabled ? 0.7 : 1}
+                  >
+                    <Animated.Text style={[s.logBtnText, { color: logTextColor }]}>LOG</Animated.Text>
+                  </TouchableOpacity>
+                </Animated.View>
               </View>
             );
           })()}
         </View>
 
         {/* Category list */}
-        <View style={[s.card, { backgroundColor: t.cardBg, borderColor: t.cardBorder, padding: 0, overflow: 'hidden' }]}>
+        <View style={[s.card, { backgroundColor: t.cardBg, borderColor: t.cardBorder, padding: 0, overflow: 'hidden', position: 'relative' }]}>
           {(() => {
             if (!Array.isArray(categories)) return null;
             const sorted = [...categories].sort((a, b) => b.amount - a.amount);
@@ -481,8 +503,8 @@ const s = StyleSheet.create({
   hdTitleD3:        { fontSize: 24, fontWeight: '700' },
   totalAmount:      { fontSize: 42, fontWeight: 'bold', marginBottom: 20 },
   quickRow:         { flexDirection: 'row', gap: 12 },
-  quickBtn:         { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  card:             { marginHorizontal: 16, marginTop: 16, borderRadius: 16, padding: 16, borderWidth: 1 },
+  quickBtn:         { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 3 },
+  card:             { marginHorizontal: 16, marginTop: 16, borderRadius: 16, padding: 16, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
   label:            { fontSize: 13, fontWeight: '600', letterSpacing: 0.5, marginBottom: 6 },
   amountRow:        { flexDirection: 'row', alignItems: 'center', borderRadius: 10, paddingHorizontal: 12, height: 46, borderWidth: 1 },
   dollar:           { fontSize: 17, marginRight: 4 },
@@ -490,10 +512,11 @@ const s = StyleSheet.create({
   catBtn:           { borderRadius: 10, height: 46, justifyContent: 'center', paddingHorizontal: 12, borderWidth: 1 },
   catBtnText:       { fontSize: 16 },
   descInput:        { borderRadius: 10, padding: 12, fontSize: 16, borderWidth: 1 },
-  clearBtn:         { flex: 0.75, height: 46, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  clearBtn:         { flex: 0.75, height: 46, borderRadius: 10, borderWidth: 1, overflow: 'hidden' },
   clearBtnText:     { fontWeight: '600', fontSize: 15 },
-  logBtn:           { flex: 1, height: 46, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  logBtnText:       { color: '#fff', fontWeight: '700', fontSize: 17 },
+  logBtn:           { flex: 1, height: 46, borderRadius: 10, borderWidth: 1, overflow: 'hidden' },
+  logBtnText:       { fontWeight: '700', fontSize: 15 },
+  btnInner:         { flex: 1, alignItems: 'center', justifyContent: 'center' },
   catRow:           { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 },
   catRowInner:      { flex: 1, flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
   catDeleteAction:  { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#FF3B30', borderRadius: 10, justifyContent: 'center', alignItems: 'center', width: 64, marginRight: 8 },

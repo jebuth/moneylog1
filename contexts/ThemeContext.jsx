@@ -34,7 +34,7 @@ export const lightTheme = {
 };
 
 export const darkTheme = {
-  background: '#121212',
+  background: '#000000',
   backgroundShadow1: '#DCDCDC',
   backgroundShadow2: '#C7C7C7',
   card: '#1D1D1D',
