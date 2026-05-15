@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
   iconBtn:        { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   addBtn:         { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#5C5CFF' },
   searchRow:      { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginTop: 14, marginBottom: 4, borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, height: 46 },
-  searchInput:    { flex: 1, fontSize: 15 },
+  searchInput:    { flex: 1, fontSize: 17 },
   row:            { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 20 },
   iconCircle:     { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
   catName:        { flex: 1, fontSize: 16, fontWeight: '400' },
